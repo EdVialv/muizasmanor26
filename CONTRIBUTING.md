@@ -26,11 +26,13 @@ Every pull request should:
 ## Required local checks
 
 ```bash
+npm run lint
+npm run format:check
 npm run typecheck
 npm run build
 ```
 
-Testing and lint commands will be added when their configurations land.
+Use `npm run lint:fix` and `npm run format` to fix issues automatically. Markdown files are not auto-formatted. Test commands will be added on Day 3 (issue #5).
 
 ## Safety
 

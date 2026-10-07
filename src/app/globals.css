@@ -43,7 +43,9 @@ main {
 .eyebrow {
   margin: 0 0 1rem;
   color: var(--accent);
-  font: 700 0.78rem/1.4 system-ui, sans-serif;
+  font:
+    700 0.78rem/1.4 system-ui,
+    sans-serif;
   letter-spacing: 0.13em;
   text-transform: uppercase;
 }
@@ -69,7 +71,9 @@ h2 {
   max-width: 44rem;
   margin: 1.75rem 0;
   color: var(--muted);
-  font: 400 clamp(1.05rem, 2vw, 1.3rem)/1.65 system-ui, sans-serif;
+  font:
+    400 clamp(1.05rem, 2vw, 1.3rem)/1.65 system-ui,
+    sans-serif;
 }
 
 .primaryAction {
@@ -78,7 +82,9 @@ h2 {
   background: var(--ink);
   color: white;
   padding: 0.9rem 1.25rem;
-  font: 700 0.95rem/1 system-ui, sans-serif;
+  font:
+    700 0.95rem/1 system-ui,
+    sans-serif;
   text-decoration: none;
 }
 
@@ -107,7 +113,9 @@ h2 {
   border-radius: 1rem;
   background: var(--surface);
   padding: 1.25rem;
-  font: 650 1rem/1.4 system-ui, sans-serif;
+  font:
+    650 1rem/1.4 system-ui,
+    sans-serif;
 }
 
 @media (max-width: 40rem) {

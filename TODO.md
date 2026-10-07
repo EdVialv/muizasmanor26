@@ -25,7 +25,7 @@ Claude Code may implement a focused task on its own branch. Codex should review 
 | Day | Two-hour outcome | Linked issue | Main tool | Status |
 |---:|---|---|---|:---:|
 | 1 | Define the MVP, architecture, data contract, repository workflow and initial Next.js shell. | [#1](https://github.com/EdVialv/muizasmanor26/issues/1) | Codex + manual decisions | [x] |
-| 2 | Commit the npm lockfile; configure ESLint and formatting; confirm a clean local install. | [#5](https://github.com/EdVialv/muizasmanor26/issues/5) | Claude Code | [ ] |
+| 2 | Commit the npm lockfile; configure ESLint and formatting; confirm a clean local install. | [#5](https://github.com/EdVialv/muizasmanor26/issues/5) | Claude Code | [~] |
 | 3 | Add unit-test tooling and GitHub Actions for type checking, tests and production builds. | [#5](https://github.com/EdVialv/muizasmanor26/issues/5) | Claude Code, Codex review | [ ] |
 | 4 | Select 20–30 representative manor records covering complete, incomplete and unusual cases. | [#8](https://github.com/EdVialv/muizasmanor26/issues/8) | Manual data review | [ ] |
 | 5 | Map existing dataset columns to the proposed fields; record missing and conflicting values. | [#8](https://github.com/EdVialv/muizasmanor26/issues/8) | Manual + Codex | [ ] |
