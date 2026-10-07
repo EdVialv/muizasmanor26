@@ -32,6 +32,8 @@ Open http://localhost:3000.
 
 ## Documentation
 
+- [30-evening roadmap](TODO.md)
+- [Shared Codex and Claude Code progress log](PROGRESS.md)
 - [MVP scope](docs/MVP_SCOPE.md)
 - [Technical architecture](docs/ARCHITECTURE.md)
 - [Manor data contract](docs/DATA_MODEL.md)
@@ -40,3 +42,5 @@ Open http://localhost:3000.
 ## Working method
 
 Changes are developed on focused branches and reviewed through pull requests. Claude Code may implement features; Codex may review, debug and test them. Never let both tools edit the same branch simultaneously.
+
+Before starting work, both assistants must read `PROGRESS.md`. Before ending a session, the active assistant must update its current-work status and add a complete handoff entry.
