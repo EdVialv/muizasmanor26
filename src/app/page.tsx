@@ -13,8 +13,8 @@ export default function Home() {
         <p className="eyebrow">Latvijas kultūrvēsturiskais mantojums</p>
         <h1 id="page-title">Atklāj Latvijas muižas vienuviet</h1>
         <p className="intro">
-          Top katalogs ceļotājiem un pasākumu rīkotājiem. Pirmajā versijā varēs
-          atrast muižas, salīdzināt iespējas un nosūtīt pasākuma pieprasījumu.
+          Top katalogs ceļotājiem un pasākumu rīkotājiem. Pirmajā versijā varēs atrast muižas,
+          salīdzināt iespējas un nosūtīt pasākuma pieprasījumu.
         </p>
         <a className="primaryAction" href="#mvp">
           Apskatīt MVP plānu
