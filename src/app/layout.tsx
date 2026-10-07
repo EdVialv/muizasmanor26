@@ -7,13 +7,10 @@ export const metadata: Metadata = {
     default: "Latvijas muižas",
     template: "%s | Latvijas muižas",
   },
-  description:
-    "Atklāj Latvijas muižas, to stāstus, pakalpojumus un pasākumu iespējas.",
+  description: "Atklāj Latvijas muižas, to stāstus, pakalpojumus un pasākumu iespējas.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: ReactNode }>) {
+export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="lv">
       <body>{children}</body>
