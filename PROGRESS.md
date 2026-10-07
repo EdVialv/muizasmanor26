@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 2
-- **Last completed day:** Day 1
+- **Current roadmap day:** Day 3
+- **Last completed day:** Day 2
 - **Next issue:** [#5 — Set up development quality and CI baseline](https://github.com/EdVialv/muizasmanor26/issues/5)
-- **Next outcome:** Commit the npm lockfile, configure ESLint and formatting, and verify a clean install, type check and production build.
-- **MVP status:** Foundation complete; development quality baseline not yet started.
+- **Next outcome:** Add unit-test tooling and GitHub Actions for formatting, linting, type checking, tests and production builds.
+- **MVP status:** Foundation and reproducible quality baseline complete; automated tests and CI are pending.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field | Current value |
-|---|---|
-| Status | Idle |
-| Agent | None |
-| Issue | None |
-| Branch | None |
-| Session goal | None |
-| Started | None |
-| Expected handoff | Start Day 2 from issue #5 |
+| Field            | Current value             |
+| ---------------- | ------------------------- |
+| Status           | Idle                      |
+| Agent            | None                      |
+| Issue            | None                      |
+| Branch           | None                      |
+| Session goal     | None                      |
+| Started          | None                      |
+| Expected handoff | Start Day 3 from issue #5 |
 
 ## Required session entry
 
@@ -69,6 +69,42 @@ Copy this template to the top of **Session history** before ending a session.
 ## Session history
 
 Add the newest completed session immediately below this heading.
+
+### 2026-10-07 18:22 Europe/Riga — Codex
+
+- **Issue:** [#5 — Set up development quality and CI baseline](https://github.com/EdVialv/muizasmanor26/issues/5)
+- **Branch:** `codex/day-02-quality-baseline`
+- **Pull request:** pending at time of entry
+- **Session goal:** Complete Day 2 by locking dependencies, configuring linting and formatting, and verifying a clean production build.
+- **Completed:**
+  - generated and verified `package-lock.json`;
+  - configured ESLint with the Next.js Core Web Vitals and TypeScript rules;
+  - configured Prettier and repository formatting scripts;
+  - formatted the existing source and documentation baseline;
+  - updated contributor verification commands.
+- **Files changed:**
+  - `package.json` and `package-lock.json` — locked quality-tool dependencies and added scripts;
+  - `eslint.config.mjs` — Next.js and TypeScript lint rules;
+  - `prettier.config.mjs` and `.prettierignore` — formatting policy;
+  - `CONTRIBUTING.md` — required local checks;
+  - existing source and Markdown files — one-time Prettier baseline;
+  - `TODO.md` and `PROGRESS.md` — Day 2 completion and Day 3 handoff.
+- **Verification:**
+  - `npm ci` — passed;
+  - `npm ls eslint eslint-config-next prettier` — passed with a valid dependency tree;
+  - `npm run format:check` — passed;
+  - `npm run lint` — passed;
+  - `npm run typecheck` — passed;
+  - `npm run build` — passed.
+- **Decisions:**
+  - pinned ESLint 9 because the current Next.js plugin chain does not yet support ESLint 10;
+  - retained npm as the package manager and committed its lockfile;
+  - formatted the existing repository once so future formatting checks can be enforced without legacy failures.
+- **Blockers or risks:**
+  - ESLint 9 is no longer the newest major version; upgrade after the Next.js plugin chain declares ESLint 10 compatibility.
+- **Next exact action:**
+  - complete Day 3 on issue #5 by adding test tooling and the GitHub Actions quality workflow.
+- **Handoff state:** awaiting review
 
 ### 2026-10-07 17:26 Europe/Riga — Codex
 
