@@ -11,17 +11,17 @@
 
 ## Service responsibilities
 
-| Concern | Service |
-|---|---|
-| Web application and server routes | Next.js + TypeScript |
-| Source control and review | GitHub |
-| Hosting and preview deployments | Vercel |
-| Database, authentication and image storage | Supabase |
-| DNS, caching and edge protection | Cloudflare |
-| Transactional enquiry emails | Resend |
-| Maps and geocoding | Mapbox |
-| Error and performance monitoring | Sentry |
-| Product analytics | PostHog |
+| Concern                                    | Service              |
+| ------------------------------------------ | -------------------- |
+| Web application and server routes          | Next.js + TypeScript |
+| Source control and review                  | GitHub               |
+| Hosting and preview deployments            | Vercel               |
+| Database, authentication and image storage | Supabase             |
+| DNS, caching and edge protection           | Cloudflare           |
+| Transactional enquiry emails               | Resend               |
+| Maps and geocoding                         | Mapbox               |
+| Error and performance monitoring           | Sentry               |
+| Product analytics                          | PostHog              |
 
 ## Initial application areas
 
