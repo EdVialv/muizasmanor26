@@ -26,11 +26,13 @@ Every pull request should:
 ## Required local checks
 
 ```bash
+npm run format:check
+npm run lint
 npm run typecheck
 npm run build
 ```
 
-Testing and lint commands will be added when their configurations land.
+Automated tests will be added during Day 3.
 
 ## Safety
 
