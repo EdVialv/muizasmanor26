@@ -74,7 +74,7 @@ Add the newest completed session immediately below this heading.
 
 - **Issue:** [#5 — Set up development quality and CI baseline](https://github.com/EdVialv/muizasmanor26/issues/5)
 - **Branch:** `codex/day-02-quality-baseline`
-- **Pull request:** pending at time of entry
+- **Pull request:** [#16](https://github.com/EdVialv/muizasmanor26/pull/16) — merged
 - **Session goal:** Complete Day 2 by locking dependencies, configuring linting and formatting, and verifying a clean production build.
 - **Completed:**
   - generated and verified `package-lock.json`;
@@ -104,7 +104,7 @@ Add the newest completed session immediately below this heading.
   - ESLint 9 is no longer the newest major version; upgrade after the Next.js plugin chain declares ESLint 10 compatibility.
 - **Next exact action:**
   - complete Day 3 on issue #5 by adding test tooling and the GitHub Actions quality workflow.
-- **Handoff state:** awaiting review
+- **Handoff state:** merged
 
 ### 2026-10-07 17:26 Europe/Riga — Codex
 
