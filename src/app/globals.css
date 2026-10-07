@@ -1,0 +1,122 @@
+:root {
+  color-scheme: light;
+  --ink: #17332d;
+  --muted: #536b64;
+  --paper: #f7f4ec;
+  --surface: #fffdf8;
+  --accent: #a6602b;
+  --line: #d8d2c4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+main {
+  min-height: 100vh;
+}
+
+.hero,
+.featureSection {
+  width: min(72rem, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+.hero {
+  display: grid;
+  min-height: 68vh;
+  align-content: center;
+  padding-block: 5rem;
+}
+
+.eyebrow {
+  margin: 0 0 1rem;
+  color: var(--accent);
+  font: 700 0.78rem/1.4 system-ui, sans-serif;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+h1,
+h2 {
+  max-width: 16ch;
+  margin: 0;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: clamp(2.75rem, 9vw, 6.75rem);
+  line-height: 0.95;
+}
+
+h2 {
+  font-size: clamp(2rem, 5vw, 3.75rem);
+  line-height: 1;
+}
+
+.intro {
+  max-width: 44rem;
+  margin: 1.75rem 0;
+  color: var(--muted);
+  font: 400 clamp(1.05rem, 2vw, 1.3rem)/1.65 system-ui, sans-serif;
+}
+
+.primaryAction {
+  justify-self: start;
+  border-radius: 999px;
+  background: var(--ink);
+  color: white;
+  padding: 0.9rem 1.25rem;
+  font: 700 0.95rem/1 system-ui, sans-serif;
+  text-decoration: none;
+}
+
+.primaryAction:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.featureSection {
+  padding-block: 5rem 7rem;
+  border-top: 1px solid var(--line);
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0.75rem;
+  padding: 0;
+  margin: 2.5rem 0 0;
+  list-style: none;
+}
+
+.featureGrid li {
+  min-height: 8rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--surface);
+  padding: 1.25rem;
+  font: 650 1rem/1.4 system-ui, sans-serif;
+}
+
+@media (max-width: 40rem) {
+  .hero {
+    min-height: auto;
+    padding-block: 4rem;
+  }
+
+  .featureSection {
+    padding-block: 3.5rem 5rem;
+  }
+}
