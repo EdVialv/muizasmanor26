@@ -32,6 +32,23 @@ Imports use `source_system` plus `external_source_id` for idempotent upserts. A 
 | `source_url`       | URL       | Principal source for verification                                         |
 | `last_verified_at` | datetime  | Date the public facts were last checked                                   |
 
+## Cadastral cross-references
+
+Use a separate `object_cadastre_references` relation. In the Latvian Cadastre, a real estate property has a cadastral number, while land units, buildings and premises groups have cadastral designations. One heritage object may span several cadastral objects, and one parcel may contain several heritage objects, so a single unique field on the heritage-object row is not sufficient.
+
+| Field             | Type          | Rule                                                                                                  |
+| ----------------- | ------------- | ----------------------------------------------------------------------------------------------------- |
+| `object_id`       | relation      | Heritage object being cross-referenced                                                                |
+| `reference_type`  | enum          | `real_estate_number`, `land_unit_designation`, `building_designation` or `premises_group_designation` |
+| `reference_value` | text          | Identifier copied from the official Kadastrs source without inventing spaces or reformatting          |
+| `is_primary`      | boolean       | Marks the most useful reference for this object; does not imply exclusive ownership                   |
+| `verified_at`     | nullable date | Date the reference was last confirmed against the official Kadastrs service                           |
+| `source_url`      | nullable URL  | Official lookup or dataset reference used for confirmation                                            |
+| `match_method`    | enum          | `manual_lookup`, `api_match` or `imported_dataset`                                                    |
+| `match_notes`     | nullable text | Ambiguity or review note; required when an automated match is not exact                               |
+
+Do not derive a cadastral reference from approximate coordinates. Enforce uniqueness on `(object_id, reference_type, reference_value)`, not globally on the reference value: a cadastral parcel can legitimately be associated with several heritage objects.
+
 ## Classification fields used by filters
 
 | Field                       | Type                   | Allowed values and rule                                                 |
@@ -115,6 +132,7 @@ Raw API keys, tokens, passwords and webhook secrets must never be stored in obje
 ## Index and query requirements
 
 - Unique index on `slug` and on `(source_system, external_source_id)`.
+- Unique index on `(object_id, reference_type, reference_value)` in `object_cadastre_references`.
 - GiST index on `location` for viewport and distance queries.
 - B-tree indexes matching published-directory filters: `status`, `object_type`, `municipality`, `condition_category`, `ownership_type` and `parent_object_id`.
 - GIN/trigram index over a maintained search document containing Latvian, alternate and historical names plus searchable location text.
@@ -142,6 +160,7 @@ Raw API keys, tokens, passwords and webhook secrets must never be stored in obje
 - Detect duplicates using stable source IDs first, then review name/location candidates manually.
 - Validate parent relationships and reject hierarchy cycles.
 - Do not infer condition, ownership or commercial services from photographs or old descriptions.
+- Do not guess cadastral references or derive them from approximate coordinates; populate them only from a verified official lookup or dataset match.
 - Keep unknown values null instead of writing “no” or assigning an unverified category.
 - Exclude null condition and ownership values from those filters until verified.
 - Separate public contacts from internal enquiry-routing addresses.
