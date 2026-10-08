@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 3
-- **Last completed day:** Day 2
-- **Next issue:** [#5 — Set up development quality and CI baseline](https://github.com/EdVialv/muizasmanor26/issues/5)
-- **Next outcome:** Add unit-test tooling and GitHub Actions for formatting, linting, type checking, tests and production builds.
-- **MVP status:** Foundation and reproducible quality baseline complete; automated tests and CI are pending.
+- **Current roadmap day:** Day 3 (implemented and locally verified; awaiting pull-request CI and merge)
+- **Last completed-and-merged day:** Day 2
+- **Next issue after merge:** [#8 — Data model and sample dataset](https://github.com/EdVialv/muizasmanor26/issues/8)
+- **Next outcome:** Review and merge the separate Day 4 representative sample.
+- **MVP status:** Foundation and quality baseline are merged. Automated tests and CI are implemented on this branch and awaiting remote verification.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value             |
-| ---------------- | ------------------------- |
-| Status           | Idle                      |
-| Agent            | None                      |
-| Issue            | None                      |
-| Branch           | None                      |
-| Session goal     | None                      |
-| Started          | None                      |
-| Expected handoff | Start Day 3 from issue #5 |
+| Field            | Current value                      |
+| ---------------- | ---------------------------------- |
+| Status           | Awaiting review                    |
+| Agent            | Codex                              |
+| Issue            | #5                                 |
+| Branch           | `codex/day3-reviewed`              |
+| Session goal     | Publish and verify Day 3           |
+| Started          | 2026-10-08                         |
+| Expected handoff | Merge after pull-request CI passes |
 
 ## Required session entry
 
@@ -69,6 +69,73 @@ Copy this template to the top of **Session history** before ending a session.
 ## Session history
 
 Add the newest completed session immediately below this heading.
+
+### 2026-10-08 — Codex review of Claude Day 3 bundle
+
+- **Issue:** [#5 — Set up development quality and CI baseline](https://github.com/EdVialv/muizasmanor26/issues/5)
+- **Branch:** `codex/day3-reviewed`
+- **Pull request:** to be opened
+- **Session goal:** Review, rebase and publish Claude's Day 3 bundle.
+- **Completed:**
+  - rebased the test and CI work onto current `main` after PR #19;
+  - independently reran all seven tests, coverage, formatting, linting, type checking and the production build;
+  - replaced end-of-life Node.js 20 with Node.js 24 for local and CI requirements;
+  - pinned GitHub Actions dependencies to immutable commit SHAs;
+  - updated local prerequisites and the obsolete Mapbox secret reference.
+- **Verification:**
+  - `npm ci` — passed;
+  - `npm run format:check` — passed;
+  - `npm run lint` — passed;
+  - `npm run typecheck` — passed;
+  - `npm run test` — passed (3 files, 7 tests);
+  - `npm run test:coverage` — passed;
+  - `npm run build` — passed.
+- **Decisions:**
+  - retained Claude's Vitest and React Testing Library design;
+  - used the supported Node.js 24 LTS line because Node.js 20 reached end of life in 2026.
+- **Blockers or risks:**
+  - GitHub Actions still needs to pass on the pull request before merge.
+- **Next exact action:**
+  - open the pull request, confirm remote CI, then merge Day 3 before merging Day 4.
+- **Handoff state:** awaiting review
+
+### 2026-10-08 00:25 Europe/Riga — Claude Code
+
+- **Issue:** [#5 — Set up development quality and CI baseline](https://github.com/EdVialv/muizasmanor26/issues/5)
+- **Branch:** `claude/day3-test-and-ci`
+- **Pull request:** not opened (this session has no GitHub write access; see Blockers)
+- **Session goal:** Complete Day 3 by adding unit-test tooling, initial smoke tests, and a GitHub Actions CI workflow.
+- **Completed:**
+  - added Vitest with jsdom, React Testing Library and jest-dom matchers, resolving the `@/*` path alias via Vite's native `resolve.tsconfigPaths`;
+  - added `vitest.config.mts` and `vitest.setup.ts`;
+  - added three component/configuration smoke test files covering the home page, root layout metadata and `next.config.ts`;
+  - added `npm run test`, `npm run test:watch` and `npm run test:coverage` scripts;
+  - added `.github/workflows/ci.yml` running format check, lint, typecheck, test and build on every push to `main` and every pull request;
+  - updated `CONTRIBUTING.md` required-checks list and noted that CI enforces the same checks.
+- **Files changed:**
+  - `package.json`, `package-lock.json` — added Vitest/Testing Library dev dependencies and test scripts;
+  - `vitest.config.mts`, `vitest.setup.ts` — test runner configuration;
+  - `src/app/page.test.tsx`, `src/app/layout.test.tsx`, `next.config.test.ts` — smoke tests;
+  - `.github/workflows/ci.yml` — CI workflow;
+  - `CONTRIBUTING.md` — updated required local checks and CI note;
+  - `TODO.md`, `PROGRESS.md` — Day 3 completion and Day 4 handoff.
+- **Verification:**
+  - `npm ci` — passed;
+  - `npm run format:check` — passed;
+  - `npm run lint` — passed;
+  - `npm run typecheck` — passed;
+  - `npm run test` — passed (3 files, 7 tests);
+  - `npm run build` — passed.
+- **Decisions:**
+  - chose Vitest + React Testing Library over Jest for native ESM/Next.js 16 + React 19 compatibility and faster startup;
+  - used Vite's built-in `resolve.tsconfigPaths` instead of the `vite-tsconfig-paths` plugin to avoid an extra dependency;
+  - named the config `vitest.config.mts` to avoid the CommonJS/ESM loader warning without changing the package's module type.
+- **Blockers or risks:**
+  - this session has a linked GitHub account (read access confirmed) but no tool to push commits or open a pull request; the branch and diff exist only in the session workspace and must be pushed/opened by the project owner or a session with write access;
+  - CI workflow has not yet been verified against an actual pull request run on GitHub, since it could not be pushed from here — the next session should confirm it runs and passes on GitHub Actions once pushed.
+- **Next exact action:**
+  - push `claude/day3-test-and-ci` to GitHub, open the pull request against `main`, confirm the CI workflow runs and passes, then merge and start Day 4 from issue #8.
+- **Handoff state:** uncommitted changes (committed locally on `claude/day3-test-and-ci`, not pushed)
 
 ### 2026-10-07 18:22 Europe/Riga — Codex
 

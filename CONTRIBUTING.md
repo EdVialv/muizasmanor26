@@ -1,5 +1,11 @@
 # Contributing
 
+## Prerequisites
+
+- Node.js 24 LTS or newer supported release;
+- npm, using the committed `package-lock.json`;
+- local environment values copied from `.env.example`, never from production.
+
 ## Branches
 
 Use one branch per issue:
@@ -29,14 +35,15 @@ Every pull request should:
 npm run format:check
 npm run lint
 npm run typecheck
+npm run test
 npm run build
 ```
 
-Automated tests will be added during Day 3.
+These same checks run automatically on every push to `main` and on every pull request via the `CI` GitHub Actions workflow (`.github/workflows/ci.yml`). A pull request cannot be considered verified until that workflow passes.
 
 ## Safety
 
 - Never commit `.env*`, credentials, personal data or production exports.
-- Never expose Supabase service-role, Resend or Mapbox secret tokens to browser code.
+- Never expose Supabase service-role, Resend or map-tile-provider secret tokens to browser code.
 - Review AI-generated migrations, authentication logic and dependency changes manually.
 - Preserve user-authored changes and resolve conflicts deliberately.
