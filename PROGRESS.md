@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 4 (reviewed locally; awaiting pull-request checks and merge)
-- **Last completed-and-merged day:** Day 3
+- **Current roadmap day:** Day 5
+- **Last completed-and-merged day:** Day 4
 - **Current issue:** [#8 — Data model and sample dataset](https://github.com/EdVialv/muizasmanor26/issues/8)
-- **Next outcome after merge:** Map the owner's existing dataset columns to the target fields during Day 5.
-- **MVP status:** Foundation, scale architecture, automated tests and CI are merged. The representative data sample is under review.
+- **Next outcome:** Map the owner's existing dataset columns to the target fields and record gaps or conflicts.
+- **MVP status:** Foundation, scale architecture, automated tests, CI and the reviewed representative data sample are merged.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                      |
-| ---------------- | ---------------------------------- |
-| Status           | Awaiting review                    |
-| Agent            | Codex                              |
-| Issue            | #8                                 |
-| Branch           | `codex/day4-reviewed`              |
-| Session goal     | Publish and verify Day 4           |
-| Started          | 2026-10-08                         |
-| Expected handoff | Merge after pull-request CI passes |
+| Field            | Current value                       |
+| ---------------- | ----------------------------------- |
+| Status           | Idle                                |
+| Agent            | None                                |
+| Issue            | None                                |
+| Branch           | None                                |
+| Session goal     | None                                |
+| Started          | None                                |
+| Expected handoff | Start Day 5 on issue #8 from `main` |
 
 ## Required session entry
 
@@ -69,6 +69,31 @@ Copy this template to the top of **Session history** before ending a session.
 ## Session history
 
 Add the newest completed session immediately below this heading.
+
+### 2026-10-08 — Codex bundle publication and handoff
+
+- **Issues:** [#5 — Set up development quality and CI baseline](https://github.com/EdVialv/muizasmanor26/issues/5) and [#8 — Data model and sample dataset](https://github.com/EdVialv/muizasmanor26/issues/8)
+- **Branches:** `codex/day3-reviewed`, `codex/day4-reviewed`
+- **Pull requests:** [#20](https://github.com/EdVialv/muizasmanor26/pull/20) and [#21](https://github.com/EdVialv/muizasmanor26/pull/21) — merged
+- **Session goal:** Review both Claude bundles, correct material issues, verify them locally and remotely, and publish them in dependency order.
+- **Completed:**
+  - reviewed and rebased Day 3, upgraded the runtime baseline, pinned CI actions, and merged PR #20;
+  - reviewed and corrected Day 4's field semantics, classifications, hierarchy and cadastral model, and merged PR #21;
+  - confirmed the GitHub Actions workflow passed on both pull requests;
+  - advanced the shared roadmap to Day 5 and cleared the active-work lock.
+- **Verification:**
+  - local format, lint, typecheck, tests, coverage and production build — passed for Day 3;
+  - local CSV assertions, format, lint, typecheck, tests and production build — passed for Day 4;
+  - GitHub Actions CI — passed on PR #20 and PR #21.
+- **Decisions:**
+  - treat the 25-record sample as a research and edge-case artifact, not publishable or import-ready data;
+  - start Day 5 from the owner's actual dataset and preserve its source columns during mapping.
+- **Blockers or risks:**
+  - Day 5 requires access to the owner's actual dataset or a representative export with unchanged column names;
+  - the Mežotnes hillfort source returned HTTP 502 and still needs replacement or rechecking during source verification.
+- **Next exact action:**
+  - Claude Code should pull `main`, read `TODO.md` and `PROGRESS.md`, claim issue #8 in Current work, and map the owner's existing dataset columns for Day 5.
+- **Handoff state:** merged
 
 ### 2026-10-08 — Codex review of Claude Day 4 bundle
 
