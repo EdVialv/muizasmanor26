@@ -19,11 +19,11 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 3 (implemented and locally verified; awaiting pull-request CI and merge)
-- **Last completed-and-merged day:** Day 2
-- **Next issue after merge:** [#8 — Data model and sample dataset](https://github.com/EdVialv/muizasmanor26/issues/8)
-- **Next outcome:** Review and merge the separate Day 4 representative sample.
-- **MVP status:** Foundation and quality baseline are merged. Automated tests and CI are implemented on this branch and awaiting remote verification.
+- **Current roadmap day:** Day 4 (reviewed locally; awaiting pull-request checks and merge)
+- **Last completed-and-merged day:** Day 3
+- **Current issue:** [#8 — Data model and sample dataset](https://github.com/EdVialv/muizasmanor26/issues/8)
+- **Next outcome after merge:** Map the owner's existing dataset columns to the target fields during Day 5.
+- **MVP status:** Foundation, scale architecture, automated tests and CI are merged. The representative data sample is under review.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
@@ -34,9 +34,9 @@ Update this section when a session starts. Only one write-enabled session should
 | ---------------- | ---------------------------------- |
 | Status           | Awaiting review                    |
 | Agent            | Codex                              |
-| Issue            | #5                                 |
-| Branch           | `codex/day3-reviewed`              |
-| Session goal     | Publish and verify Day 3           |
+| Issue            | #8                                 |
+| Branch           | `codex/day4-reviewed`              |
+| Session goal     | Publish and verify Day 4           |
 | Started          | 2026-10-08                         |
 | Expected handoff | Merge after pull-request CI passes |
 
@@ -69,6 +69,36 @@ Copy this template to the top of **Session history** before ending a session.
 ## Session history
 
 Add the newest completed session immediately below this heading.
+
+### 2026-10-08 — Codex review of Claude Day 4 bundle
+
+- **Issue:** [#8 — Data model and sample dataset](https://github.com/EdVialv/muizasmanor26/issues/8)
+- **Branch:** `codex/day4-reviewed`
+- **Pull request:** to be opened
+- **Session goal:** Review, correct and publish Claude's 25-record representative sample.
+- **Completed:**
+  - recovered the Day 4 bundle and preserved its 25 real candidate records;
+  - validated row counts, headers, enums, unique slugs, dates, source URLs and parent references;
+  - removed condition and ownership classifications that had been inferred from use or old descriptions;
+  - removed invalid parent links from newer manor houses to older medieval castles;
+  - distinguished English research summaries and source-access dates from publishable Latvian fields and factual verification;
+  - replaced the one-field cadastral model with a many-reference relation that distinguishes property numbers from object designations.
+- **Verification:**
+  - CSV structural assertions — passed for 25 rows;
+  - `npm run format:check` — passed;
+  - `npm run lint` — passed;
+  - `npm run typecheck` — passed;
+  - `npm run build` — passed.
+- **Decisions:**
+  - retain the sample as a research artifact, not import-ready or publishable content;
+  - require authoritative verification during Days 5–6 because 15 rows currently cite English Wikipedia as their only source;
+  - keep only genuine containment links; model same-complex relationships separately during Day 6 if needed.
+- **Blockers or risks:**
+  - the Mežotnes hillfort source returned HTTP 502 during review and needs replacement or later rechecking;
+  - factual claims were not independently reverified record by record in this sample-selection phase.
+- **Next exact action:**
+  - merge after pull-request checks pass, then start Day 5 using the owner's actual dataset rather than expanding this hand-researched sample.
+- **Handoff state:** awaiting review
 
 ### 2026-10-08 — Codex review of Claude Day 3 bundle
 
