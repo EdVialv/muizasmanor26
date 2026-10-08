@@ -39,8 +39,8 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 | --: | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ----------------------------------- | :----: |
 |   1 | Define the MVP, architecture, data contract, repository workflow and initial Next.js shell.                   | [#1](https://github.com/EdVialv/muizasmanor26/issues/1)   | Codex + manual decisions            |  [x]   |
 |   2 | Commit the npm lockfile; configure ESLint and formatting; confirm a clean local install.                      | [#5](https://github.com/EdVialv/muizasmanor26/issues/5)   | Codex                               |  [x]   |
-|   3 | Add unit-test tooling and GitHub Actions for type checking, tests and production builds.                      | [#5](https://github.com/EdVialv/muizasmanor26/issues/5)   | Claude Code, Codex review           |  [~]   |
-|   4 | Select 20–30 representative records across object types, hierarchies, complete, incomplete and unusual cases. | [#8](https://github.com/EdVialv/muizasmanor26/issues/8)   | Manual data review                  |  [ ]   |
+|   3 | Add unit-test tooling and GitHub Actions for type checking, tests and production builds.                      | [#5](https://github.com/EdVialv/muizasmanor26/issues/5)   | Claude Code, Codex review           |  [x]   |
+|   4 | Select 20–30 representative records across object types, hierarchies, complete, incomplete and unusual cases. | [#8](https://github.com/EdVialv/muizasmanor26/issues/8)   | Manual data review                  |  [~]   |
 |   5 | Map existing dataset columns to the heritage-object fields; record missing and conflicting values.            | [#8](https://github.com/EdVialv/muizasmanor26/issues/8)   | Manual + Codex                      |  [ ]   |
 |   6 | Define normalisation, stable IDs, parent–child mapping, duplicate detection and rejected-row rules.           | [#8](https://github.com/EdVialv/muizasmanor26/issues/8)   | Codex                               |  [ ]   |
 |   7 | Create the development Supabase project; enable PostGIS and document safe local configuration.                | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Manual + Claude Code                |  [ ]   |
@@ -70,11 +70,11 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 
 ## Current next action
 
-Complete the **Day 3 review** on issue [#5](https://github.com/EdVialv/muizasmanor26/issues/5):
+Complete the **Day 4 review** on issue [#8](https://github.com/EdVialv/muizasmanor26/issues/8):
 
-- confirm the GitHub Actions workflow passes on the pull request;
-- merge Day 3 after all checks pass;
-- then review the separate Day 4 sample-data branch.
+- review the 25-record research sample and source limitations;
+- validate object types, identifiers and parent links;
+- merge after checks pass, then map the owner's existing dataset during Day 5.
 
 ## MVP boundary
 
