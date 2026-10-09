@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 6
+- **Current roadmap day:** Day 6 (finished locally, pending push and review)
 - **Last completed-and-merged day:** Day 5
 - **Current issue:** [#8 — Data model and sample dataset](https://github.com/EdVialv/muizasmanor26/issues/8)
-- **Next outcome:** Define the import scope, normalisation, stable IDs, duplicate detection, row-collapse precedence and rejected-row rules.
-- **MVP status:** Foundation, scale architecture, automated tests, CI, representative sample and verified real-dataset mapping are merged.
+- **Next outcome:** Codex or the project owner should review `claude/day6-normalization-rules`, confirm the scope decision in §1, and merge; then start Day 7 (Supabase/PostGIS setup) on issue #6.
+- **MVP status:** Foundation, scale architecture, automated tests, CI, representative sample and verified real-dataset mapping are merged. Day 6's import-scope and normalisation rules are complete locally, awaiting push and confirmation.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                       |
-| ---------------- | ----------------------------------- |
-| Status           | Idle                                |
-| Agent            | None                                |
-| Issue            | None                                |
-| Branch           | None                                |
-| Session goal     | None                                |
-| Started          | None                                |
-| Expected handoff | Start Day 6 on issue #8 from `main` |
+| Field            | Current value                                                                                                        |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Status           | Blocked on push (work complete and committed; see Blockers in the session entry below)                               |
+| Agent            | Claude Code                                                                                                          |
+| Issue            | #8                                                                                                                   |
+| Branch           | `claude/day6-normalization-rules`                                                                                    |
+| Session goal     | Define the Day 6 import scope, stable IDs/slugs, row-collapse precedence, duplicate detection and rejected-row rules |
+| Started          | 2026-10-09                                                                                                           |
+| Expected handoff | Codex or the owner: review and confirm the §1 scope decision, merge, then start Day 7 on issue #6                    |
 
 ## Required session entry
 
@@ -69,6 +69,42 @@ Copy this template to the top of **Session history** before ending a session.
 ## Session history
 
 Add the newest completed session immediately below this heading.
+
+### 2026-10-09 13:05 Europe/Riga — Claude Code
+
+- **Issue:** [#8 — Data model and sample dataset](https://github.com/EdVialv/muizasmanor26/issues/8)
+- **Branch:** `claude/day6-normalization-rules`
+- **Pull request:** not opened (this session has no GitHub write access; see Blockers)
+- **Session goal:** Define the Day 6 import scope, stable-ID/slug rules, row-collapse precedence, duplicate detection and rejected-row rules from the verified Day 5 profile, without writing importer code.
+- **Completed:**
+  - resolved the "manors only vs. wider heritage dataset" scope question using the product definition already in `docs/MVP_SCOPE.md`: v1 import is manors, palaces/castles, historical-site ruins and structures within a manor's own complex; independent churches, schools, mills, bridges, cemeteries, stations and taverns are archived but not published, revisitable if scope broadens;
+  - defined a primary-name-extraction and slug algorithm (diacritic transliteration, parenthetical-alternate-name stripping, trailing-location-qualifier retention for collision disambiguation) and validated it against 6 real titles from the dataset;
+  - defined row-collapse precedence per field (real-value-over-placeholder for address/coordinates; longest-value-with-logged-alternates for inconsistent body text; no-collapse per-image for the four image columns);
+  - defined a manual-review candidate-flagging rule for cross-post duplicate/hierarchy detection (name match or ~500m proximity), since the source has zero hierarchy signal and zero exact duplicates;
+  - defined rejected-row disposition for every category Day 5 found (out-of-scope type, 15 foreign posts, 2 malformed coordinates, 505/26 missing coordinates/addresses, logged body-text variants), all archived-not-deleted and keyed for reversibility;
+  - proposed an `object_images` relation schema from Day 5's four per-image columns, including which URL is canonical and a fixed attribution note per the owner's confirmed blanket-reuse permission;
+  - flagged two open gaps for later days: no modelled schema yet for alternate/historical names, and the duplicate/hierarchy candidate list itself still needs to be generated once the in-scope set is settled.
+- **Files changed:**
+  - `docs/DAY6_NORMALIZATION_RULES.md` — the full scope, normalisation and rejection rule set;
+  - `TODO.md`, `PROGRESS.md` — Day 6 status and Day 7 handoff.
+- **Verification:**
+  - `npm run format:check` — passed;
+  - `npm run lint` — passed;
+  - `npm run typecheck` — passed;
+  - `npm run test` — passed;
+  - `npm run build` — passed;
+  - slug algorithm spot-checked against 6 real source titles (manual review, not an automated test).
+- **Decisions:**
+  - grounded the scope decision in the existing `docs/MVP_SCOPE.md` product definition rather than deciding product direction unilaterally;
+  - kept title-keyword matching as a review-queue triage aid only, never a final `object_type`/scope classification, consistent with Day 5's finding of 112 overlapping and 787 unmatched posts;
+  - treated every rejection as archive-only and reversible, never a delete, to preserve the resumable-import requirement in `docs/ARCHITECTURE.md`.
+- **Blockers or risks:**
+  - this session has no tool to push commits or open a pull request, same as Days 3–5 — delivered as a git bundle;
+  - the §1 scope decision is a product call this session made from existing docs; it should be confirmed by Codex or the project owner before Day 8's migration encodes it structurally;
+  - the alternate-names schema gap (§2) should be resolved before any slug-extraction output needs somewhere to put the names it splits off.
+- **Next exact action:**
+  - push `claude/day6-normalization-rules` (or apply the delivered bundle), review (especially the §1 scope confirmation), merge, then start Day 7 on issue #6 (development Supabase project, PostGIS).
+- **Handoff state:** uncommitted changes (committed locally on `claude/day6-normalization-rules`, not pushed)
 
 ### 2026-10-09 — Codex Day 5 merge and Day 6 handoff
 
