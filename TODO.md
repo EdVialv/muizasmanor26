@@ -41,7 +41,7 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 |   2 | Commit the npm lockfile; configure ESLint and formatting; confirm a clean local install.                      | [#5](https://github.com/EdVialv/muizasmanor26/issues/5)   | Codex                               |  [x]   |
 |   3 | Add unit-test tooling and GitHub Actions for type checking, tests and production builds.                      | [#5](https://github.com/EdVialv/muizasmanor26/issues/5)   | Claude Code, Codex review           |  [x]   |
 |   4 | Select 20–30 representative records across object types, hierarchies, complete, incomplete and unusual cases. | [#8](https://github.com/EdVialv/muizasmanor26/issues/8)   | Manual data review                  |  [x]   |
-|   5 | Map existing dataset columns to the heritage-object fields; record missing and conflicting values.            | [#8](https://github.com/EdVialv/muizasmanor26/issues/8)   | Manual + Codex                      |  [ ]   |
+|   5 | Map existing dataset columns to the heritage-object fields; record missing and conflicting values.            | [#8](https://github.com/EdVialv/muizasmanor26/issues/8)   | Manual + Codex                      |  [~]   |
 |   6 | Define normalisation, stable IDs, parent–child mapping, duplicate detection and rejected-row rules.           | [#8](https://github.com/EdVialv/muizasmanor26/issues/8)   | Codex                               |  [ ]   |
 |   7 | Create the development Supabase project; enable PostGIS and document safe local configuration.                | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Manual + Claude Code                |  [ ]   |
 |   8 | Write the first migration for heritage objects, hierarchy, classifications, contacts, sources and families.   | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Claude Code                         |  [ ]   |
@@ -70,12 +70,14 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 
 ## Current next action
 
-Complete **Day 5** on issue [#8](https://github.com/EdVialv/muizasmanor26/issues/8):
+Complete the reviewed **Day 5 merge** on issue [#8](https://github.com/EdVialv/muizasmanor26/issues/8):
 
-- obtain the owner's actual dataset or an export that preserves its column names;
-- map every source column to the heritage-object model and record unmapped fields;
-- document missing, conflicting and multi-value data without changing source values;
-- use the reviewed 25-record sample only as an edge-case reference, not as a replacement dataset.
+- merge `codex/day5-reviewed` after GitHub Actions passes;
+- then start Day 6 by defining normalisation, stable identifiers, duplicate detection and rejected-row rules;
+- use `docs/DAY5_COLUMN_MAPPING.md` as the verified source profile;
+- decide whether the MVP imports only manors and related estate objects or also the wider heritage dataset.
+
+Do not start importer implementation before the Day 6 scope and normalisation rules are agreed.
 
 ## MVP boundary
 
