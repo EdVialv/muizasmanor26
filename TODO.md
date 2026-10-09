@@ -42,7 +42,7 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 |   3 | Add unit-test tooling and GitHub Actions for type checking, tests and production builds.                      | [#5](https://github.com/EdVialv/muizasmanor26/issues/5)   | Claude Code, Codex review           |  [x]   |
 |   4 | Select 20–30 representative records across object types, hierarchies, complete, incomplete and unusual cases. | [#8](https://github.com/EdVialv/muizasmanor26/issues/8)   | Manual data review                  |  [x]   |
 |   5 | Map existing dataset columns to the heritage-object fields; record missing and conflicting values.            | [#8](https://github.com/EdVialv/muizasmanor26/issues/8)   | Manual + Codex                      |  [x]   |
-|   6 | Define normalisation, stable IDs, parent–child mapping, duplicate detection and rejected-row rules.           | [#8](https://github.com/EdVialv/muizasmanor26/issues/8)   | Codex                               |  [~]   |
+|   6 | Define normalisation, stable IDs, parent–child mapping, duplicate detection and rejected-row rules.           | [#8](https://github.com/EdVialv/muizasmanor26/issues/8)   | Codex                               |  [x]   |
 |   7 | Create the development Supabase project; enable PostGIS and document safe local configuration.                | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Manual + Claude Code                |  [ ]   |
 |   8 | Write the first migration for heritage objects, hierarchy, classifications, contacts, sources and families.   | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Claude Code                         |  [ ]   |
 |   9 | Add spatial/search/filter indexes, constraints, roles and Row Level Security; inspect query plans.            | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Claude Code, Codex security review  |  [ ]   |
@@ -70,12 +70,13 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 
 ## Current next action
 
-**Day 6 is in Codex review.** Claude delivered the rules in a Git bundle; Codex is correcting deterministic identity, review-state and image-key details before publishing the pull request.
+Start **Day 7** on issue [#6](https://github.com/EdVialv/muizasmanor26/issues/6):
 
-- Day 6 (import scope, normalisation and rejection rules) is finished on branch `claude/day6-normalization-rules`, based on current `main` (`082c100`), using `docs/DAY5_COLUMN_MAPPING.md` as the verified source profile.
-- The branch could not be pushed from the Claude session that built it — see `PROGRESS.md` session history for why.
-
-Once it is pushed and merged, start **Day 7** on issue [#6](https://github.com/EdVialv/muizasmanor26/issues/6): create the development Supabase project and enable PostGIS, using `docs/DAY6_NORMALIZATION_RULES.md` as the agreed scope and rule set. Do not start importer implementation before that document's rules are reviewed and agreed by the project owner — this session decided them, but they are a product/schema decision Codex or the owner should confirm, not a unilateral final answer.
+- create the development Supabase project;
+- enable PostGIS and verify it with a simple spatial query;
+- add a safe `.env.example` with variable names only, never secrets;
+- document local and hosted configuration for Claude Code and Codex;
+- use `docs/DAY6_NORMALIZATION_RULES.md` as the agreed import contract for the Day 8 migration.
 
 ## MVP boundary
 

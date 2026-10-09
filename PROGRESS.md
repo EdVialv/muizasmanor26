@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 6 (finished locally, pending push and review)
-- **Last completed-and-merged day:** Day 5
-- **Current issue:** [#8 — Data model and sample dataset](https://github.com/EdVialv/muizasmanor26/issues/8)
-- **Next outcome:** Codex or the project owner should review `claude/day6-normalization-rules`, confirm the scope decision in §1, and merge; then start Day 7 (Supabase/PostGIS setup) on issue #6.
-- **MVP status:** Foundation, scale architecture, automated tests, CI, representative sample and verified real-dataset mapping are merged. Day 6's import-scope and normalisation rules are complete locally, awaiting push and confirmation.
+- **Current roadmap day:** Day 7
+- **Last completed-and-merged day:** Day 6
+- **Current issue:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6)
+- **Next outcome:** Create the development Supabase project, enable PostGIS and document safe local configuration.
+- **MVP status:** Foundation, scale architecture, automated tests, CI, representative sample, verified source mapping and reviewed import rules are merged.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                                                                                        |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Status           | Blocked on push (work complete and committed; see Blockers in the session entry below)                               |
-| Agent            | Claude Code                                                                                                          |
-| Issue            | #8                                                                                                                   |
-| Branch           | `claude/day6-normalization-rules`                                                                                    |
-| Session goal     | Define the Day 6 import scope, stable IDs/slugs, row-collapse precedence, duplicate detection and rejected-row rules |
-| Started          | 2026-10-09                                                                                                           |
-| Expected handoff | Codex or the owner: review and confirm the §1 scope decision, merge, then start Day 7 on issue #6                    |
+| Field            | Current value                               |
+| ---------------- | ------------------------------------------- |
+| Status           | Idle                                        |
+| Agent            | None                                        |
+| Issue            | None                                        |
+| Branch           | None                                        |
+| Session goal     | None                                        |
+| Started          | None                                        |
+| Expected handoff | Start Day 7 on issue #6 from current `main` |
 
 ## Required session entry
 
@@ -69,6 +69,39 @@ Copy this template to the top of **Session history** before ending a session.
 ## Session history
 
 Add the newest completed session immediately below this heading.
+
+### 2026-10-09 07:41 Europe/Riga — Codex
+
+- **Issue:** [#8 — Data model and sample dataset](https://github.com/EdVialv/muizasmanor26/issues/8)
+- **Branch:** `codex/day6-reviewed`
+- **Pull request:** [#25](https://github.com/EdVialv/muizasmanor26/pull/25) — merged
+- **Session goal:** Review Claude's Day 6 bundle, correct the rules, verify the repository and publish the result.
+- **Completed:**
+  - reviewed Claude's complete bundle against the Day 5 source profile and the current data contract;
+  - made slug allocation deterministic across batch order and resumed imports;
+  - replaced unstable `Nr.`-based row identity with a stable per-image identifier and retained `Nr.` only for traceability/order;
+  - separated out-of-scope archive decisions from incomplete records that need review;
+  - separated probable duplicates from nearby estate-component relationship candidates;
+  - added an `object_names` proposal and a rights-review state for Day 8;
+  - merged the reviewed rules after GitHub Actions passed.
+- **Files changed:**
+  - `docs/DAY6_NORMALIZATION_RULES.md` — reviewed import contract;
+  - `TODO.md`, `PROGRESS.md` — Day 6 status and handoff.
+- **Verification:**
+  - `npm run format:check` — passed locally and in GitHub Actions;
+  - `npm run lint` — passed locally and in GitHub Actions;
+  - `npm run typecheck` — passed locally and in GitHub Actions;
+  - `npm run test` — passed locally and in GitHub Actions (7 tests);
+  - `npm run build` — passed locally and in GitHub Actions.
+- **Decisions:**
+  - v1 publishes manor-related objects and affiliated structures; unrelated heritage records remain reversible raw/archive data;
+  - missing required canonical fields use `needs_review`, not rejection or silent nullable import;
+  - source images require attribution now, with detailed rights assessment deferred and explicitly tracked.
+- **Blockers or risks:**
+  - Day 7 requires the owner to create or select the hosted Supabase project and keep its credentials outside Git.
+- **Next exact action:**
+  - start Day 7 on issue #6, enable PostGIS and document safe configuration before writing the Day 8 migration.
+- **Handoff state:** merged
 
 ### 2026-10-09 13:05 Europe/Riga — Claude Code
 
