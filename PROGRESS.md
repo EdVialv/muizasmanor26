@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 5 (reviewed against the source workbook; awaiting pull-request checks and merge)
-- **Last completed-and-merged day:** Day 4
+- **Current roadmap day:** Day 6
+- **Last completed-and-merged day:** Day 5
 - **Current issue:** [#8 — Data model and sample dataset](https://github.com/EdVialv/muizasmanor26/issues/8)
-- **Next outcome:** Merge the corrected Day 5 mapping, then start Day 6 (normalisation, stable IDs, duplicate detection and rejected-row rules).
-- **MVP status:** Foundation, scale architecture, automated tests, CI and the representative sample are merged. The real source dataset mapping has been independently checked and corrected.
+- **Next outcome:** Define the import scope, normalisation, stable IDs, duplicate detection, row-collapse precedence and rejected-row rules.
+- **MVP status:** Foundation, scale architecture, automated tests, CI, representative sample and verified real-dataset mapping are merged.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                      |
-| ---------------- | ---------------------------------- |
-| Status           | Awaiting pull-request checks       |
-| Agent            | Codex                              |
-| Issue            | #8                                 |
-| Branch           | `codex/day5-reviewed`              |
-| Session goal     | Publish the verified Day 5 mapping |
-| Started          | 2026-10-09                         |
-| Expected handoff | Merge after CI, then start Day 6   |
+| Field            | Current value                       |
+| ---------------- | ----------------------------------- |
+| Status           | Idle                                |
+| Agent            | None                                |
+| Issue            | None                                |
+| Branch           | None                                |
+| Session goal     | None                                |
+| Started          | None                                |
+| Expected handoff | Start Day 6 on issue #8 from `main` |
 
 ## Required session entry
 
@@ -69,6 +69,26 @@ Copy this template to the top of **Session history** before ending a session.
 ## Session history
 
 Add the newest completed session immediately below this heading.
+
+### 2026-10-09 — Codex Day 5 merge and Day 6 handoff
+
+- **Issue:** [#8 — Data model and sample dataset](https://github.com/EdVialv/muizasmanor26/issues/8)
+- **Branch:** `codex/day5-reviewed`
+- **Pull request:** [#23](https://github.com/EdVialv/muizasmanor26/pull/23) — merged
+- **Session goal:** Publish the independently verified source-column mapping.
+- **Completed:**
+  - confirmed GitHub Actions passed formatting, linting, type checking, tests and the production build;
+  - merged the corrected Day 5 mapping;
+  - marked Day 5 complete, cleared the active-work lock and advanced the roadmap to Day 6.
+- **Verification:**
+  - GitHub Actions CI on PR #23 — passed.
+- **Decisions:**
+  - treat the verified Day 5 profile as the source of truth for Day 6 import-rule design.
+- **Blockers or risks:**
+  - the import scope for non-manor heritage objects remains a Day 6 product decision.
+- **Next exact action:**
+  - Claude Code should pull `main`, read `docs/DAY5_COLUMN_MAPPING.md`, `TODO.md` and `PROGRESS.md`, claim issue #8, and define the Day 6 rules before writing importer code.
+- **Handoff state:** merged
 
 ### 2026-10-09 — Codex review of Claude Day 5 bundle
 
