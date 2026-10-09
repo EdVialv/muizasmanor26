@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 5
+- **Current roadmap day:** Day 5 (reviewed against the source workbook; awaiting pull-request checks and merge)
 - **Last completed-and-merged day:** Day 4
 - **Current issue:** [#8 — Data model and sample dataset](https://github.com/EdVialv/muizasmanor26/issues/8)
-- **Next outcome:** Map the owner's existing dataset columns to the target fields and record gaps or conflicts.
-- **MVP status:** Foundation, scale architecture, automated tests, CI and the reviewed representative data sample are merged.
+- **Next outcome:** Merge the corrected Day 5 mapping, then start Day 6 (normalisation, stable IDs, duplicate detection and rejected-row rules).
+- **MVP status:** Foundation, scale architecture, automated tests, CI and the representative sample are merged. The real source dataset mapping has been independently checked and corrected.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                       |
-| ---------------- | ----------------------------------- |
-| Status           | Idle                                |
-| Agent            | None                                |
-| Issue            | None                                |
-| Branch           | None                                |
-| Session goal     | None                                |
-| Started          | None                                |
-| Expected handoff | Start Day 5 on issue #8 from `main` |
+| Field            | Current value                      |
+| ---------------- | ---------------------------------- |
+| Status           | Awaiting pull-request checks       |
+| Agent            | Codex                              |
+| Issue            | #8                                 |
+| Branch           | `codex/day5-reviewed`              |
+| Session goal     | Publish the verified Day 5 mapping |
+| Started          | 2026-10-09                         |
+| Expected handoff | Merge after CI, then start Day 6   |
 
 ## Required session entry
 
@@ -69,6 +69,75 @@ Copy this template to the top of **Session history** before ending a session.
 ## Session history
 
 Add the newest completed session immediately below this heading.
+
+### 2026-10-09 — Codex review of Claude Day 5 bundle
+
+- **Issue:** [#8 — Data model and sample dataset](https://github.com/EdVialv/muizasmanor26/issues/8)
+- **Branch:** `codex/day5-reviewed`
+- **Pull request:** to be opened
+- **Session goal:** Reproduce Claude's source analysis against `muizasdb_pic.xlsx`, correct the mapping report and publish it.
+- **Completed:**
+  - verified 16,800 image rows, 11 columns and 3,716 permanent blog-post identifiers against the source workbook;
+  - confirmed image-count statistics, unique titles and URLs, and the 2 address, 4 coordinate and 12 body-text within-post inconsistencies;
+  - corrected placeholder counts to distinguish any occurrence from values still unresolved after row collapse;
+  - corrected the coordinate cross-check to 2,632 posts, all agreeing after handling the label dash correctly;
+  - corrected the out-of-bound coordinate inventory from 10 to 17: 15 genuine foreign sites and 2 malformed Latvian coordinates;
+  - corrected the title keyword scan so place names ending in `-pils` are not classified as castles and disclosed overlapping categories;
+  - recorded the owner's confirmation that blog post numbers are permanent and images may be used with source attribution, with detailed licence assessment deferred.
+- **Files changed:**
+  - `docs/DAY5_COLUMN_MAPPING.md` — independently verified and corrected source profile;
+  - `TODO.md`, `PROGRESS.md` — review state and Day 6 handoff.
+- **Verification:**
+  - workbook profiling against SHA-256 `49e8ca0d5c61e22f91bcf5a2bdfb4a75a73704ae23b3545a8c26948f7b64f199` — passed;
+  - `npm ci` — passed;
+  - `npm run format:check` — passed;
+  - `npm run lint` — passed;
+  - `npm run typecheck` — passed;
+  - `npm run test` and `npm run test:coverage` — passed (7 tests);
+  - `npm run build` — passed.
+- **Decisions:**
+  - use `source_system = manasvietas_blogspot` plus permanent `Bloga ieraksta Nr.` as the idempotent import key;
+  - retain 15 foreign records in source provenance but exclude them from the Latvia-only MVP directory and map;
+  - preserve original image URLs and attribution; perform detailed rights assessment later.
+- **Blockers or risks:**
+  - Day 6 must settle the import scope because the source contains many non-manor heritage objects;
+  - two malformed Latvian coordinates require manual source checking rather than guessed correction.
+- **Next exact action:**
+  - merge after pull-request CI passes, clear Current work, then define the Day 6 normalisation and rejection rules.
+- **Handoff state:** awaiting review
+
+### 2026-10-08 11:40 Europe/Riga — Claude Code
+
+- **Issue:** [#8 — Data model and sample dataset](https://github.com/EdVialv/muizasmanor26/issues/8)
+- **Branch:** `claude/day5-column-mapping`
+- **Pull request:** not opened (this session has no GitHub write access; see Blockers)
+- **Session goal:** Map the owner's real dataset (`muizasdb_pic.xlsx`) columns onto the heritage-object fields in `docs/DATA_MODEL.md`, and record missing/conflicting/multi-value data without changing source values.
+- **Completed:**
+  - profiled the owner's uploaded export: 1 sheet, 11 columns, 16,800 image-rows grouping into 3,716 unique posts via `Bloga ieraksta Nr.` (zero duplicates, no duplicate titles);
+  - mapped each of the 11 source columns to a `docs/DATA_MODEL.md` field, a future per-image relation, or "unmapped," and listed every target field with no source signal at all (`object_type`, `slug`, `parent_object_id`, `status`, `last_verified_at`, condition/ownership/family fields, `object_cadastre_references`);
+  - inventoried the source's literal "not found" placeholder strings (`Koordinātas nav atrastas` in 507/3,716 posts, `Adrese nav atrasta` in 27/3,716) that must become real nulls on import rather than text;
+  - found and listed within-post inconsistencies across a post's own image rows (2 posts disagree on `Adrese`, 4 on `Koordinātas`, 12 on body text) — all 4 coordinate cases are a real-value-vs-placeholder pattern, not two conflicting real values;
+  - cross-validated the `Koordinātas` column against coordinates embedded inline in `Adrese` text for the 1,094 posts carrying both: all agree;
+  - found 10 posts with coordinates outside an approximate Latvia bounding box: 6 are genuine Poland-based sites tied to the same noble-family history (Warsaw x5, Białystok x1), 2 look like malformed/truncated Latvia coordinates needing manual re-check rather than auto-correction;
+  - ran a keyword scan of post titles against the current `object_type` enum and found the dataset is materially broader than manors (muiža 45.5%; churches, mills, schools, cemeteries, stations and bridges together over 1,200 more posts; 20.6% match none of these groups) — flagged as an open Day 6 scope question rather than deciding it here.
+- **Files changed:**
+  - `docs/DAY5_COLUMN_MAPPING.md` — the full column mapping, null-handling rules, conflict findings and open questions;
+  - `TODO.md`, `PROGRESS.md` — Day 5 status and Day 6 handoff.
+- **Verification:**
+  - `npm run format:check` — passed;
+  - `npm run lint` — passed;
+  - `npm run typecheck` — passed;
+  - `npm run test` — passed;
+  - `npm run build` — passed.
+- **Decisions:**
+  - documented the mapping and its gaps only; did not generate slugs, assign `object_type`, infer condition/ownership, or deduplicate — all left to Day 6 per the existing data-quality rules;
+  - treated the 6 Poland-located posts as real data to exclude from the Latvia-only map view, not as errors to delete or coerce into Latvia; treated the 2 malformed-coordinate posts as needing a manual re-check, not a guessed correction.
+- **Blockers or risks:**
+  - this session has no tool to push commits or open a pull request, same as Days 3 and 4 — the branch and diff exist only in the session workspace and must be pushed/opened by the project owner or a session with write access (delivered as a git bundle);
+  - the `object_type` scope question (how much of this 3,716-post dataset fits the current enum) is unresolved and should be settled before Day 6's normalisation work, since it affects the majority of non-manor posts.
+- **Next exact action:**
+  - push `claude/day5-column-mapping` (or apply the delivered bundle), open the pull request against `main`, confirm CI passes, merge, then start Day 6 on issue #8 using `docs/DAY5_COLUMN_MAPPING.md`'s "Summary for Day 6" section as the starting checklist.
+- **Handoff state:** uncommitted changes (committed locally on `claude/day5-column-mapping`, not pushed)
 
 ### 2026-10-08 — Codex bundle publication and handoff
 
