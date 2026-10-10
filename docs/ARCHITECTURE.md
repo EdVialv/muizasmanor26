@@ -63,7 +63,7 @@ At low zoom levels, the map returns clusters. At higher zoom levels it returns v
 - Preview: one isolated Vercel deployment per pull request.
 - Production: protected production project and database.
 
-Never reuse the production Supabase service-role key in local or preview environments.
+Never reuse a production Supabase secret key (or legacy service-role key) in local or preview environments.
 
 ## Delivery workflow
 

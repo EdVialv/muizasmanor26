@@ -44,6 +44,6 @@ These same checks run automatically on every push to `main` and on every pull re
 ## Safety
 
 - Never commit `.env*`, credentials, personal data or production exports.
-- Never expose Supabase service-role, Resend or map-tile-provider secret tokens to browser code.
+- Never expose Supabase secret or legacy service-role keys, Resend credentials, or map-tile-provider secret tokens to browser code.
 - Review AI-generated migrations, authentication logic and dependency changes manually.
 - Preserve user-authored changes and resolve conflicts deliberately.

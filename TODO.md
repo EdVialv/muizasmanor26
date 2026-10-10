@@ -43,7 +43,7 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 |   4 | Select 20–30 representative records across object types, hierarchies, complete, incomplete and unusual cases. | [#8](https://github.com/EdVialv/muizasmanor26/issues/8)   | Manual data review                  |  [x]   |
 |   5 | Map existing dataset columns to the heritage-object fields; record missing and conflicting values.            | [#8](https://github.com/EdVialv/muizasmanor26/issues/8)   | Manual + Codex                      |  [x]   |
 |   6 | Define normalisation, stable IDs, parent–child mapping, duplicate detection and rejected-row rules.           | [#8](https://github.com/EdVialv/muizasmanor26/issues/8)   | Codex                               |  [x]   |
-|   7 | Create the development Supabase project; enable PostGIS and document safe local configuration.                | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Manual + Claude Code                |  [ ]   |
+|   7 | Create the development Supabase project; enable PostGIS and document safe local configuration.                | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Manual + Claude Code                |  [~]   |
 |   8 | Write the first migration for heritage objects, hierarchy, classifications, contacts, sources and families.   | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Claude Code                         |  [ ]   |
 |   9 | Add spatial/search/filter indexes, constraints, roles and Row Level Security; inspect query plans.            | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Claude Code, Codex security review  |  [ ]   |
 |  10 | Build an idempotent, batched, resumable importer and load the representative sample.                          | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Claude Code                         |  [ ]   |
@@ -70,13 +70,12 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 
 ## Current next action
 
-Start **Day 7** on issue [#6](https://github.com/EdVialv/muizasmanor26/issues/6):
+**Day 7 is split between a manual step and a documentation/config step.** The documentation/config half is complete but blocked on push, same situation as Days 3–6 — see `PROGRESS.md`. The manual half still needs the project owner, because no AI agent session creates third-party accounts or holds real credentials:
 
-- create the development Supabase project;
-- enable PostGIS and verify it with a simple spatial query;
-- add a safe `.env.example` with variable names only, never secrets;
-- document local and hosted configuration for Claude Code and Codex;
-- use `docs/DAY6_NORMALIZATION_RULES.md` as the agreed import contract for the Day 8 migration.
+- Claude Code's half (done, on branch `claude/day7-supabase-postgis-setup`, based on current `main` `8284c13`): `docs/SUPABASE_SETUP.md` (the full setup/verification runbook) and the four reserved Supabase variable names added to `.env.example` (no values).
+- **Owner's half (not yet done by anyone):** follow `docs/SUPABASE_SETUP.md` sections 1–3 — create the `muizasmanor26-dev` Supabase project, enable PostGIS, run the two verification queries, and fill in a local `.env.local` from the new `.env.example` names. Nothing here can be scripted or delegated; it happens under the owner's own Supabase login.
+
+Once the handoff checklist at the bottom of `docs/SUPABASE_SETUP.md` is checked off, start **Day 8** on issue [#6](https://github.com/EdVialv/muizasmanor26/issues/6): write the first migration using `docs/DATA_MODEL.md` as the schema contract and `docs/DAY6_NORMALIZATION_RULES.md` as the agreed import scope.
 
 ## MVP boundary
 
