@@ -62,7 +62,7 @@ Do **not** copy any of these values into this repository, into chat with either 
 - `SUPABASE_SECRET_KEY` — current server-only key format (`sb_secret_...`) for a future privileged backend client. It bypasses Row Level Security, must never carry the `NEXT_PUBLIC_` prefix and must never reach browser-bundled code. Do not create or use it until a server-side feature requires it.
 - `SUPABASE_DB_URL` — the direct Postgres connection string, for migrations and server-side scripts. Day 8 will decide the specific migration tool and may add a second pooled-connection variable alongside this one if that tool needs it; this document reserves the name, not the tool choice.
 
-To work locally: copy `.env.example` to `.env.local`, fill in the real values retrieved in §3, and never commit `.env.local` (already blocked by `.gitignore`). Each contributor — including whichever agent session has local file access at the time — uses their own `.env.local` pointing at the shared `muizasmanor26-dev` project; nobody commits or pastes its contents anywhere.
+To work locally: copy `.env.example` to `.env.local`, fill in the project URL, publishable key and direct database URL retrieved in §3, and leave `SUPABASE_SECRET_KEY` blank until a reviewed server-only feature actually needs it. Never commit `.env.local` (already blocked by `.gitignore`). Each contributor with authorised local file access uses their own `.env.local` pointing at the shared `muizasmanor26-dev` project; nobody commits or pastes its contents anywhere.
 
 ## 5. Hosted configuration (forward reference)
 
@@ -74,7 +74,7 @@ Before Day 8 starts, confirm:
 
 - [ ] The `muizasmanor26-dev` Supabase project exists.
 - [ ] `select extensions.postgis_version();` returns a version, not an error, and PostGIS is installed in the `extensions` schema.
-- [ ] `.env.local` exists locally (untracked) with real values; `.env.example` in Git has only the four names above, no values.
+- [ ] `.env.local` exists locally (untracked) with the project URL, publishable key and direct database URL; `SUPABASE_SECRET_KEY` remains blank until required. `.env.example` in Git contains names only.
 - [ ] No Supabase key or password appears anywhere in `PROGRESS.md`, `TODO.md`, a commit message, or chat history with either agent.
 
 Once those are checked, Day 8 ("Write the first migration for heritage objects, hierarchy, classifications, contacts, sources and families") can proceed using `docs/DATA_MODEL.md` as the schema contract and `docs/DAY6_NORMALIZATION_RULES.md` as the agreed import scope and rules.
