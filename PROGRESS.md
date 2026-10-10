@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 7 (documentation/config half finished locally, pending push; manual half still needs the owner)
+- **Current roadmap day:** Day 7 (reviewed setup documentation merged; live project verification still needs the owner)
 - **Last completed-and-merged day:** Day 6
 - **Current issue:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6)
 - **Next outcome:** Owner creates the `muizasmanor26-dev` Supabase project and enables PostGIS per `docs/SUPABASE_SETUP.md`; then start Day 8 (first migration).
-- **MVP status:** Foundation, scale architecture, automated tests, CI, representative sample, verified source mapping and reviewed import rules are merged. Day 7's setup runbook and `.env.example` additions are complete locally, awaiting push; the actual Supabase project has not been created yet by anyone.
+- **MVP status:** Foundation through the reviewed Day 7 Supabase/PostGIS setup runbook is merged. The actual development project has not been verified yet.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                                                                          |
-| ---------------- | ------------------------------------------------------------------------------------------------------ |
-| Status           | Blocked on push (work complete, committed) and on a manual step (see Blockers below)                   |
-| Agent            | Claude Code                                                                                            |
-| Issue            | #6                                                                                                     |
-| Branch           | `claude/day7-supabase-postgis-setup`                                                                   |
-| Session goal     | Document safe Supabase/PostGIS setup and reserve env variable names; project creation itself is manual |
-| Started          | 2026-10-10                                                                                             |
-| Expected handoff | Owner: follow `docs/SUPABASE_SETUP.md` §1–3, then start Day 8 on issue #6                              |
+| Field            | Current value                                                           |
+| ---------------- | ----------------------------------------------------------------------- |
+| Status           | Awaiting owner setup and live PostGIS verification                      |
+| Agent            | Project owner                                                           |
+| Issue            | #6                                                                      |
+| Branch           | None                                                                    |
+| Session goal     | Create and verify `muizasmanor26-dev` without exposing credentials      |
+| Started          | 2026-10-10                                                              |
+| Expected handoff | Confirm the checklist only; never paste credentials into chat or GitHub |
 
 ## Required session entry
 
@@ -69,6 +69,41 @@ Copy this template to the top of **Session history** before ending a session.
 ## Session history
 
 Add the newest completed session immediately below this heading.
+
+### 2026-10-10 11:35 Europe/Riga — Codex
+
+- **Issue:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6)
+- **Branch:** `codex/day7-reviewed`
+- **Pull request:** [#27](https://github.com/EdVialv/muizasmanor26/pull/27) — merged
+- **Session goal:** Test and review Claude's Day 7 bundle, correct current Supabase guidance and publish it.
+- **Completed:**
+  - verified the bundle is complete and based on current `main`;
+  - replaced legacy `anon`/`service_role` setup with current publishable/secret keys;
+  - required PostGIS installation in the dedicated `extensions` schema rather than `public`;
+  - corrected the current Dashboard paths for API keys and database connection strings;
+  - clarified that the secret key remains blank until an approved server-only feature needs it;
+  - merged the reviewed runbook after GitHub Actions passed.
+- **Files changed:**
+  - `.env.example` — current names-only Supabase variables;
+  - `docs/SUPABASE_SETUP.md` — corrected setup and verification runbook;
+  - `CONTRIBUTING.md`, `docs/ARCHITECTURE.md` — current secret-key terminology;
+  - `TODO.md`, `PROGRESS.md` — Day 7 status and owner handoff.
+- **Verification:**
+  - `npm run format:check` — passed locally and in GitHub Actions;
+  - `npm run lint` — passed locally and in GitHub Actions;
+  - `npm run typecheck` — passed locally and in GitHub Actions;
+  - `npm run test` — passed locally and in GitHub Actions (7 tests);
+  - `npm run build` — passed locally and in GitHub Actions;
+  - live PostGIS queries — pending owner project creation.
+- **Decisions:**
+  - use a specific EU region (`eu-central-1`) and current Supabase key formats;
+  - keep Day 7 in progress until the live PostGIS checks pass;
+  - do not request or record any credential value in chat or GitHub.
+- **Blockers or risks:**
+  - Day 8 cannot run a real migration until the owner completes the live-project checklist.
+- **Next exact action:**
+  - owner follows `docs/SUPABASE_SETUP.md`, then reports only whether both SQL checks passed and `.env.local` exists.
+- **Handoff state:** awaiting owner
 
 ### 2026-10-10 03:50 Europe/Riga — Claude Code
 
