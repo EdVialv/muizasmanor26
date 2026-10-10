@@ -70,10 +70,12 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 
 ## Current next action
 
-**Day 7 is split between a manual step and a documentation/config step.** The documentation/config half is complete but blocked on push, same situation as Days 3–6 — see `PROGRESS.md`. The manual half still needs the project owner, because no AI agent session creates third-party accounts or holds real credentials:
+**Day 7 is split between an owner step and a documentation/config step.** The reviewed documentation/configuration is merged in [PR #27](https://github.com/EdVialv/muizasmanor26/pull/27). The remaining owner steps are:
 
-- Claude Code's half (done, on branch `claude/day7-supabase-postgis-setup`, based on current `main` `8284c13`): `docs/SUPABASE_SETUP.md` (the full setup/verification runbook) and the four reserved Supabase variable names added to `.env.example` (no values).
-- **Owner's half (not yet done by anyone):** follow `docs/SUPABASE_SETUP.md` sections 1–3 — create the `muizasmanor26-dev` Supabase project, enable PostGIS, run the two verification queries, and fill in a local `.env.local` from the new `.env.example` names. Nothing here can be scripted or delegated; it happens under the owner's own Supabase login.
+- create the `muizasmanor26-dev` Supabase project in the specific Central EU (Frankfurt) region;
+- enable PostGIS in the dedicated `extensions` schema;
+- run the two verification queries in `docs/SUPABASE_SETUP.md`;
+- create an untracked `.env.local` with the project URL, publishable key and direct database URL; leave the secret key blank until a reviewed server-only feature requires it.
 
 Once the handoff checklist at the bottom of `docs/SUPABASE_SETUP.md` is checked off, start **Day 8** on issue [#6](https://github.com/EdVialv/muizasmanor26/issues/6): write the first migration using `docs/DATA_MODEL.md` as the schema contract and `docs/DAY6_NORMALIZATION_RULES.md` as the agreed import scope.
 
