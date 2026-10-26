@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 7 (reviewed setup documentation merged; live project verification still needs the owner)
-- **Last completed-and-merged day:** Day 6
+- **Current roadmap day:** Day 8 (finished locally, pending push and review)
+- **Last completed-and-merged day:** Day 7
 - **Current issue:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6)
-- **Next outcome:** Owner creates the `muizasmanor26-dev` Supabase project and enables PostGIS per `docs/SUPABASE_SETUP.md`; then start Day 8 (first migration).
-- **MVP status:** Foundation through the reviewed Day 7 Supabase/PostGIS setup runbook is merged. The actual development project has not been verified yet.
+- **Next outcome:** Codex reviews and merges `claude/day8-initial-schema-migration`, the migration is applied to the real `muizasmanor26-dev` project, then Day 9 (indexes, remaining constraints, roles and RLS policies) starts.
+- **MVP status:** Foundation through Day 7's Supabase/PostGIS setup is merged and verified live by the owner. Day 8's first schema migration is complete locally (tested against a disposable local Postgres+PostGIS instance, not the real project) and awaiting push.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                                           |
-| ---------------- | ----------------------------------------------------------------------- |
-| Status           | Awaiting owner setup and live PostGIS verification                      |
-| Agent            | Project owner                                                           |
-| Issue            | #6                                                                      |
-| Branch           | None                                                                    |
-| Session goal     | Create and verify `muizasmanor26-dev` without exposing credentials      |
-| Started          | 2026-10-10                                                              |
-| Expected handoff | Confirm the checklist only; never paste credentials into chat or GitHub |
+| Field            | Current value                                                                                                         |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Status           | Blocked on push (work complete, committed, and locally tested; see Blockers below)                                    |
+| Agent            | Claude Code                                                                                                           |
+| Issue            | #6                                                                                                                    |
+| Branch           | `claude/day8-initial-schema-migration`                                                                                |
+| Session goal     | Write and verify the first migration for heritage objects, hierarchy, classifications, contacts, sources and families |
+| Started          | 2026-10-12                                                                                                            |
+| Expected handoff | Codex: review, merge, apply to the real `muizasmanor26-dev` project, then start Day 9 on issue #6                     |
 
 ## Required session entry
 
@@ -69,6 +69,39 @@ Copy this template to the top of **Session history** before ending a session.
 ## Session history
 
 Add the newest completed session immediately below this heading.
+
+### 2026-10-12 19:58 Europe/Riga — Claude Code
+
+- **Issue:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6)
+- **Branch:** `claude/day8-initial-schema-migration`
+- **Pull request:** not opened (this session has no GitHub write access; see Blockers)
+- **Session goal:** Write and verify the first migration for heritage objects, hierarchy, classifications, contacts, sources and families, per `docs/DATA_MODEL.md` and `docs/DAY6_NORMALIZATION_RULES.md`.
+- **Completed:**
+  - wrote `supabase/migrations/20261012195606_initial_heritage_schema.sql`: 11 enum types, `heritage_objects` (core + hierarchy + inline classification fields), `object_names`, `object_historical_owner_families`, `object_contacts`, `object_cadastre_references`, a shared `updated_at` trigger, and RLS enabled (no policies yet) on every table;
+  - installed PostgreSQL 16 + PostGIS locally (this session holds no real Supabase credentials) with PostGIS in a dedicated `extensions` schema matching the real project's actual Day 7 configuration, and applied + exercised the migration against it;
+  - verified: the generated `location` column correctly derives `POINT(lon lat)` from `latitude`/`longitude`; every constraint (self-parent, duplicate slug, duplicate source id, out-of-range latitude, missing required field, duplicate cadastre reference, bad year order) actually rejects bad data; cascade delete and `on delete set null` both behave correctly; the `updated_at` trigger fires on update; RLS actually blocks an unprivileged role with table-level `SELECT` granted but no policies defined;
+  - documented 5 scope/design decisions in both the migration's header comment and `docs/DAY8_MIGRATION_NOTES.md`, each flagged for Codex's independent review: required-field `NOT NULL`s make `heritage_objects` the canonical/publish-track table; `object_images`/`object_booking_integrations` excluded as out of this day's scope; `historical_owner_families` built as one association table rather than a master-plus-join pair; RLS enabled immediately everywhere; only a trivial self-parent check, with full cycle detection deferred to Day 9.
+- **Files changed:**
+  - `supabase/migrations/20261012195606_initial_heritage_schema.sql` — the migration itself;
+  - `docs/DAY8_MIGRATION_NOTES.md` — decisions, verification record, and open items for Day 9;
+  - `TODO.md`, `PROGRESS.md` — Day 7 owner-step closeout, Day 8 status, Day 9 handoff.
+- **Verification:**
+  - migration applied cleanly to a disposable local Postgres 16 + PostGIS 3.4 database (full test log in `docs/DAY8_MIGRATION_NOTES.md`);
+  - `npm run format:check` — passed;
+  - `npm run lint` — passed;
+  - `npm run typecheck` — passed;
+  - `npm run test` — passed;
+  - `npm run build` — passed;
+  - the migration was never applied to the real `muizasmanor26-dev` project from this session — only to the disposable local test database, which was dropped afterward.
+- **Decisions:**
+  - see the 5 decisions listed above and in `docs/DAY8_MIGRATION_NOTES.md`; all are flagged for independent review rather than treated as final.
+- **Blockers or risks:**
+  - this session has no tool to push commits or open a pull request, same as every prior day — delivered as a git bundle;
+  - the migration has not yet run against the real Supabase project; someone with dashboard access needs to apply it (SQL Editor or `supabase db push`) before Day 9 can add indexes/RLS policies on top of it;
+  - the `historical_owner_families`-as-single-table decision (3) is the least directly specified by existing docs and is the one most worth a second opinion.
+- **Next exact action:**
+  - Codex: review the migration and its 5 flagged decisions, merge, apply it to `muizasmanor26-dev`, then start Day 9 on issue #6 (indexes, remaining constraints, roles, RLS policies) using `docs/DAY8_MIGRATION_NOTES.md`'s "Open items" section as the checklist.
+- **Handoff state:** uncommitted changes (committed locally on `claude/day8-initial-schema-migration`, not pushed)
 
 ### 2026-10-10 11:35 Europe/Riga — Codex
 
