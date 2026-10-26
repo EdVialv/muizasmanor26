@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 9 (finished locally, pending push and review — same as Day 8)
+- **Current roadmap day:** Day 10 (finished locally, pending push and review — same as Days 8 and 9)
 - **Last completed-and-merged day:** Day 7
 - **Current issue:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6)
-- **Next outcome:** Codex reviews and merges `claude/day8-initial-schema-migration` and `claude/day9-indexes-roles-rls` (in that order), both migrations are applied to the real `muizasmanor26-dev` project, then Day 10 (idempotent batched importer, load the representative sample) starts.
-- **MVP status:** Foundation through Day 7's Supabase/PostGIS setup is merged and verified live by the owner. Day 8's first schema migration and Day 9's indexes/roles/RLS migration are both complete locally (tested against a disposable local Postgres+PostGIS instance, not the real project) and awaiting push.
+- **Next outcome:** Codex reviews and merges `claude/day8-initial-schema-migration`, `claude/day9-indexes-roles-rls` and `claude/day10-importer-sample-load` (in that order), all three are applied to the real `muizasmanor26-dev` project, an editor completes `summary_lv` on at least a few staged sample rows, then Day 11 (import dry run against the real raw dataset) starts.
+- **MVP status:** Foundation through Day 7's Supabase/PostGIS setup is merged and verified live by the owner. Day 8's schema, Day 9's indexes/roles/RLS and Day 10's import staging schema + CLI importer are all complete locally (tested against a disposable local Postgres+PostGIS instance, not the real project) and awaiting push. The importer was run against the Day 4 representative sample: all 25 rows correctly land in `needs_review` (missing `summary_lv`, which this sample format has no column for), confirming the staging contract works as intended rather than leaving anything to promote yet.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                                                                                                                 |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Status           | Blocked on push (work complete, committed, and locally tested; see Blockers below)                                                            |
-| Agent            | Claude Code                                                                                                                                   |
-| Issue            | #6                                                                                                                                            |
-| Branch           | `claude/day9-indexes-roles-rls` (based on the still-unmerged `claude/day8-initial-schema-migration`)                                          |
-| Session goal     | Add spatial/search/filter indexes, full hierarchy-cycle detection, roles and Row Level Security policies on top of the Day 8 schema           |
-| Started          | 2026-10-19                                                                                                                                    |
-| Expected handoff | Codex: review and merge both Day 8 and Day 9 (Day 8 first), apply both to the real `muizasmanor26-dev` project, then start Day 10 on issue #6 |
+| Field            | Current value                                                                                                                                             |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Status           | Blocked on push (work complete, committed, and locally tested; see Blockers below)                                                                        |
+| Agent            | Claude Code                                                                                                                                               |
+| Issue            | #6                                                                                                                                                        |
+| Branch           | `claude/day10-importer-sample-load` (based on the still-unmerged `claude/day9-indexes-roles-rls`, itself based on `claude/day8-initial-schema-migration`) |
+| Session goal     | Build an idempotent, batched, resumable importer and load the representative sample into staging                                                          |
+| Started          | 2026-10-24                                                                                                                                                |
+| Expected handoff | Codex: review and merge Day 8, 9 and 10 in order, apply all three to the real `muizasmanor26-dev` project, then start Day 11 on issue #6                  |
 
 ## Required session entry
 
@@ -69,6 +69,57 @@ Copy this template to the top of **Session history** before ending a session.
 ## Session history
 
 Add the newest completed session immediately below this heading.
+
+### 2026-10-26 — Codex review
+
+- **Scope:** Independent review of the linear Day 8 → Day 9 → Day 10 bundle before GitHub integration.
+- **Corrections:** made `.env.local` loading explicit for the standalone importer; rejected invalid batch sizes and blank stable identifiers; preserved staging review reasons in CLI output; added a database constraint preventing incomplete rows from being marked ready; removed public/Data API access to the administrative staging table and promotion function; made repeated promotion avoid duplicate identical family rows; clarified that editors must set completed rows to `ready_for_import`.
+- **Security:** upgraded Next.js and `eslint-config-next` from 16.4.0 to patched 16.4.3 after the build security gate; `npm audit --omit=dev` reports zero vulnerabilities.
+- **Verification:** formatting, lint, typecheck, unit tests, production build and dependency audit passed after the corrections.
+- **Next exact action:** publish and merge the reviewed Day 8, Day 9 and Day 10 history to GitHub, then apply the migrations to `muizasmanor26-dev` using owner-held credentials.
+
+### 2026-10-24 17:45 Europe/Riga — Claude Code
+
+- **Issue:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6)
+- **Branch:** `claude/day10-importer-sample-load` (branched from the still-unmerged `claude/day9-indexes-roles-rls`)
+- **Pull request:** not opened (this session has no GitHub write access; see Blockers)
+- **Session goal:** Build an idempotent, batched, resumable importer and load the representative sample, per `TODO.md`'s Day 10 entry and `docs/DAY6_NORMALIZATION_RULES.md`'s staging-state-machine design.
+- **Completed:**
+  - wrote `supabase/migrations/20261024173045_import_staging.sql`: an `import_row_status` enum matching `docs/DAY6_NORMALIZATION_RULES.md` section 5's four states exactly, a `staging_heritage_objects` table (raw payload + hash, resolved candidate fields, jsonb family/cadastre arrays, RLS enabled with zero policies), and a `promote_staging_row(uuid)` function that inserts into `heritage_objects` plus its family/cadastre children and resolves parent linkage through the staging table, raising a distinct `SQLSTATE MM001` when a row's parent is not promoted yet;
+  - added `pg`, `csv-parse` and `tsx` tooling and wrote `scripts/import/` (`types.ts`, `parseSample.ts`, `db.ts`, `runImport.ts`): a CLI (`npm run import --`) that parses the sample CSV, resolves/validates every row against `heritage_objects`' own required-field contract, upserts into staging in batched transactions keyed by `(source_system, external_source_id)`, skips rows whose content hash is unchanged (the resumability mechanism), and optionally promotes everything that reaches `ready_for_import`, retrying rows deferred on an unpromoted parent within the same run;
+  - ran it against `data/sample/day4-representative-records.csv`: all 25 rows staged as `needs_review` - every row is missing `summary_lv`, which this CSV format has no column for at all (deliberately never mapped from the English `summary_research_en` research note) - confirming the Day 4 Codex review's own finding that this sample is "a research artifact, not import-ready," now enforced structurally rather than just noted in prose;
+  - verified promotion end-to-end on real staged data by simulating an editor completing `summary_lv` directly on the Rundāle parent/park/stables trio: re-running the importer did not clobber the manual edit (unchanged-content skip), and `--promote` correctly promoted the parent then both children in one run, with correct `parent_object_id` links and correct `object_historical_owner_families` rows parsed from each row's real semicolon-separated family list;
+  - found and fixed one real bug while testing the "source changed after an already-imported row" guard: an SQL update referenced an unused bound parameter, which Postgres rejected outright ("could not determine data type of parameter $2") - fixed in `scripts/import/db.ts`, then re-verified the guard keeps the staging row `imported`, notes the change, and leaves the canonical row untouched;
+  - wrote 10 unit tests (`scripts/import/parseSample.test.ts`) for the parsing/validation logic, most importantly the `"(none confirmed ...)"` sentinel that must not be naively split on its own internal semicolon;
+  - documented 9 scope/design decisions in both the migration's header comment and `docs/DAY10_IMPORTER_NOTES.md`, flagged for Codex's independent review - most importantly that this importer never does the raw-blog-dataset scope/keyword classification (that is explicitly Day 11's job against real raw rows) and that `summary_lv` is never auto-derived from the English research notes under any circumstance.
+- **Files changed:**
+  - `supabase/migrations/20261024173045_import_staging.sql` — staging schema and promotion function;
+  - `scripts/import/types.ts`, `parseSample.ts`, `parseSample.test.ts`, `db.ts`, `runImport.ts` — the importer itself;
+  - `package.json` — added `pg`, `@types/pg`, `csv-parse`, `tsx`, and the `import` script;
+  - `docs/DAY10_IMPORTER_NOTES.md` — decisions, verification record, and open items for Day 11+;
+  - `docs/CODEX_REVIEW_DAY8-10.md` — added after this session's main work, once the user asked for a single review entry point: consolidates all three days' branches, decisions and verification into one document, since push has been blocked long enough that three days now need reviewing in one pass instead of one PR at a time;
+  - `TODO.md`, `PROGRESS.md` — Day 10 status and Day 11 handoff.
+- **Verification:**
+  - all three migrations (Day 8, 9, 10) applied cleanly in sequence against a disposable local Postgres 16 + PostGIS 3.4 + pg_trgm database, with `anon`/`authenticated`/`service_role` mirrored locally (full test log in `docs/DAY10_IMPORTER_NOTES.md`);
+  - `promote_staging_row()` exercised directly in `psql` with a synthetic parent/child pair and a synthetic cadastre reference before any TypeScript was involved;
+  - the importer run against the real sample, re-run for idempotency, run again after a simulated editorial completion, and run again after a simulated post-import source change - all behaved as designed;
+  - `npm run format:check` — passed;
+  - `npm run lint` — passed;
+  - `npm run typecheck` — passed;
+  - `npm run test` — passed (17 tests, 10 new);
+  - `npm run build` — passed on retry past a pre-existing, unrelated Next.js security-advisory gate (Next.js 16.0.0–16.4.0 has a disclosed RCE; `npm audit` shows the same finding) - not introduced or fixed by this change;
+  - the importer was never run against the real `muizasmanor26-dev` project from this session — only against the disposable local test database, which was dropped afterward along with the mirrored roles.
+- **Decisions:**
+  - see the 9 decisions listed above and in `docs/DAY10_IMPORTER_NOTES.md`; all are flagged for independent review rather than treated as final;
+  - branched from the unmerged `claude/day9-indexes-roles-rls` rather than `main`, for the same reason Day 9 branched from Day 8: this migration's table did not exist on `main` yet.
+- **Blockers or risks:**
+  - this session has no tool to push commits or open a pull request, same as every prior day — delivered as a git bundle;
+  - this branch's history includes both Day 8's and Day 9's commits; Codex should review/merge in order (8, then 9, then this one, rebasing each onto `main` as it lands) rather than merging this branch directly;
+  - decision 2 (no scope/keyword classification here) means Day 11's real dry run against the raw ~3,716-post dataset is materially new work, not a rerun of this importer against more rows — it needs that classification pass, the per-image collapsing rules, and the duplicate/relationship candidate queues this sample's shape never exercised;
+  - the Next.js security-advisory finding from `npm run build` is unrelated to this work but worth the owner's attention separately.
+- **Next exact action:**
+  - Codex: review and merge Day 8, then Day 9, then this Day 10 branch (each rebased onto `main` as it lands), apply all three to `muizasmanor26-dev`, have an editor complete `summary_lv` (and missing coordinates/municipality) on at least a few staged sample rows directly in `staging_heritage_objects` so a `--promote` run has something real to promote on the live project, then start Day 11 on issue #6 (import dry run against the real raw dataset, inspect failures, fix transformations, document resume/rollback procedures) using `docs/DAY10_IMPORTER_NOTES.md`'s "Open items" section as the checklist.
+- **Handoff state:** uncommitted changes (committed locally on `claude/day10-importer-sample-load`, not pushed)
 
 ### 2026-10-19 18:05 Europe/Riga — Claude Code
 
