@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 10 (finished locally, pending push and review — same as Days 8 and 9)
-- **Last completed-and-merged day:** Day 7
+- **Current roadmap day:** Day 11 (waiting for the real Supabase migration/import dry run)
+- **Last completed-and-merged day:** Day 10
 - **Current issue:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6)
-- **Next outcome:** Codex reviews and merges `claude/day8-initial-schema-migration`, `claude/day9-indexes-roles-rls` and `claude/day10-importer-sample-load` (in that order), all three are applied to the real `muizasmanor26-dev` project, an editor completes `summary_lv` on at least a few staged sample rows, then Day 11 (import dry run against the real raw dataset) starts.
-- **MVP status:** Foundation through Day 7's Supabase/PostGIS setup is merged and verified live by the owner. Day 8's schema, Day 9's indexes/roles/RLS and Day 10's import staging schema + CLI importer are all complete locally (tested against a disposable local Postgres+PostGIS instance, not the real project) and awaiting push. The importer was run against the Day 4 representative sample: all 25 rows correctly land in `needs_review` (missing `summary_lv`, which this sample format has no column for), confirming the staging contract works as intended rather than leaving anything to promote yet.
+- **Next outcome:** Apply the three merged migrations to `muizasmanor26-dev`, stage the 25 representative rows, complete and promote a few samples, then begin the Day 11 dry run against the real raw dataset.
+- **MVP status:** Days 1–10 are merged. The schema, indexes/RLS, staging state machine and hardened CLI importer are in `main`; real Supabase application and representative-row editorial completion remain owner-side work before Day 11.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                                                                                                                             |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Status           | Blocked on push (work complete, committed, and locally tested; see Blockers below)                                                                        |
-| Agent            | Claude Code                                                                                                                                               |
-| Issue            | #6                                                                                                                                                        |
-| Branch           | `claude/day10-importer-sample-load` (based on the still-unmerged `claude/day9-indexes-roles-rls`, itself based on `claude/day8-initial-schema-migration`) |
-| Session goal     | Build an idempotent, batched, resumable importer and load the representative sample into staging                                                          |
-| Started          | 2026-10-24                                                                                                                                                |
-| Expected handoff | Codex: review and merge Day 8, 9 and 10 in order, apply all three to the real `muizasmanor26-dev` project, then start Day 11 on issue #6                  |
+| Field            | Current value                                                                                  |
+| ---------------- | ---------------------------------------------------------------------------------------------- |
+| Status           | Awaiting owner-side Supabase migration and sample import                                       |
+| Agent            | Project owner                                                                                  |
+| Issue            | #6                                                                                             |
+| Branch           | None                                                                                           |
+| Session goal     | Apply Days 8–10 to `muizasmanor26-dev` and verify several promoted representative records      |
+| Started          | 2026-10-26                                                                                     |
+| Expected handoff | Report migration/import results without sharing credentials; then start Day 11 from fresh main |
 
 ## Required session entry
 
@@ -69,6 +69,15 @@ Copy this template to the top of **Session history** before ending a session.
 ## Session history
 
 Add the newest completed session immediately below this heading.
+
+### 2026-10-26 — Codex GitHub integration
+
+- **Issue:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6)
+- **Pull requests:** [#29](https://github.com/EdVialv/muizasmanor26/pull/29), [#30](https://github.com/EdVialv/muizasmanor26/pull/30), [#31](https://github.com/EdVialv/muizasmanor26/pull/31) — merged in migration order
+- **Completed:** reviewed, hardened, published and merged Days 8–10; all three pull-request CI runs passed.
+- **Verification:** formatting, lint, typecheck, 23 tests, production build and production-dependency audit passed; audit reported zero vulnerabilities.
+- **Next exact action:** owner applies the three migrations to `muizasmanor26-dev`, runs the representative sample import and marks completed sample rows `ready_for_import` before promotion.
+- **Handoff state:** merged; awaiting owner-side database work
 
 ### 2026-10-26 — Codex review
 
