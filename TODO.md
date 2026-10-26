@@ -44,7 +44,7 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 |   5 | Map existing dataset columns to the heritage-object fields; record missing and conflicting values.            | [#8](https://github.com/EdVialv/muizasmanor26/issues/8)   | Manual + Codex                      |  [x]   |
 |   6 | Define normalisation, stable IDs, parent–child mapping, duplicate detection and rejected-row rules.           | [#8](https://github.com/EdVialv/muizasmanor26/issues/8)   | Codex                               |  [x]   |
 |   7 | Create the development Supabase project; enable PostGIS and document safe local configuration.                | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Manual + Claude Code                |  [~]   |
-|   8 | Write the first migration for heritage objects, hierarchy, classifications, contacts, sources and families.   | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Claude Code                         |  [ ]   |
+|   8 | Write the first migration for heritage objects, hierarchy, classifications, contacts, sources and families.   | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Claude Code                         |  [!]   |
 |   9 | Add spatial/search/filter indexes, constraints, roles and Row Level Security; inspect query plans.            | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Claude Code, Codex security review  |  [ ]   |
 |  10 | Build an idempotent, batched, resumable importer and load the representative sample.                          | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Claude Code                         |  [ ]   |
 |  11 | Run an import dry run, inspect failures, fix transformations and document resume/rollback procedures.         | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Claude Code + manual QA             |  [ ]   |
@@ -70,14 +70,14 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 
 ## Current next action
 
-**Day 7 is split between an owner step and a documentation/config step.** The reviewed documentation/configuration is merged in [PR #27](https://github.com/EdVialv/muizasmanor26/pull/27). The remaining owner steps are:
+**Day 7 is fully done** — the owner created the `muizasmanor26-dev` project, enabled PostGIS in the dedicated `extensions` schema and verified it.
 
-- create the `muizasmanor26-dev` Supabase project in the specific Central EU (Frankfurt) region;
-- enable PostGIS in the dedicated `extensions` schema;
-- run the two verification queries in `docs/SUPABASE_SETUP.md`;
-- create an untracked `.env.local` with the project URL, publishable key and direct database URL; leave the secret key blank until a reviewed server-only feature requires it.
+**Day 8 is complete but blocked on push**, not actually merged — same situation as every prior day. See `PROGRESS.md` for the full explanation.
 
-Once the handoff checklist at the bottom of `docs/SUPABASE_SETUP.md` is checked off, start **Day 8** on issue [#6](https://github.com/EdVialv/muizasmanor26/issues/6): write the first migration using `docs/DATA_MODEL.md` as the schema contract and `docs/DAY6_NORMALIZATION_RULES.md` as the agreed import scope.
+- Day 8 (first migration: `supabase/migrations/20261012195606_initial_heritage_schema.sql`, documented in `docs/DAY8_MIGRATION_NOTES.md`) is finished on branch `claude/day8-initial-schema-migration`, based on current `main`, and was tested against a disposable local Postgres 16 + PostGIS instance (not the real Supabase project — this session holds no credentials for it).
+- The branch could not be pushed from the Claude session that built it — see `PROGRESS.md` session history for why.
+
+Once it is pushed, applied to the real `muizasmanor26-dev` project (via the Supabase SQL Editor, same manual workflow as Day 7) and merged, start **Day 9** on issue [#6](https://github.com/EdVialv/muizasmanor26/issues/6): add spatial/search/filter indexes, the remaining constraints (full parent/child cycle detection), roles and Row Level Security policies — `docs/DAY8_MIGRATION_NOTES.md`'s "Open items" section lists exactly what Day 9 needs to add.
 
 ## MVP boundary
 
