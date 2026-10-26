@@ -45,7 +45,7 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 |   6 | Define normalisation, stable IDs, parent–child mapping, duplicate detection and rejected-row rules.           | [#8](https://github.com/EdVialv/muizasmanor26/issues/8)   | Codex                               |  [x]   |
 |   7 | Create the development Supabase project; enable PostGIS and document safe local configuration.                | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Manual + Claude Code                |  [~]   |
 |   8 | Write the first migration for heritage objects, hierarchy, classifications, contacts, sources and families.   | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Claude Code                         |  [!]   |
-|   9 | Add spatial/search/filter indexes, constraints, roles and Row Level Security; inspect query plans.            | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Claude Code, Codex security review  |  [ ]   |
+|   9 | Add spatial/search/filter indexes, constraints, roles and Row Level Security; inspect query plans.            | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Claude Code, Codex security review  |  [!]   |
 |  10 | Build an idempotent, batched, resumable importer and load the representative sample.                          | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Claude Code                         |  [ ]   |
 |  11 | Run an import dry run, inspect failures, fix transformations and document resume/rollback procedures.         | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Claude Code + manual QA             |  [ ]   |
 |  12 | Establish reusable layout, navigation, typography, colour tokens and responsive breakpoints.                  | [#7](https://github.com/EdVialv/muizasmanor26/issues/7)   | Claude Code                         |  [ ]   |
@@ -72,12 +72,14 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 
 **Day 7 is fully done** — the owner created the `muizasmanor26-dev` project, enabled PostGIS in the dedicated `extensions` schema and verified it.
 
-**Day 8 is complete but blocked on push**, not actually merged — same situation as every prior day. See `PROGRESS.md` for the full explanation.
+**Days 8 and 9 are both complete but blocked on push**, neither actually merged — same situation as every prior day. See `PROGRESS.md` for the full explanation.
 
-- Day 8 (first migration: `supabase/migrations/20261012195606_initial_heritage_schema.sql`, documented in `docs/DAY8_MIGRATION_NOTES.md`) is finished on branch `claude/day8-initial-schema-migration`, based on current `main`, and was tested against a disposable local Postgres 16 + PostGIS instance (not the real Supabase project — this session holds no credentials for it).
-- The branch could not be pushed from the Claude session that built it — see `PROGRESS.md` session history for why.
+- Day 8 (first migration: `supabase/migrations/20261012195606_initial_heritage_schema.sql`, documented in `docs/DAY8_MIGRATION_NOTES.md`) is finished on branch `claude/day8-initial-schema-migration`, based on current `main`.
+- Day 9 (indexes, roles, RLS: `supabase/migrations/20261019175413_indexes_roles_rls.sql`, documented in `docs/DAY9_MIGRATION_NOTES.md`) is finished on branch `claude/day9-indexes-roles-rls`, based on `claude/day8-initial-schema-migration` (since it adds indexes/policies to tables only Day 8's migration creates). It should rebase cleanly onto `main` once Day 8 merges.
+- Both migrations were tested together, in sequence, against a disposable local Postgres 16 + PostGIS + pg_trgm instance (not the real Supabase project — this session holds no credentials for it).
+- Neither branch could be pushed from the Claude session that built it — see `PROGRESS.md` session history for why.
 
-Once it is pushed, applied to the real `muizasmanor26-dev` project (via the Supabase SQL Editor, same manual workflow as Day 7) and merged, start **Day 9** on issue [#6](https://github.com/EdVialv/muizasmanor26/issues/6): add spatial/search/filter indexes, the remaining constraints (full parent/child cycle detection), roles and Row Level Security policies — `docs/DAY8_MIGRATION_NOTES.md`'s "Open items" section lists exactly what Day 9 needs to add.
+Once pushed, reviewed (Day 8 first, then Day 9 rebased onto `main`), applied to the real `muizasmanor26-dev` project (via the Supabase SQL Editor, same manual workflow as Day 7) and merged, start **Day 10** on issue [#6](https://github.com/EdVialv/muizasmanor26/issues/6): build the idempotent, batched, resumable importer and load the representative sample — `docs/DAY9_MIGRATION_NOTES.md`'s "Open items" section lists exactly what Day 10 needs to add (`object_images`, the staging/review schema, Supabase CLI setup).
 
 ## MVP boundary
 

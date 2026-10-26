@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 8 (finished locally, pending push and review)
+- **Current roadmap day:** Day 9 (finished locally, pending push and review — same as Day 8)
 - **Last completed-and-merged day:** Day 7
 - **Current issue:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6)
-- **Next outcome:** Codex reviews and merges `claude/day8-initial-schema-migration`, the migration is applied to the real `muizasmanor26-dev` project, then Day 9 (indexes, remaining constraints, roles and RLS policies) starts.
-- **MVP status:** Foundation through Day 7's Supabase/PostGIS setup is merged and verified live by the owner. Day 8's first schema migration is complete locally (tested against a disposable local Postgres+PostGIS instance, not the real project) and awaiting push.
+- **Next outcome:** Codex reviews and merges `claude/day8-initial-schema-migration` and `claude/day9-indexes-roles-rls` (in that order), both migrations are applied to the real `muizasmanor26-dev` project, then Day 10 (idempotent batched importer, load the representative sample) starts.
+- **MVP status:** Foundation through Day 7's Supabase/PostGIS setup is merged and verified live by the owner. Day 8's first schema migration and Day 9's indexes/roles/RLS migration are both complete locally (tested against a disposable local Postgres+PostGIS instance, not the real project) and awaiting push.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                                                                                         |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Status           | Blocked on push (work complete, committed, and locally tested; see Blockers below)                                    |
-| Agent            | Claude Code                                                                                                           |
-| Issue            | #6                                                                                                                    |
-| Branch           | `claude/day8-initial-schema-migration`                                                                                |
-| Session goal     | Write and verify the first migration for heritage objects, hierarchy, classifications, contacts, sources and families |
-| Started          | 2026-10-12                                                                                                            |
-| Expected handoff | Codex: review, merge, apply to the real `muizasmanor26-dev` project, then start Day 9 on issue #6                     |
+| Field            | Current value                                                                                                                                 |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Status           | Blocked on push (work complete, committed, and locally tested; see Blockers below)                                                            |
+| Agent            | Claude Code                                                                                                                                   |
+| Issue            | #6                                                                                                                                            |
+| Branch           | `claude/day9-indexes-roles-rls` (based on the still-unmerged `claude/day8-initial-schema-migration`)                                          |
+| Session goal     | Add spatial/search/filter indexes, full hierarchy-cycle detection, roles and Row Level Security policies on top of the Day 8 schema           |
+| Started          | 2026-10-19                                                                                                                                    |
+| Expected handoff | Codex: review and merge both Day 8 and Day 9 (Day 8 first), apply both to the real `muizasmanor26-dev` project, then start Day 10 on issue #6 |
 
 ## Required session entry
 
@@ -69,6 +69,41 @@ Copy this template to the top of **Session history** before ending a session.
 ## Session history
 
 Add the newest completed session immediately below this heading.
+
+### 2026-10-19 18:05 Europe/Riga — Claude Code
+
+- **Issue:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6)
+- **Branch:** `claude/day9-indexes-roles-rls` (branched from the still-unmerged `claude/day8-initial-schema-migration`, not from `main` — see Decisions)
+- **Pull request:** not opened (this session has no GitHub write access; see Blockers)
+- **Session goal:** Add spatial/search/filter indexes, the remaining hierarchy constraint, database roles and Row Level Security policies on top of Day 8's schema, per `docs/DATA_MODEL.md`'s "Index and query requirements" and `docs/ARCHITECTURE.md`'s RLS mandate.
+- **Completed:**
+  - wrote `supabase/migrations/20261019175413_indexes_roles_rls.sql`: `pg_trgm` installed into the `extensions` schema; a GiST index on `location`; B-tree indexes on `status`, `object_type`, `municipality`, `condition_category`, `ownership_type`, `parent_object_id`; a B-tree index on every child table's `object_id` foreign key; GIN/trigram indexes on `heritage_objects.name_lv`/`municipality` and `object_names.name`; a `prevent_hierarchy_cycle()` trigger that walks the full ancestor chain (replacing Day 8's direct-self-parent-only `CHECK` as the active guard); grants and read-only RLS policies for Supabase's built-in `anon`/`authenticated` roles (published objects only; `object_contacts` additionally requires `visibility = 'public'`); no write policy on any table;
+  - installed PostgreSQL 16 + PostGIS + `pg_trgm` locally again (this session still holds no real Supabase credentials), created `anon`/`authenticated`/`service_role` roles locally to mirror what Supabase's platform already provisions, applied the Day 8 migration then this Day 9 migration in sequence, and exercised both against 8,000 seeded rows;
+  - verified: all 14 new indexes exist and the query planner actually chooses each one (status filter, municipality+object_type filter, trigram name search, spatial bounding box, FK child-table lookup — confirmed with `EXPLAIN`); `anon`/`authenticated` see only `published` rows while `service_role` bypasses RLS and sees everything; both roles are denied `INSERT`/`UPDATE` outright; `object_contacts` correctly hides an `internal` contact and a `public` contact on a non-published object, while showing the `public` contact on a `published` object; the cycle trigger accepts a valid 3-level chain, rejects the indirect closing edge, rejects a two-statement same-transaction cycle (with a clean rollback), and rejects direct self-parenting;
+  - documented 6 scope/design decisions in both the migration's header comment and `docs/DAY9_MIGRATION_NOTES.md`, flagged for Codex's independent review: "roles" scoped to Supabase's existing anon/authenticated/service_role rather than inventing a staff-role system (that is explicitly Day 21's job); `authenticated` treated identically to `anon` until Day 21 exists; `object_cadastre_references` given the same published-parent read policy as other child tables despite no documented public use yet; the GIN/trigram search implemented as direct indexes rather than a maintained cross-table search document, deferring that shape to Day 16; the cycle trigger's accepted concurrency limitation (two genuinely concurrent transactions could still race past it); `pg_trgm` installed into `extensions`, matching PostGIS.
+- **Files changed:**
+  - `supabase/migrations/20261019175413_indexes_roles_rls.sql` — the migration itself;
+  - `docs/DAY9_MIGRATION_NOTES.md` — decisions, verification record, and open items for Day 10+;
+  - `TODO.md`, `PROGRESS.md` — Day 9 status and Day 10 handoff.
+- **Verification:**
+  - migration applied cleanly on top of Day 8's migration against a disposable local Postgres 16 + PostGIS 3.4 + pg_trgm database (full test log in `docs/DAY9_MIGRATION_NOTES.md`);
+  - `npm run format:check` — passed;
+  - `npm run lint` — passed;
+  - `npm run typecheck` — passed;
+  - `npm run test` — passed;
+  - `npm run build` — passed;
+  - the migration was never applied to the real `muizasmanor26-dev` project from this session — only to the disposable local test database, which was dropped afterward along with the mirrored roles.
+- **Decisions:**
+  - branched from the unmerged `claude/day8-initial-schema-migration` rather than `main`, because this migration adds indexes/policies to tables that only exist after Day 8's migration runs; it should rebase cleanly onto `main` once Day 8 merges, since that content will be identical;
+  - see the 6 decisions listed above and in `docs/DAY9_MIGRATION_NOTES.md`; all are flagged for independent review rather than treated as final.
+- **Blockers or risks:**
+  - this session has no tool to push commits or open a pull request, same as every prior day — delivered as a git bundle;
+  - this branch's history includes Day 8's commit; Codex should review/merge Day 8 first, then this branch should be rebased onto `main` before merging, so the final history doesn't duplicate Day 8's commit;
+  - decisions 1 and 2 (role scope) are explicitly temporary placeholders that Day 21 is expected to revisit once real admin/editor identity exists;
+  - decision 3 (`object_cadastre_references` public readability) is a product call, not a technical one, and is the one most worth a second opinion.
+- **Next exact action:**
+  - Codex: review and merge Day 8 first, then rebase/review/merge this Day 9 branch, apply both migrations to `muizasmanor26-dev` (SQL Editor or `supabase db push`), then start Day 10 on issue #6 (idempotent batched importer, load the representative sample) using `docs/DAY9_MIGRATION_NOTES.md`'s "Open items" section as the checklist.
+- **Handoff state:** uncommitted changes (committed locally on `claude/day9-indexes-roles-rls`, not pushed)
 
 ### 2026-10-12 19:58 Europe/Riga — Claude Code
 
