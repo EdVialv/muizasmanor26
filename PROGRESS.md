@@ -30,15 +30,15 @@ Read it before starting a session and update it before ending a session.
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                                                                  |
-| ---------------- | ---------------------------------------------------------------------------------------------- |
-| Status           | Ready for Day 11                                                                               |
-| Agent            | None                                                                                           |
-| Issue            | #6                                                                                             |
-| Branch           | None                                                                                           |
-| Session goal     | Run the first dry run against the real raw blog dataset                                        |
-| Started          | Not started                                                                                    |
-| Expected handoff | Failure summary, corrected transformations and documented resume/rollback procedure            |
+| Field            | Current value                                                                       |
+| ---------------- | ----------------------------------------------------------------------------------- |
+| Status           | Ready for Day 11                                                                    |
+| Agent            | None                                                                                |
+| Issue            | #6                                                                                  |
+| Branch           | None                                                                                |
+| Session goal     | Run the first dry run against the real raw blog dataset                             |
+| Started          | Not started                                                                         |
+| Expected handoff | Failure summary, corrected transformations and documented resume/rollback procedure |
 
 ## Required session entry
 
