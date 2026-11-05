@@ -229,12 +229,12 @@ begin
   loop
     insert into object_historical_owner_families (
       object_id, family_name, source_url, verification_status
-    ) values (
+    )
+    select
       v_object_id,
       v_family ->> 'family_name',
       v_family ->> 'source_url',
       coalesce((v_family ->> 'verification_status')::verification_status, 'unverified')
-    )
     where not exists (
       select 1
       from object_historical_owner_families existing
