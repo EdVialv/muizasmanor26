@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 11 (waiting for the real Supabase migration/import dry run)
+- **Current roadmap day:** Day 11 (ready to start the real raw-dataset dry run)
 - **Last completed-and-merged day:** Day 10
 - **Current issue:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6)
-- **Next outcome:** Apply the three merged migrations to `muizasmanor26-dev`, stage the 25 representative rows, complete and promote a few samples, then begin the Day 11 dry run against the real raw dataset.
-- **MVP status:** Days 1–10 are merged. The schema, indexes/RLS, staging state machine and hardened CLI importer are in `main`; real Supabase application and representative-row editorial completion remain owner-side work before Day 11.
+- **Next outcome:** Begin the Day 11 dry run against the real raw blog dataset, inspect failures, fix transformations and document resume/rollback procedures.
+- **MVP status:** Days 1–10 are merged and verified against the real `muizasmanor26-dev` project. All three migrations are applied, 25 representative rows are staged, and the Rundāle parent/park/stables trio is promoted with verified hierarchy links.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                                                                  |
-| ---------------- | ---------------------------------------------------------------------------------------------- |
-| Status           | Awaiting owner-side Supabase migration and sample import                                       |
-| Agent            | Project owner                                                                                  |
-| Issue            | #6                                                                                             |
-| Branch           | None                                                                                           |
-| Session goal     | Apply Days 8–10 to `muizasmanor26-dev` and verify several promoted representative records      |
-| Started          | 2026-10-26                                                                                     |
-| Expected handoff | Report migration/import results without sharing credentials; then start Day 11 from fresh main |
+| Field            | Current value                                                                       |
+| ---------------- | ----------------------------------------------------------------------------------- |
+| Status           | Ready for Day 11                                                                    |
+| Agent            | None                                                                                |
+| Issue            | #6                                                                                  |
+| Branch           | None                                                                                |
+| Session goal     | Run the first dry run against the real raw blog dataset                             |
+| Started          | Not started                                                                         |
+| Expected handoff | Failure summary, corrected transformations and documented resume/rollback procedure |
 
 ## Required session entry
 
@@ -67,6 +67,38 @@ Copy this template to the top of **Session history** before ending a session.
 ```
 
 ## Session history
+
+### 2026-11-06 Europe/Riga — Owner + Codex live Supabase verification
+
+- **Issue:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6)
+- **Branch:** `codex/record-live-supabase-verification`
+- **Pull request:** pending
+- **Session goal:** Apply and verify Days 8–10 against the real `muizasmanor26-dev` Supabase project.
+- **Completed:**
+  - applied the Day 8 schema, Day 9 indexes/RLS and corrected Day 10 staging migration to the real development project;
+  - installed dependencies locally with portable Node.js 24 and passed all 23 tests;
+  - configured the IPv4-compatible Supabase transaction pooler in the ignored local `.env.local`;
+  - staged all 25 representative records; all correctly entered `needs_review` because `summary_lv` was absent;
+  - completed the Rundāle palace/park/stables trio editorially and promoted all three into `heritage_objects`;
+  - verified the palace is the parent of both the park and stables, with all three canonical rows remaining `draft`;
+  - reran the importer and confirmed idempotency: 25 unchanged rows skipped, 22 still need review and 3 remain imported.
+- **Files changed:**
+  - `PROGRESS.md` and `TODO.md` — recorded completion of the live Supabase prerequisite and advanced the handoff to Day 11.
+- **Verification:**
+  - `npm.cmd test` — passed (5 files, 23 tests);
+  - representative import — passed (25 staged);
+  - editorial promotion — passed (3 imported);
+  - parent–child SQL verification — passed;
+  - idempotent rerun — passed (`skippedUnchanged: 25`).
+- **Decisions:**
+  - use the shared transaction pooler for the local IPv4 connection;
+  - keep imported objects as `draft`; publishing remains a later editorial action.
+- **Blockers or risks:**
+  - 22 sample rows still require editorial completion, but they do not block Day 11;
+  - the real raw-dataset importer still needs the Day 11 scope/classification and transformation work.
+- **Next exact action:**
+  - start Day 11 on issue #6: locate the real raw blog dataset, run a non-destructive dry run, classify failures and document resume/rollback steps.
+- **Handoff state:** live database prerequisite completed; ready for Day 11
 
 Add the newest completed session immediately below this heading.
 

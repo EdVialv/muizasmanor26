@@ -70,11 +70,9 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 
 ## Current next action
 
-**Day 7 is fully done** — the owner created the `muizasmanor26-dev` project, enabled PostGIS in the dedicated `extensions` schema and verified it.
+**Days 7–10 are now complete on the real development environment.** The three merged migrations are applied to `muizasmanor26-dev`. The representative importer staged 25 rows, the Rundāle palace/park/stables trio was editorially completed and promoted, its parent–child links were verified, and a repeat run skipped all 25 unchanged source rows. Twenty-two sample rows remain in `needs_review`; completing them is useful editorial work but does not block the next engineering day.
 
-**Days 8, 9 and 10 are reviewed and merged** through PRs [#29](https://github.com/EdVialv/muizasmanor26/pull/29), [#30](https://github.com/EdVialv/muizasmanor26/pull/30) and [#31](https://github.com/EdVialv/muizasmanor26/pull/31). All pull-request CI runs passed. Next.js was upgraded to patched 16.4.3, and the production dependency audit reports zero vulnerabilities.
-
-Before Day 11 begins, apply the three migrations to the real `muizasmanor26-dev` project in timestamp order. Run the representative sample importer, complete `summary_lv` and any missing required location fields for a few staged rows, set those completed rows to `ready_for_import`, and rerun with `--promote`. Then start **Day 11** on issue [#6](https://github.com/EdVialv/muizasmanor26/issues/6): run the first dry run against the real raw blog dataset, inspect failures, fix transformations and document resume/rollback procedures.
+Start **Day 11** on issue [#6](https://github.com/EdVialv/muizasmanor26/issues/6): run a non-destructive dry run against the real raw blog dataset, inspect and classify failures, fix transformations, and document safe resume and rollback procedures. Do not promote bulk raw data until the dry-run report and transformation rules have been reviewed.
 
 ## MVP boundary
 
