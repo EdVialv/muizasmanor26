@@ -26,3 +26,8 @@ pnpm-debug.log*
 .DS_Store
 .idea/
 .vscode/
+
+# the real raw source workbook - large, owner-provided binary, never committed
+# (see docs/DAY11_DRY_RUN_NOTES.md decision 1); the dry run's own report
+# (docs/day11-dry-run-output/) is derived, much smaller, and is committed.
+/data/raw/

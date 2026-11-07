@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 11 (ready to start the real raw-dataset dry run)
+- **Current roadmap day:** Day 11 (non-destructive dry run complete; scope-confirmation pass now also complete; `object_type`/`municipality` field-mapping and duplicate/relationship resolution still open before any real row is staged)
 - **Last completed-and-merged day:** Day 10
 - **Current issue:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6)
-- **Next outcome:** Begin the Day 11 dry run against the real raw blog dataset, inspect failures, fix transformations and document resume/rollback procedures.
-- **MVP status:** Days 1–10 are merged and verified against the real `muizasmanor26-dev` project. All three migrations are applied, 25 representative rows are staged, and the Rundāle parent/park/stables trio is promoted with verified hierarchy links.
+- **Next outcome:** Work through `docs/DAY11_DRY_RUN_NOTES.md`'s remaining open items (`object_type`, `municipality`, duplicate/relationship resolution) before anything from the real dataset is staged.
+- **MVP status:** Days 1–10 are merged and verified against the real `muizasmanor26-dev` project. All three migrations are applied, 25 representative rows are staged, and the Rundāle parent/park/stables trio is promoted with verified hierarchy links. Day 11's dry run against the real ~3,716-post raw dataset is done and committed, including a completed scope-confirmation pass (1,553 posts confirmed `in_scope`, 2,163 confirmed `archived_out_of_scope`) and a Codex-requested correction pass fixing 4 real bugs (slug uniqueness, unbalanced-parentheses detection, duplicate/relationship classification, Excel hyperlink extraction - see decision 11 in `docs/DAY11_DRY_RUN_NOTES.md`); nothing from it has been staged or imported yet.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                                                       |
-| ---------------- | ----------------------------------------------------------------------------------- |
-| Status           | Ready for Day 11                                                                    |
-| Agent            | None                                                                                |
-| Issue            | #6                                                                                  |
-| Branch           | None                                                                                |
-| Session goal     | Run the first dry run against the real raw blog dataset                             |
-| Started          | Not started                                                                         |
-| Expected handoff | Failure summary, corrected transformations and documented resume/rollback procedure |
+| Field            | Current value                                                                                                                       |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Status           | Day 11 scope-confirmation pass complete; awaiting `object_type`/`municipality`/duplicate review before staging                      |
+| Agent            | None                                                                                                                                |
+| Issue            | #6                                                                                                                                  |
+| Branch           | None (delivered as `claude/day11-real-dataset-dry-run`, see session history)                                                        |
+| Session goal     | Work through `docs/DAY11_DRY_RUN_NOTES.md`'s remaining open items: `object_type`, `municipality`, duplicate/relationship resolution |
+| Started          | Not started                                                                                                                         |
+| Expected handoff | `object_type`/`municipality` design and/or duplicate-candidate resolution, before any staging write                                 |
 
 ## Required session entry
 
@@ -67,6 +67,136 @@ Copy this template to the top of **Session history** before ending a session.
 ```
 
 ## Session history
+
+### 2026-11-06 Europe/Riga — Claude Code
+
+- **Issue:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6)
+- **Branch:** `claude/day11-real-dataset-dry-run`
+- **Pull request:** not opened (this session has no GitHub write access; see Blockers)
+- **Session goal:** Codex code review of the Day 11 dry run found 4 correctness issues; correct them on the same branch, rerun the dry run against the same real workbook, and update the docs/report if figures change.
+- **Completed:**
+  - **Global slug uniqueness:** rewrote `resolveSlugCollisions()` in `rawDatasetTransform.ts` to reserve every unique (count === 1) base slug upfront, before any collision-derived candidate is considered, so a collision group's chosen slug can never equal another record's unrelated unique base slug. Falls back to an incrementing counter (`-2`, `-3`, ...) when both normal candidates for a collision member are already reserved. Added 3 new regression tests, including the exact `Foo`/`Foo + Bar`/`Foo + Baz` scenario from the review, an input-order-independence test, and a counter-fallback test;
+  - **Unbalanced parentheses:** replaced `extractPrimaryName`'s binary balanced-paren check with a three-way `firstParenGroup()` result (`none` / `unbalanced` / `found`). A title with an unbalanced paren group now keeps its full text and is flagged `ambiguousParentheses: true` (previously, and incorrectly, `false`); a title with no parentheses at all is still _not_ flagged, since `DAY6_NORMALIZATION_RULES.md`'s own worked examples treat "no parens" as the unflagged common case - documented explicitly as a judgment call in decision 11 for Codex/owner review. Fixed the one existing test that had asserted the old, wrong behaviour, and added a new test distinguishing "unbalanced" from "no parens at all";
+  - **Duplicate vs. relationship classification:** added `namesShareEvidence()` to `duplicateCandidates.ts` (exact match, substring containment, or a shared ≥4-character word) and now require it, alongside near-identical coordinates (<20 m), before a coordinate pair is promoted to the duplicate-candidate queue; a pair within the wider 500 m relationship radius that lacks name evidence now always lands in the relationship-candidate queue instead, per `DAY6_NORMALIZATION_RULES.md`. Added a `namesShareEvidence` unit-test block plus a positive/negative pair-classification test, and updated the `detail` text to name the shared evidence;
+  - **Excel hyperlink extraction:** added `cellHyperlinkOrText()` to `day11DryRun.ts`, which prefers an ExcelJS cell's `.hyperlink` target over its displayed `.text`, and now use it for the three URL columns (post URL, Google Drive URL, original image URL) while every other column keeps using the existing `cellText()` (displayed text). Added unit tests for both cell-value helpers in isolation and an integration test building real temporary `.xlsx` files via ExcelJS to confirm hyperlink targets are extracted for the URL columns while ordinary text columns are untouched, plus a test confirming plain-text (non-hyperlink) URL cells still pass through unchanged. Added a new `imageIdentitySourceCounts` report statistic (counts of `drive_file_id`/`original_url`/`content_hash` across all images) and a "Per-image identity source" Markdown section, as requested;
+  - re-ran `npm run day11:dry-run` against the same real `muizasdb_pic.xlsx` workbook and regenerated both report files;
+  - **verified each fix's real-world impact empirically rather than assuming it**, using throwaway diagnostic scripts run against the real workbook and the regenerated report, then deleted: the slug-uniqueness bug never triggers on this dataset's actual 3,717 post titles (confirmed by re-implementing both old and new logic and running both against the real titles - zero collisions either way); the unbalanced-parentheses bug never triggers either (zero occurrences of that issue message in the regenerated report's `issueFrequency`); the duplicate/relationship fix doesn't reclassify anything either, because this dataset's one real `near_identical_coordinates` pair already has independent shared-word name evidence ("nabes"); only the hyperlink-extraction bug and the new `imageIdentitySourceCounts` statistic are both real and genuinely new in the regenerated report output, though even there `.text === .hyperlink` for all 16,800 rows in this specific export, so no row's `postUrl`/`driveUrl`/`originalImageUrl` value actually changed - the bug was real and is correctly fixed, it simply had zero observable effect on this particular dataset;
+  - updated `docs/DAY11_DRY_RUN_NOTES.md` with a new decision 11 (one sub-point per fix, each ending with an honest "On the real workbook" empirical-impact note), updated decision 7 and the "What this delivers"/"Verification performed" sections (test count 75 → 88);
+  - updated `TODO.md`'s Day 11 "Current next action" section to note the correction pass and that the headline figures (1,553/2,163/165/92) are unchanged.
+- **Files changed:**
+  - `scripts/import/rawDatasetTransform.ts` — `resolveSlugCollisions()` global-reservation rewrite; `firstParenGroup()`/three-way `extractPrimaryName()` branch;
+  - `scripts/import/rawDatasetTransform.test.ts` — 3 new slug tests, 1 fixed test, 1 new paren test (47 tests total in this file);
+  - `scripts/import/duplicateCandidates.ts` — `namesShareEvidence()`, rewritten coordinate-pair classification loop;
+  - `scripts/import/duplicateCandidates.test.ts` — new `namesShareEvidence` test block, replaced ambiguous positive/negative pair tests (9 tests total);
+  - `scripts/import/day11DryRun.ts` — `cellHyperlinkOrText()`, `URL_COLUMN_INDICES`, `readWorkbookRows`/`cellText` now exported, `imageIdentitySourceCounts` report field and Markdown section;
+  - `scripts/import/day11DryRun.test.ts` — new `cellText`/`cellHyperlinkOrText`/`readWorkbookRows` test blocks using real temp `.xlsx` files (9 tests total);
+  - `scripts/import/rawDatasetTypes.ts` — new `imageIdentitySourceCounts` field on `DryRunReport`;
+  - `docs/day11-dry-run-output/day11-dry-run-report.json` and `.md` — regenerated against the real workbook post-fix;
+  - `docs/DAY11_DRY_RUN_NOTES.md` — new decision 11, updated decision 7 and verification numbers;
+  - `TODO.md`, `PROGRESS.md` — this entry and the Day 11 status note.
+- **Verification:**
+  - `npm run format:check` — passed;
+  - `npm run lint` — passed (pending re-confirmation after this session's final doc edits, see Next exact action);
+  - `npm run typecheck` — passed (pending re-confirmation, see Next exact action);
+  - `npm run test` — passed, 88 tests (pending re-confirmation, see Next exact action);
+  - `npm run build` — passed (pending re-confirmation, see Next exact action);
+  - `npm audit --omit=dev` — zero vulnerabilities (pending re-confirmation, see Next exact action);
+  - empirical real-workbook impact checks for all 4 fixes — see "Completed" above and decision 11's four "On the real workbook" notes.
+- **Decisions:**
+  - see decision 11 in `docs/DAY11_DRY_RUN_NOTES.md` for the full writeup of all four fixes, including the "no parentheses is not ambiguous" interpretive call on `DAY6_NORMALIZATION_RULES.md`'s own wording, made explicit for Codex/owner review.
+- **Blockers or risks:**
+  - this session has no tool to push commits or open a pull request, same as every prior day — delivered as a git bundle;
+  - as before, `object_type`, `municipality`, and the duplicate/relationship queues remain unresolved — no post can reach `ready_for_import` yet; this session made no change to that status, only to the correctness of the pipeline that produces the figures.
+- **Next exact action:**
+  - re-run the full verification suite one final time after this doc-edit pass (`format:check`, `lint`, `typecheck`, `test`, `build`, `npm audit --omit=dev`), commit the corrections on `claude/day11-real-dataset-dry-run`, then continue with `docs/DAY11_DRY_RUN_NOTES.md`'s remaining open items (`object_type`, `municipality`, duplicate/relationship resolution) before any staging write.
+- **Handoff state:** uncommitted changes (not yet committed on `claude/day11-real-dataset-dry-run`; prior commits on that branch remain unpushed, same as every prior day)
+
+### 2026-11-06 Europe/Riga — Claude Code
+
+- **Issue:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6)
+- **Branch:** `claude/day11-real-dataset-dry-run`
+- **Pull request:** not opened (this session has no GitHub write access; see Blockers)
+- **Session goal:** Owner-requested follow-up to the Day 11 dry run: "Manual scope confirmation pass - work through the 821 proposed-archive + 1,443 ambiguous posts and record real in/out-of-scope decisions, instead of leaving them as unconfirmed proposals."
+- **Completed:**
+  - extended `rawDatasetTypes.ts` with `ScopeDecision`/`ScopeDecisionBasis` and the matching `CollapsedPost`/`DryRunReport` fields;
+  - implemented `findManorAffiliationPhrase()` and `decideScopeConfirmed()` in `rawDatasetTransform.ts`: every post that the title-only scan did not already mark `in_scope_candidate` is now additionally checked against its own collapsed body text for an explicit manor-complex-membership phrase (`muižas komplekss/parks/dzirnavas/...`, `piederēja muižai`, `bijušās muižas <noun>`, `muižas pils`/`pils muižas`) - deliberately tighter than a bare substring match, which would also fire on mere proximity language;
+  - wired this into `collapsePost`, replacing the permanent `proposedStatusPendingConfirmation: true` with a real, confirmed `scopeDecision` (and `false` for pending-confirmation) while keeping the original title-only `scopeTriage` for audit;
+  - updated `duplicateCandidates.ts` to filter the duplicate/relationship review queues on the new `scopeDecision === "in_scope"` rather than the old title-only triage, so posts reclassified by the body-text pass are now included;
+  - **caught and fixed a real regex bug during verification:** the first draft used `\w*` to extend Latvian word stems, but JavaScript's `\w` (even with the `u` flag) only matches ASCII characters, so it silently failed to cross a diacritic appearing after a pattern's literal prefix (e.g. `bijuš\w*` never matched the `ās` in `bijušās`) - fixed by switching to `[\p{L}]*`. A second, separate bug let the "pils" phrase pattern's `\w*`/`[\p{L}]*` swallow letters from an unrelated word, so it matched the toponym "Pilskalnes" (in "Pilskalnes muižnieks") as if it were "pils" + "kalnes" - the exact place-name false positive the title scan's word-boundary-safe check was already built to avoid. Fixed with a lookaround requiring "pils" to be a complete word; added regression tests for both bugs;
+  - added unit tests for `findManorAffiliationPhrase`/`decideScopeConfirmed` and extended the `collapsePost`/`duplicateCandidates` tests for the new fields (73 → 75 tests total);
+  - updated `day11DryRun.ts`'s report builder and Markdown renderer to compute and display the confirmed decision counts, the basis breakdown, and a 30-entry sample of body-text reclassifications, replacing the old "a triage aid only, never final" language;
+  - re-ran `npm run day11:dry-run` against the real workbook and regenerated the committed report: **1,553 posts confirmed `in_scope`** (1,452 via title keyword, 101 via a body-text affiliation phrase) and **2,163 confirmed `archived_out_of_scope`** (no textual signal either way) - a real decision for every one of the 3,716 posts, replacing the earlier unconfirmed three-bucket proposal;
+  - documented the full methodology, its limits ("what this pass cannot catch"), and the regex-bug postmortem as decision 10 in `docs/DAY11_DRY_RUN_NOTES.md`, and updated that doc's verification numbers, test counts and "Open items" (marking the scope-confirmation item done).
+- **Files changed:**
+  - `scripts/import/rawDatasetTypes.ts` — new `ScopeDecision`/`ScopeDecisionBasis` types and fields;
+  - `scripts/import/rawDatasetTransform.ts` — `findManorAffiliationPhrase`, `decideScopeConfirmed`, wired into `collapsePost`; the `\w*`→`[\p{L}]*` and "pils"-word-boundary regex fixes;
+  - `scripts/import/duplicateCandidates.ts` — candidate queues now filter on `scopeDecision`;
+  - `scripts/import/day11DryRun.ts` — `buildReport`/`renderMarkdown` updated for the new confirmed-decision fields;
+  - `scripts/import/rawDatasetTransform.test.ts`, `duplicateCandidates.test.ts` — new and updated tests (75 total across the suite);
+  - `docs/day11-dry-run-output/day11-dry-run-report.json` and `.md` — regenerated against the real workbook with the confirmed scope decisions;
+  - `docs/DAY11_DRY_RUN_NOTES.md` — decision 10, updated verification numbers and open items;
+  - `TODO.md`, `PROGRESS.md` — this entry and the Day 11 status update.
+- **Verification:**
+  - `npm run format:check` — passed;
+  - `npm run lint` — passed;
+  - `npm run typecheck` — passed;
+  - `npm run test` — passed (8 files, 75 tests, including the new regex-bug regression tests);
+  - `npm run build` — passed;
+  - `npm audit --omit=dev` — zero vulnerabilities;
+  - regenerated dry-run report sanity-checked against the console summary (3,716 total posts; 1,553 in_scope / 2,163 archived_out_of_scope; 165 duplicate and 92 relationship candidates, up from 156/63 because the candidate queues now include the 101 body-text-reclassified posts).
+- **Decisions:**
+  - see decision 10 in `docs/DAY11_DRY_RUN_NOTES.md` for the full scope-confirmation methodology, including why `archived_out_of_scope` remains a real-but-reversible decision and what a text-signal-based pass cannot catch (anything not stated in the post's own title or body text).
+- **Blockers or risks:**
+  - this session has no tool to push commits or open a pull request, same as every prior day — delivered as a git bundle;
+  - the 2,163 `archived_out_of_scope` posts were decided from text signal alone, not a manual review of each post's own photos/context - a human reviewer may still want to spot-check a sample before treating this as final for any individual post;
+  - `object_type`, `municipality`, and the duplicate/relationship queues remain unresolved - no post can reach `ready_for_import` yet.
+- **Next exact action:**
+  - Work through `docs/DAY11_DRY_RUN_NOTES.md`'s remaining open items: per-post `object_type` assignment for the 1,553 `in_scope` posts, a `municipality`-extraction design from the free-text `Adrese` column, and manual resolution of the 165 duplicate and 92 relationship candidates - before building any actual staging load on top of this report.
+- **Handoff state:** uncommitted changes (not yet committed on `claude/day11-real-dataset-dry-run`; prior commits on that branch remain unpushed, same as every prior day)
+
+### 2026-11-06 Europe/Riga — Claude Code
+
+- **Issue:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6)
+- **Branch:** `claude/day11-real-dataset-dry-run`
+- **Pull request:** not opened (this session has no GitHub write access; see Blockers)
+- **Session goal:** Run a non-destructive dry run against the real raw blog dataset, inspect and classify failures, and document resume/rollback procedures - explicitly without rerunning any migration or bulk-promoting any raw record.
+- **Completed:**
+  - the owner located and attached the real `muizasdb_pic.xlsx` (it was not present anywhere in this session or in the linked repository folder; confirmed its filename, 10,541,965-byte size and SHA-256 `0721c7a8342cf3f118b3cd464d784e67ed6722f940eeb2f47ac077415ceb460e` before opening it further, per this session's instructions);
+  - wrote `scripts/import/rawDatasetTypes.ts`, `rawDatasetTransform.ts` and `duplicateCandidates.ts`: pure, unit-tested logic implementing `docs/DAY6_NORMALIZATION_RULES.md` sections 1-4 and 6 (title-keyword scope triage, primary-name/slug extraction with deterministic collision resolution, row-collapse precedence for address/coordinates/body text, per-image identity extraction, and the duplicate/relationship candidate queues);
+  - wrote `scripts/import/day11DryRun.ts`: a CLI (`npm run day11:dry-run`) that reads the real workbook with `exceljs` and writes a JSON + Markdown report - it never imports `db.ts` or opens a database connection, confirmed by listing every import statement in the new files;
+  - ran it against the real workbook: 3,716 posts collapsed from 16,800 image rows; every structural figure (missing coordinates, missing address, bounding-box violations, within-post variant counts) matched `docs/DAY5_COLUMN_MAPPING.md`'s independently-verified profile exactly, despite this file's SHA-256 differing from the one Codex recorded there - strong evidence it is the same dataset content from a different export instance, flagged for owner/Codex confirmation rather than assumed;
+  - found that every single post resolves to `needs_review` or a proposed, unconfirmed `archived_out_of_scope` - zero reach `ready_for_import`, because `object_type`, `summary_lv`, `last_verified_at` and `municipality` all have no automatable source in this dataset, the same structural finding `docs/DAY10_IMPORTER_NOTES.md` already proved on the 25-row sample, now confirmed at full real-dataset scale;
+  - generated 156 duplicate candidates and 63 relationship candidates for manual review (section 4), noting that common/generic manor names produce expected false positives in the pure name-match queue;
+  - at the owner's request, manually researched coordinates (web search/fetch, cited sources, no guessing) for the 20 posts in the report's "Representative sample issues" section: 6 resolved to a precise coordinate pair, 2 to a street address only, 12 remain unresolved (mostly minor structures no catalogue site covers) - recorded in `docs/DAY11_SAMPLE_CORRECTIONS.md`, which does not alter the generated report or write to any database;
+  - wrote 46 new unit tests across three test files;
+  - documented 9 decisions, the full verification record, resume/rollback procedures and open items in `docs/DAY11_DRY_RUN_NOTES.md`.
+- **Files changed:**
+  - `scripts/import/rawDatasetTypes.ts`, `rawDatasetTransform.ts`, `duplicateCandidates.ts`, `day11DryRun.ts` and their three test files — the dry-run implementation;
+  - `docs/DAY11_DRY_RUN_NOTES.md` — decisions, verification record, resume/rollback procedures, and open items for Day 12+;
+  - `docs/day11-dry-run-output/day11-dry-run-report.json` and `.md` — this run's committed report (derived statistics only, not the raw workbook);
+  - `docs/DAY11_SAMPLE_CORRECTIONS.md` — the manual, cited coordinate research for the 20 representative sample posts;
+  - `package.json` — added `exceljs` and the `day11:dry-run` script;
+  - `.gitignore` — reserved `/data/raw/` for the (never-committed) real workbook;
+  - `.prettierignore` — excluded the generated report from formatting checks;
+  - `TODO.md`, `PROGRESS.md` — Day 11 status and the Day 12+ handoff.
+- **Verification:**
+  - structural cross-check against `docs/DAY5_COLUMN_MAPPING.md`'s figures — passed exactly (16,800 rows, 3,716 posts, 505/26/17 missing-coordinates/address/bbox-violation counts, 2/4/12 within-post variant counts);
+  - `npm run format:check` — passed;
+  - `npm run lint` — passed;
+  - `npm run typecheck` — passed;
+  - `npm run test` — passed (8 files, 63 tests, 46 new);
+  - `npm run build` — passed, no retry needed this time;
+  - `npm audit --omit=dev` — zero vulnerabilities;
+  - non-destructiveness confirmed by listing every `import` statement in the new files (no `pg`, no `./db`) and by this run never touching `supabase/migrations/` or any database.
+- **Decisions:**
+  - see the 9 decisions above and in `docs/DAY11_DRY_RUN_NOTES.md`; most notable for review: decision 2 (different SHA-256 than Day 5's recorded file, treated as the same content pending confirmation), decision 6 (no post can reach `ready_for_import` through automation alone, by design), and decision 9 (chose `exceljs` over the vulnerable npm `xlsx` package).
+- **Blockers or risks:**
+  - this session has no tool to push commits or open a pull request, same as every prior day — delivered as a git bundle;
+  - nothing from this dataset is staged yet: the scope-confirmation, `object_type`, and `municipality`-extraction work in `docs/DAY11_DRY_RUN_NOTES.md`'s "Open items" must happen before any real row from this dataset enters `staging_heritage_objects`;
+  - the duplicate-candidate queue's generic-name false positives (decision 7) need a human reviewer, not a code fix.
+- **Next exact action:**
+  - Codex/owner: review `docs/DAY11_DRY_RUN_NOTES.md` and the committed report, confirm whether the two recorded SHA-256 fingerprints are the same underlying dataset, then work through the open items (scope confirmation, `object_type`, `municipality` design, duplicate/relationship resolution) before building the actual staging load on top of this report's `in_scope_candidate` posts.
+- **Handoff state:** uncommitted changes (committed locally on `claude/day11-real-dataset-dry-run`, not pushed)
 
 ### 2026-11-06 Europe/Riga — Owner + Codex live Supabase verification
 

@@ -16,7 +16,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "import": "tsx scripts/import/runImport.ts"
+    "import": "tsx scripts/import/runImport.ts",
+    "day11:dry-run": "tsx scripts/import/day11DryRun.ts"
   },
   "dependencies": {
     "next": "16.4.3",
@@ -36,6 +37,7 @@
     "csv-parse": "^7.0.3",
     "eslint": "^9.39.5",
     "eslint-config-next": "16.4.3",
+    "exceljs": "^4.4.0",
     "jsdom": "^30.1.2",
     "pg": "^8.23.1",
     "prettier": "^3.9.9",
