@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 11 (non-destructive dry run complete; scope-confirmation pass now also complete; `object_type`/`municipality` field-mapping and duplicate/relationship resolution still open before any real row is staged)
-- **Last completed-and-merged day:** Day 10
-- **Current issue:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6)
-- **Next outcome:** Work through `docs/DAY11_DRY_RUN_NOTES.md`'s remaining open items (`object_type`, `municipality`, duplicate/relationship resolution) before anything from the real dataset is staged.
-- **MVP status:** Days 1–10 are merged and verified against the real `muizasmanor26-dev` project. All three migrations are applied, 25 representative rows are staged, and the Rundāle parent/park/stables trio is promoted with verified hierarchy links. Day 11's dry run against the real ~3,716-post raw dataset is done and committed, including a completed scope-confirmation pass (1,553 posts confirmed `in_scope`, 2,163 confirmed `archived_out_of_scope`) and a Codex-requested correction pass fixing 4 real bugs (slug uniqueness, unbalanced-parentheses detection, duplicate/relationship classification, Excel hyperlink extraction - see decision 11 in `docs/DAY11_DRY_RUN_NOTES.md`); nothing from it has been staged or imported yet.
+- **Current roadmap day:** Day 13 ready to start
+- **Last completed-and-merged day:** Day 11; Day 12 is reviewed and awaiting pull-request CI/merge
+- **Current issue:** [#7 — Public manor directory and detail pages](https://github.com/EdVialv/muizasmanor26/issues/7)
+- **Next outcome:** Build manor cards and a cursor-paginated server-side directory with loading, empty and error states.
+- **MVP status:** Days 1–11 are merged and verified. Day 12's reusable layout, navigation, typography, colour tokens and responsive breakpoints are reviewed on `codex/day12-reviewed-layout`. The real dataset remains non-destructive: no Day 11 row was staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                                                                                                       |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Status           | Day 11 scope-confirmation pass complete; awaiting `object_type`/`municipality`/duplicate review before staging                      |
-| Agent            | None                                                                                                                                |
-| Issue            | #6                                                                                                                                  |
-| Branch           | None (delivered as `claude/day11-real-dataset-dry-run`, see session history)                                                        |
-| Session goal     | Work through `docs/DAY11_DRY_RUN_NOTES.md`'s remaining open items: `object_type`, `municipality`, duplicate/relationship resolution |
-| Started          | Not started                                                                                                                         |
-| Expected handoff | `object_type`/`municipality` design and/or duplicate-candidate resolution, before any staging write                                 |
+| Field            | Current value                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------------ |
+| Status           | Day 12 reviewed; awaiting GitHub CI and merge                                                    |
+| Agent            | Codex                                                                                            |
+| Issue            | #7                                                                                               |
+| Branch           | `codex/day12-reviewed-layout`                                                                    |
+| Session goal     | Integrate the reusable layout/design system on top of merged Day 11                              |
+| Started          | 2026-11-07                                                                                       |
+| Expected handoff | Merge after CI, then start Day 13; continue Day 11 editorial data review separately from UI work |
 
 ## Required session entry
 
@@ -67,6 +67,31 @@ Copy this template to the top of **Session history** before ending a session.
 ```
 
 ## Session history
+
+### 2026-11-07 Europe/Riga — Codex
+
+- **Issues:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6) and [#7 — Public manor directory and detail pages](https://github.com/EdVialv/muizasmanor26/issues/7)
+- **Branches:** `codex/day11-reviewed-dry-run`, `codex/day12-reviewed-layout`
+- **Pull requests:** Day 11 [#35](https://github.com/EdVialv/muizasmanor26/pull/35) merged; Day 12 awaiting publication
+- **Session goal:** Review Claude's corrected Day 11 and independent Day 12 bundles, publish them in dependency order and preserve a linear verified history.
+- **Completed:**
+  - independently verified all four Day 11 review corrections and their regression tests;
+  - published Day 11, confirmed GitHub CI and squash-merged PR #35;
+  - reviewed Day 12's reusable `AppShell`, header, footer, design tokens, breakpoints and accessibility tests;
+  - rebased Day 12's effective changes onto merged Day 11 and reconciled the shared roadmap/progress documents;
+  - kept Day 11's remaining `object_type`, municipality and duplicate/relationship review as a parallel editorial stream that must finish before bulk staging, without blocking public UI development.
+- **Verification:**
+  - Day 11: format, lint, typecheck, 88 tests, production build and production dependency audit passed locally and GitHub CI passed;
+  - Day 12 standalone: format, lint, typecheck, 30 tests, production build and production dependency audit passed;
+  - combined Day 11 + Day 12: format, lint, typecheck, 95 tests, production build and production dependency audit passed.
+- **Decisions:**
+  - Day 12 may proceed because it does not stage or promote raw data and is technically independent of the remaining Day 11 editorial queue;
+  - Day 13 is the next engineering day after Day 12 merges.
+- **Blockers or risks:**
+  - bulk staging remains blocked until Day 11's open editorial mappings and candidate queues are resolved.
+- **Next exact action:**
+  - publish and merge Day 12 after GitHub CI, then begin Day 13 on a new branch.
+- **Handoff state:** combined verification passed; awaiting publication
 
 ### 2026-11-06 Europe/Riga — Claude Code
 
