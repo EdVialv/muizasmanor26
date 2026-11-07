@@ -8,8 +8,8 @@ const plannedFeatures = [
 
 export default function Home() {
   return (
-    <main>
-      <section className="hero" aria-labelledby="page-title">
+    <>
+      <section className="hero container" aria-labelledby="page-title">
         <p className="eyebrow">Latvijas kultūrvēsturiskais mantojums</p>
         <h1 id="page-title">Atklāj Latvijas muižas vienuviet</h1>
         <p className="intro">
@@ -22,14 +22,16 @@ export default function Home() {
       </section>
 
       <section className="featureSection" id="mvp" aria-labelledby="mvp-title">
-        <p className="eyebrow">Pirmā versija</p>
-        <h2 id="mvp-title">Skaidrs un pārbaudāms sākums</h2>
-        <ul className="featureGrid">
-          {plannedFeatures.map((feature) => (
-            <li key={feature}>{feature}</li>
-          ))}
-        </ul>
+        <div className="container">
+          <p className="eyebrow">Pirmā versija</p>
+          <h2 id="mvp-title">Skaidrs un pārbaudāms sākums</h2>
+          <ul className="featureGrid">
+            {plannedFeatures.map((feature) => (
+              <li key={feature}>{feature}</li>
+            ))}
+          </ul>
+        </div>
       </section>
-    </main>
+    </>
   );
 }

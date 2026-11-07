@@ -1,11 +1,66 @@
+/*
+ * Design tokens (Day 12 — docs/DAY12_DESIGN_SYSTEM_NOTES.md).
+ *
+ * Breakpoints cannot live in a custom property because media queries need a
+ * literal value at parse time, so the scale is documented here as a comment
+ * and the same literal rem values are used in every @media rule below:
+ *   --bp-sm: 40rem (640px)  — phone -> tablet
+ *   --bp-md: 48rem (768px) — tablet -> small desktop
+ *   --bp-lg: 64rem (1024px) — small desktop -> wide desktop
+ */
+
 :root {
   color-scheme: light;
+
+  /* Color — unchanged from the Day 1 landing page; promoted to a documented
+     token set rather than redesigned. */
   --ink: #17332d;
+  --ink-contrast: #fff;
   --muted: #536b64;
   --paper: #f7f4ec;
   --surface: #fffdf8;
   --accent: #a6602b;
   --line: #d8d2c4;
+
+  /* Typography — same two font stacks the landing page already used
+     (serif for headings, system sans for UI/body text), now named. */
+  --font-serif: Georgia, "Times New Roman", serif;
+  --font-sans: system-ui, sans-serif;
+
+  /* Type scale. display/h2 keep the exact clamp() values the landing page
+     already shipped with; h3-h6 and body/small are new steps for later
+     Days (cards, detail pages) that didn't exist as tokens yet. */
+  --text-display: clamp(2.75rem, 9vw, 6.75rem); /* hero h1 */
+  --text-h2: clamp(2rem, 5vw, 3.75rem);
+  --text-h3: clamp(1.5rem, 3vw, 2.25rem);
+  --text-h4: 1.25rem;
+  --text-body-lg: clamp(1.05rem, 2vw, 1.3rem); /* hero intro */
+  --text-body: 1rem;
+  --text-small: 0.875rem;
+  --text-eyebrow: 0.78rem;
+
+  /* Spacing scale — Tailwind-style naming (space-N = N * 0.25rem), chosen
+     so the exact values the landing page already used (0.75/1.25/1.75/
+     2.5/3.5/5/7rem) land on named steps instead of staying as magic
+     numbers scattered across the stylesheet. */
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 1.75rem;
+  --space-10: 2.5rem;
+  --space-14: 3.5rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-28: 7rem;
+
+  /* Radius */
+  --radius-md: 1rem;
+  --radius-full: 999px;
+
+  /* Shared max content width for the container utility below. */
+  --container-max: 72rem;
 }
 
 * {
@@ -20,32 +75,134 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-serif);
 }
 
 main {
   min-height: 100vh;
 }
 
-.hero,
-.featureSection {
-  width: min(72rem, calc(100% - 2rem));
+/* Reusable horizontal container: a fixed max width, centered, with a
+   minimum side gutter on narrow viewports. Used by the header, footer and
+   every full-bleed section so they all line up. */
+.container {
+  width: min(var(--container-max), calc(100% - 2rem));
   margin-inline: auto;
 }
 
+/* Visually hidden until focused — the first focusable element on every
+   page, letting keyboard/screen-reader users jump past the header nav
+   straight to the page's own content. */
+.skipLink {
+  position: absolute;
+  top: -3rem;
+  left: var(--space-4);
+  z-index: 100;
+  border-radius: var(--radius-md);
+  background: var(--ink);
+  color: var(--ink-contrast);
+  padding: var(--space-3) var(--space-4);
+  font: 700 var(--text-small)/1 var(--font-sans);
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+
+.skipLink:focus-visible {
+  top: var(--space-4);
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Site header */
+.siteHeader {
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.siteHeaderInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-block: var(--space-5);
+}
+
+.wordmark {
+  margin: 0;
+  color: var(--ink);
+  font: 700 var(--text-h4)/1 var(--font-serif);
+  text-decoration: none;
+}
+
+.wordmark:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.siteNav ul {
+  display: flex;
+  gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.siteNav a {
+  color: var(--ink);
+  font: 600 var(--text-body)/1 var(--font-sans);
+  text-decoration: none;
+}
+
+.siteNav a[aria-current="page"] {
+  color: var(--accent);
+}
+
+.siteNav a:hover,
+.siteNav a:focus-visible {
+  text-decoration: underline;
+}
+
+.siteNav a:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+
+/* Site footer */
+.siteFooter {
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.siteFooterInner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-block: var(--space-10);
+  font: 400 var(--text-small)/1.5 var(--font-sans);
+}
+
+.siteFooterTagline {
+  margin: 0;
+}
+
+.siteFooterMeta {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* Hero / feature sections (Day 1 landing page) */
 .hero {
   display: grid;
   min-height: 68vh;
   align-content: center;
-  padding-block: 5rem;
+  padding-block: var(--space-20);
 }
 
 .eyebrow {
-  margin: 0 0 1rem;
+  margin: 0 0 var(--space-4);
   color: var(--accent);
-  font:
-    700 0.78rem/1.4 system-ui,
-    sans-serif;
+  font: 700 var(--text-eyebrow)/1.4 var(--font-sans);
   letter-spacing: 0.13em;
   text-transform: uppercase;
 }
@@ -58,33 +215,29 @@ h2 {
 }
 
 h1 {
-  font-size: clamp(2.75rem, 9vw, 6.75rem);
+  font-size: var(--text-display);
   line-height: 0.95;
 }
 
 h2 {
-  font-size: clamp(2rem, 5vw, 3.75rem);
+  font-size: var(--text-h2);
   line-height: 1;
 }
 
 .intro {
   max-width: 44rem;
-  margin: 1.75rem 0;
+  margin: var(--space-7) 0;
   color: var(--muted);
-  font:
-    400 clamp(1.05rem, 2vw, 1.3rem)/1.65 system-ui,
-    sans-serif;
+  font: 400 var(--text-body-lg)/1.65 var(--font-sans);
 }
 
 .primaryAction {
   justify-self: start;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--ink);
-  color: white;
-  padding: 0.9rem 1.25rem;
-  font:
-    700 0.95rem/1 system-ui,
-    sans-serif;
+  color: var(--ink-contrast);
+  padding: 0.9rem var(--space-5);
+  font: 700 var(--text-body)/1 var(--font-sans);
   text-decoration: none;
 }
 
@@ -94,37 +247,44 @@ h2 {
 }
 
 .featureSection {
-  padding-block: 5rem 7rem;
+  padding-block: var(--space-20) var(--space-28);
   border-top: 1px solid var(--line);
 }
 
 .featureGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-  gap: 0.75rem;
+  gap: var(--space-3);
   padding: 0;
-  margin: 2.5rem 0 0;
+  margin: var(--space-10) 0 0;
   list-style: none;
 }
 
 .featureGrid li {
   min-height: 8rem;
   border: 1px solid var(--line);
-  border-radius: 1rem;
+  border-radius: var(--radius-md);
   background: var(--surface);
-  padding: 1.25rem;
-  font:
-    650 1rem/1.4 system-ui,
-    sans-serif;
+  padding: var(--space-5);
+  font: 650 var(--text-body)/1.4 var(--font-sans);
 }
 
+/* --bp-sm: 40rem (640px) */
 @media (max-width: 40rem) {
+  .siteHeaderInner {
+    padding-block: var(--space-4);
+  }
+
   .hero {
     min-height: auto;
-    padding-block: 4rem;
+    padding-block: var(--space-16);
   }
 
   .featureSection {
-    padding-block: 3.5rem 5rem;
+    padding-block: var(--space-14) var(--space-20);
+  }
+
+  .siteFooterInner {
+    padding-block: var(--space-7);
   }
 }
