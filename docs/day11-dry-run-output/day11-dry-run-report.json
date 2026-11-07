@@ -1,0 +1,1815 @@
+{
+  "sourceFile": "b8c72ee8-muizasdb_pic.xlsx",
+  "sourceFileSha256": "0721c7a8342cf3f118b3cd464d784e67ed6722f940eeb2f47ac077415ceb460e",
+  "sourceFileSizeBytes": 10541965,
+  "generatedAt": "2026-11-06T20:46:25.063Z",
+  "totalImageRows": 16800,
+  "totalPosts": 3716,
+  "scopeCounts": {
+    "in_scope_candidate": 1452,
+    "out_of_scope_candidate": 821,
+    "ambiguous_no_keyword_match": 1443
+  },
+  "scopeDecisionCounts": {
+    "in_scope": 1553,
+    "archived_out_of_scope": 2163
+  },
+  "scopeDecisionBasisCounts": {
+    "title_keyword": 1452,
+    "body_text_affiliation_phrase": 101,
+    "no_signal_found": 2163
+  },
+  "proposedStatusCounts": {
+    "needs_review": 1553,
+    "archived_out_of_scope": 2163
+  },
+  "issueFrequency": {
+    "missing required fields": 4221,
+    "scope decision": 101,
+    "missing required field": 26,
+    "coordinates fall outside the approximate Latvia bounding box": 17
+  },
+  "missingCoordinatesCount": 505,
+  "missingAddressCount": 26,
+  "coordinatesOutsideBboxCount": 17,
+  "coordinatesUnparsedCount": 0,
+  "withinPostVariantCounts": {
+    "address": 2,
+    "coordinates": 4,
+    "bodyText": 12
+  },
+  "duplicateCandidates": [
+    {
+      "kind": "name_match",
+      "postA": "219",
+      "postB": "763",
+      "detail": "normalized primary name \"vegu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "352",
+      "postB": "1161",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "352",
+      "postB": "1306",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "352",
+      "postB": "1647",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "352",
+      "postB": "1822",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "352",
+      "postB": "2053",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "352",
+      "postB": "2087",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "352",
+      "postB": "2675",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "352",
+      "postB": "2896",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "352",
+      "postB": "2901",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "352",
+      "postB": "2948",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "352",
+      "postB": "3231",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1161",
+      "postB": "1306",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1161",
+      "postB": "1647",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1161",
+      "postB": "1822",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1161",
+      "postB": "2053",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1161",
+      "postB": "2087",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1161",
+      "postB": "2675",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1161",
+      "postB": "2896",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1161",
+      "postB": "2901",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1161",
+      "postB": "2948",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1161",
+      "postB": "3231",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1306",
+      "postB": "1647",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1306",
+      "postB": "1822",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1306",
+      "postB": "2053",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1306",
+      "postB": "2087",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1306",
+      "postB": "2675",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1306",
+      "postB": "2896",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1306",
+      "postB": "2901",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1306",
+      "postB": "2948",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1306",
+      "postB": "3231",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1647",
+      "postB": "1822",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1647",
+      "postB": "2053",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1647",
+      "postB": "2087",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1647",
+      "postB": "2675",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1647",
+      "postB": "2896",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1647",
+      "postB": "2901",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1647",
+      "postB": "2948",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1647",
+      "postB": "3231",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1822",
+      "postB": "2053",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1822",
+      "postB": "2087",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1822",
+      "postB": "2675",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1822",
+      "postB": "2896",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1822",
+      "postB": "2901",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1822",
+      "postB": "2948",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1822",
+      "postB": "3231",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2053",
+      "postB": "2087",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2053",
+      "postB": "2675",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2053",
+      "postB": "2896",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2053",
+      "postB": "2901",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2053",
+      "postB": "2948",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2053",
+      "postB": "3231",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2087",
+      "postB": "2675",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2087",
+      "postB": "2896",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2087",
+      "postB": "2901",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2087",
+      "postB": "2948",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2087",
+      "postB": "3231",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2675",
+      "postB": "2896",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2675",
+      "postB": "2901",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2675",
+      "postB": "2948",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2675",
+      "postB": "3231",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2896",
+      "postB": "2901",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2896",
+      "postB": "2948",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2896",
+      "postB": "3231",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2901",
+      "postB": "2948",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2901",
+      "postB": "3231",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2948",
+      "postB": "3231",
+      "detail": "normalized primary name \"jauna muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "411",
+      "postB": "1773",
+      "detail": "normalized primary name \"planu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "469",
+      "postB": "2271",
+      "detail": "normalized primary name \"upesmuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "469",
+      "postB": "2666",
+      "detail": "normalized primary name \"upesmuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2271",
+      "postB": "2666",
+      "detail": "normalized primary name \"upesmuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "616",
+      "postB": "1502",
+      "detail": "normalized primary name \"saules muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "616",
+      "postB": "2552",
+      "detail": "normalized primary name \"saules muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1502",
+      "postB": "2552",
+      "detail": "normalized primary name \"saules muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "636",
+      "postB": "2909",
+      "detail": "normalized primary name \"aucu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "745",
+      "postB": "1672",
+      "detail": "normalized primary name \"grencu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "745",
+      "postB": "3210",
+      "detail": "normalized primary name \"grencu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1672",
+      "postB": "3210",
+      "detail": "normalized primary name \"grencu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "761",
+      "postB": "2111",
+      "detail": "normalized primary name \"berzu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "761",
+      "postB": "2616",
+      "detail": "normalized primary name \"berzu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "761",
+      "postB": "2617",
+      "detail": "normalized primary name \"berzu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2111",
+      "postB": "2616",
+      "detail": "normalized primary name \"berzu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2111",
+      "postB": "2617",
+      "detail": "normalized primary name \"berzu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2616",
+      "postB": "2617",
+      "detail": "normalized primary name \"berzu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "762",
+      "postB": "2068",
+      "detail": "normalized primary name \"sarlotes muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "762",
+      "postB": "2158",
+      "detail": "normalized primary name \"sarlotes muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "762",
+      "postB": "2631",
+      "detail": "normalized primary name \"sarlotes muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2068",
+      "postB": "2158",
+      "detail": "normalized primary name \"sarlotes muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2068",
+      "postB": "2631",
+      "detail": "normalized primary name \"sarlotes muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2158",
+      "postB": "2631",
+      "detail": "normalized primary name \"sarlotes muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "774",
+      "postB": "2509",
+      "detail": "normalized primary name \"punu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "790",
+      "postB": "2403",
+      "detail": "normalized primary name \"birzu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "790",
+      "postB": "2587",
+      "detail": "normalized primary name \"birzu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2403",
+      "postB": "2587",
+      "detail": "normalized primary name \"birzu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "832",
+      "postB": "2558",
+      "detail": "normalized primary name \"sarcenes muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "842",
+      "postB": "3055",
+      "detail": "normalized primary name \"katrinas muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "843",
+      "postB": "2092",
+      "detail": "normalized primary name \"zorgenfreija muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "847",
+      "postB": "1927",
+      "detail": "normalized primary name \"jaunmuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "847",
+      "postB": "2301",
+      "detail": "normalized primary name \"jaunmuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1927",
+      "postB": "2301",
+      "detail": "normalized primary name \"jaunmuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "857",
+      "postB": "1594",
+      "detail": "normalized primary name \"duru muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "993",
+      "postB": "1781",
+      "detail": "normalized primary name \"kanu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1102",
+      "postB": "1899",
+      "detail": "normalized primary name \"skedes muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1131",
+      "postB": "1912",
+      "detail": "normalized primary name \"bringu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1155",
+      "postB": "1472",
+      "detail": "normalized primary name \"ilzes muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1164",
+      "postB": "1893",
+      "detail": "normalized primary name \"vidusmuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1208",
+      "postB": "1876",
+      "detail": "normalized primary name \"karklu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1208",
+      "postB": "2272",
+      "detail": "normalized primary name \"karklu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1876",
+      "postB": "2272",
+      "detail": "normalized primary name \"karklu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1233",
+      "postB": "2362",
+      "detail": "normalized primary name \"jules muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1233",
+      "postB": "2442",
+      "detail": "normalized primary name \"jules muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2362",
+      "postB": "2442",
+      "detail": "normalized primary name \"jules muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1342",
+      "postB": "1343",
+      "detail": "normalized primary name \"annas muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1342",
+      "postB": "2807",
+      "detail": "normalized primary name \"annas muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1342",
+      "postB": "2808",
+      "detail": "normalized primary name \"annas muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1343",
+      "postB": "2807",
+      "detail": "normalized primary name \"annas muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1343",
+      "postB": "2808",
+      "detail": "normalized primary name \"annas muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2807",
+      "postB": "2808",
+      "detail": "normalized primary name \"annas muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1383",
+      "postB": "1537",
+      "detail": "normalized primary name \"veca muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1403",
+      "postB": "2444",
+      "detail": "normalized primary name \"gala muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1403",
+      "postB": "3232",
+      "detail": "normalized primary name \"gala muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2444",
+      "postB": "3232",
+      "detail": "normalized primary name \"gala muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1570",
+      "postB": "1623",
+      "detail": "normalized primary name \"satinu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1590",
+      "postB": "3699",
+      "detail": "normalized primary name \"emburgas muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1643",
+      "postB": "1818",
+      "detail": "normalized primary name \"jurgu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1643",
+      "postB": "2931",
+      "detail": "normalized primary name \"jurgu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1818",
+      "postB": "2931",
+      "detail": "normalized primary name \"jurgu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1648",
+      "postB": "2623",
+      "detail": "normalized primary name \"svetes muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1653",
+      "postB": "2471",
+      "detail": "normalized primary name \"garozas muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1660",
+      "postB": "2202",
+      "detail": "normalized primary name \"ozolmuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1660",
+      "postB": "2458",
+      "detail": "normalized primary name \"ozolmuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1660",
+      "postB": "2461",
+      "detail": "normalized primary name \"ozolmuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2202",
+      "postB": "2458",
+      "detail": "normalized primary name \"ozolmuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2202",
+      "postB": "2461",
+      "detail": "normalized primary name \"ozolmuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2458",
+      "postB": "2461",
+      "detail": "normalized primary name \"ozolmuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1680",
+      "postB": "2806",
+      "detail": "normalized primary name \"annasmuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1681",
+      "postB": "2021",
+      "detail": "normalized primary name \"jaunamuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1761",
+      "postB": "2764",
+      "detail": "normalized primary name \"velku muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1779",
+      "postB": "2686",
+      "detail": "normalized primary name \"lipstu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1803",
+      "postB": "2747",
+      "detail": "normalized primary name \"skilinu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1843",
+      "postB": "2345",
+      "detail": "normalized primary name \"silamuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1891",
+      "postB": "3518",
+      "detail": "normalized primary name \"kaives muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1895",
+      "postB": "2929",
+      "detail": "normalized primary name \"laukmuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1907",
+      "postB": "2533",
+      "detail": "normalized primary name \"jumpravas muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1930",
+      "postB": "2264",
+      "detail": "normalized primary name \"slokas muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1978",
+      "postB": "2266",
+      "detail": "normalized primary name \"lauku muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1980",
+      "postB": "3000",
+      "detail": "normalized primary name \"bullu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1980",
+      "postB": "3489",
+      "detail": "normalized primary name \"bullu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "3000",
+      "postB": "3489",
+      "detail": "normalized primary name \"bullu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "1986",
+      "postB": "2530",
+      "detail": "normalized primary name \"ruckas muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2081",
+      "postB": "2312",
+      "detail": "normalized primary name \"mezamuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2115",
+      "postB": "3040",
+      "detail": "normalized primary name \"kalnmuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2118",
+      "postB": "2866",
+      "detail": "normalized primary name \"abavas muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2150",
+      "postB": "2519",
+      "detail": "normalized primary name \"rezu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2367",
+      "postB": "2831",
+      "detail": "normalized primary name \"allazu muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2473",
+      "postB": "2475",
+      "detail": "normalized primary name \"petermuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2517",
+      "postB": "2518",
+      "detail": "normalized primary name \"renges muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2575",
+      "postB": "2576",
+      "detail": "normalized primary name \"spares muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2664",
+      "postB": "2665",
+      "detail": "normalized primary name \"upes muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "2744",
+      "postB": "2745",
+      "detail": "normalized primary name \"salas muiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "3207",
+      "postB": "3628",
+      "detail": "normalized primary name \"kalnamuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "3207",
+      "postB": "3683",
+      "detail": "normalized primary name \"kalnamuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "3628",
+      "postB": "3683",
+      "detail": "normalized primary name \"kalnamuiza\" matches"
+    },
+    {
+      "kind": "name_match",
+      "postA": "3214",
+      "postB": "3658",
+      "detail": "normalized primary name \"brunavas muiza\" matches"
+    },
+    {
+      "kind": "near_identical_coordinates",
+      "postA": "2873",
+      "postB": "3564",
+      "detail": "coordinates 2.3m apart, and names show supporting evidence (\"tiek pardota nabes\" / \"nabes muiza\")"
+    }
+  ],
+  "relationshipCandidates": [
+    {
+      "postA": "401",
+      "postB": "402",
+      "distanceMeters": 468.17862451054134
+    },
+    {
+      "postA": "427",
+      "postB": "428",
+      "distanceMeters": 115.9798528142154
+    },
+    {
+      "postA": "565",
+      "postB": "3675",
+      "distanceMeters": 112.56843782579689
+    },
+    {
+      "postA": "624",
+      "postB": "3241",
+      "distanceMeters": 413.3226032990402
+    },
+    {
+      "postA": "764",
+      "postB": "765",
+      "distanceMeters": 140.04143537704843
+    },
+    {
+      "postA": "860",
+      "postB": "1075",
+      "distanceMeters": 149.358599242879
+    },
+    {
+      "postA": "860",
+      "postB": "2533",
+      "distanceMeters": 198.06478049136078
+    },
+    {
+      "postA": "860",
+      "postB": "3562",
+      "distanceMeters": 479.5237525235879
+    },
+    {
+      "postA": "966",
+      "postB": "967",
+      "distanceMeters": 234.14912371706154
+    },
+    {
+      "postA": "1075",
+      "postB": "2533",
+      "distanceMeters": 132.13658669051375
+    },
+    {
+      "postA": "1075",
+      "postB": "3562",
+      "distanceMeters": 334.7903355379735
+    },
+    {
+      "postA": "1222",
+      "postB": "2835",
+      "distanceMeters": 72.41491333717697
+    },
+    {
+      "postA": "1265",
+      "postB": "1266",
+      "distanceMeters": 131.19596249703966
+    },
+    {
+      "postA": "1303",
+      "postB": "1304",
+      "distanceMeters": 101.7666180454104
+    },
+    {
+      "postA": "1460",
+      "postB": "3609",
+      "distanceMeters": 437.57705832496583
+    },
+    {
+      "postA": "1473",
+      "postB": "1482",
+      "distanceMeters": 385.3685124024303
+    },
+    {
+      "postA": "1475",
+      "postB": "1477",
+      "distanceMeters": 236.53758013912295
+    },
+    {
+      "postA": "1518",
+      "postB": "1519",
+      "distanceMeters": 416.2242569807489
+    },
+    {
+      "postA": "1559",
+      "postB": "1599",
+      "distanceMeters": 417.81173170564114
+    },
+    {
+      "postA": "1591",
+      "postB": "1592",
+      "distanceMeters": 97.99193931370608
+    },
+    {
+      "postA": "1620",
+      "postB": "2841",
+      "distanceMeters": 473.18419447382763
+    },
+    {
+      "postA": "1680",
+      "postB": "2432",
+      "distanceMeters": 481.2681436856528
+    },
+    {
+      "postA": "1829",
+      "postB": "1830",
+      "distanceMeters": 67.77268477251368
+    },
+    {
+      "postA": "1903",
+      "postB": "1907",
+      "distanceMeters": 59.85814674248218
+    },
+    {
+      "postA": "1918",
+      "postB": "1919",
+      "distanceMeters": 244.33405038499703
+    },
+    {
+      "postA": "1940",
+      "postB": "2806",
+      "distanceMeters": 309.03758967179755
+    },
+    {
+      "postA": "1943",
+      "postB": "1944",
+      "distanceMeters": 57.791165423739876
+    },
+    {
+      "postA": "1949",
+      "postB": "2613",
+      "distanceMeters": 437.64485380472945
+    },
+    {
+      "postA": "2017",
+      "postB": "2025",
+      "distanceMeters": 407.64086912819954
+    },
+    {
+      "postA": "2023",
+      "postB": "2025",
+      "distanceMeters": 179.13386358311374
+    },
+    {
+      "postA": "2120",
+      "postB": "3683",
+      "distanceMeters": 187.0900009742035
+    },
+    {
+      "postA": "2125",
+      "postB": "2126",
+      "distanceMeters": 315.418184814317
+    },
+    {
+      "postA": "2222",
+      "postB": "3014",
+      "distanceMeters": 266.093984333241
+    },
+    {
+      "postA": "2250",
+      "postB": "2508",
+      "distanceMeters": 447.14409365709696
+    },
+    {
+      "postA": "2292",
+      "postB": "3211",
+      "distanceMeters": 281.7972837823496
+    },
+    {
+      "postA": "2350",
+      "postB": "2486",
+      "distanceMeters": 70.44179248653946
+    },
+    {
+      "postA": "2422",
+      "postB": "2831",
+      "distanceMeters": 177.98209331478742
+    },
+    {
+      "postA": "2449",
+      "postB": "2648",
+      "distanceMeters": 450.6288742732699
+    },
+    {
+      "postA": "2497",
+      "postB": "2498",
+      "distanceMeters": 269.2896511700062
+    },
+    {
+      "postA": "2497",
+      "postB": "3123",
+      "distanceMeters": 428.9257821410811
+    },
+    {
+      "postA": "2498",
+      "postB": "3123",
+      "distanceMeters": 240.11328148594657
+    },
+    {
+      "postA": "2524",
+      "postB": "2703",
+      "distanceMeters": 238.100700690172
+    },
+    {
+      "postA": "2524",
+      "postB": "2845",
+      "distanceMeters": 398.6498300768775
+    },
+    {
+      "postA": "2531",
+      "postB": "3102",
+      "distanceMeters": 296.05476000796466
+    },
+    {
+      "postA": "2533",
+      "postB": "3562",
+      "distanceMeters": 395.9980985463225
+    },
+    {
+      "postA": "2541",
+      "postB": "3527",
+      "distanceMeters": 408.50391887120077
+    },
+    {
+      "postA": "2572",
+      "postB": "2573",
+      "distanceMeters": 295.66380283956147
+    },
+    {
+      "postA": "2579",
+      "postB": "3243",
+      "distanceMeters": 170.32493089421334
+    },
+    {
+      "postA": "2580",
+      "postB": "2855",
+      "distanceMeters": 295.2050966144974
+    },
+    {
+      "postA": "2580",
+      "postB": "3679",
+      "distanceMeters": 89.29359206462625
+    },
+    {
+      "postA": "2605",
+      "postB": "3480",
+      "distanceMeters": 432.2795215781994
+    },
+    {
+      "postA": "2611",
+      "postB": "3404",
+      "distanceMeters": 476.956238831293
+    },
+    {
+      "postA": "2628",
+      "postB": "2629",
+      "distanceMeters": 310.3491862966057
+    },
+    {
+      "postA": "2634",
+      "postB": "3314",
+      "distanceMeters": 269.87058861028055
+    },
+    {
+      "postA": "2636",
+      "postB": "3658",
+      "distanceMeters": 301.5054373355234
+    },
+    {
+      "postA": "2637",
+      "postB": "2644",
+      "distanceMeters": 69.30847798155399
+    },
+    {
+      "postA": "2637",
+      "postB": "2645",
+      "distanceMeters": 200.75837999737675
+    },
+    {
+      "postA": "2637",
+      "postB": "3220",
+      "distanceMeters": 312.6113028477685
+    },
+    {
+      "postA": "2644",
+      "postB": "2645",
+      "distanceMeters": 268.4601048969118
+    },
+    {
+      "postA": "2644",
+      "postB": "3220",
+      "distanceMeters": 381.7787211913228
+    },
+    {
+      "postA": "2645",
+      "postB": "3220",
+      "distanceMeters": 120.53082833028482
+    },
+    {
+      "postA": "2682",
+      "postB": "2696",
+      "distanceMeters": 372.42963999190715
+    },
+    {
+      "postA": "2710",
+      "postB": "3398",
+      "distanceMeters": 256.58193955317154
+    },
+    {
+      "postA": "2723",
+      "postB": "3175",
+      "distanceMeters": 350.8578399009475
+    },
+    {
+      "postA": "2746",
+      "postB": "3593",
+      "distanceMeters": 369.8820837137074
+    },
+    {
+      "postA": "2797",
+      "postB": "3277",
+      "distanceMeters": 319.9538225877482
+    },
+    {
+      "postA": "2813",
+      "postB": "2814",
+      "distanceMeters": 272.2393100054513
+    },
+    {
+      "postA": "2813",
+      "postB": "2815",
+      "distanceMeters": 348.98891334475974
+    },
+    {
+      "postA": "2845",
+      "postB": "2855",
+      "distanceMeters": 427.0351357614956
+    },
+    {
+      "postA": "2845",
+      "postB": "3672",
+      "distanceMeters": 419.19116160929684
+    },
+    {
+      "postA": "2852",
+      "postB": "2857",
+      "distanceMeters": 332.1601537103286
+    },
+    {
+      "postA": "2855",
+      "postB": "3679",
+      "distanceMeters": 378.2426193987473
+    },
+    {
+      "postA": "2907",
+      "postB": "3535",
+      "distanceMeters": 348.8918086356532
+    },
+    {
+      "postA": "3003",
+      "postB": "3699",
+      "distanceMeters": 28.996839219209534
+    },
+    {
+      "postA": "3036",
+      "postB": "3299",
+      "distanceMeters": 113.39844386806044
+    },
+    {
+      "postA": "3037",
+      "postB": "3038",
+      "distanceMeters": 174.48403716071329
+    },
+    {
+      "postA": "3056",
+      "postB": "3057",
+      "distanceMeters": 129.84839860385736
+    },
+    {
+      "postA": "3101",
+      "postB": "3113",
+      "distanceMeters": 179.56750813077593
+    },
+    {
+      "postA": "3104",
+      "postB": "3227",
+      "distanceMeters": 487.80483546674475
+    },
+    {
+      "postA": "3115",
+      "postB": "3116",
+      "distanceMeters": 240.23659027051113
+    },
+    {
+      "postA": "3160",
+      "postB": "3161",
+      "distanceMeters": 164.10873646480448
+    },
+    {
+      "postA": "3170",
+      "postB": "3175",
+      "distanceMeters": 224.13535607093536
+    },
+    {
+      "postA": "3206",
+      "postB": "3207",
+      "distanceMeters": 194.75488490551794
+    },
+    {
+      "postA": "3219",
+      "postB": "3672",
+      "distanceMeters": 413.88237898762304
+    },
+    {
+      "postA": "3241",
+      "postB": "3242",
+      "distanceMeters": 290.73554339905985
+    },
+    {
+      "postA": "3252",
+      "postB": "3285",
+      "distanceMeters": 64.33496311016104
+    },
+    {
+      "postA": "3255",
+      "postB": "3264",
+      "distanceMeters": 143.64340848401937
+    },
+    {
+      "postA": "3320",
+      "postB": "3321",
+      "distanceMeters": 27.392991814768585
+    },
+    {
+      "postA": "3482",
+      "postB": "3571",
+      "distanceMeters": 295.1311187719189
+    },
+    {
+      "postA": "3537",
+      "postB": "3705",
+      "distanceMeters": 497.34163462344515
+    },
+    {
+      "postA": "3555",
+      "postB": "3556",
+      "distanceMeters": 485.65378418268597
+    },
+    {
+      "postA": "3645",
+      "postB": "3646",
+      "distanceMeters": 74.80709269964231
+    }
+  ],
+  "slugCollisionGroups": 72,
+  "sampleIssues": [
+    {
+      "externalSourceId": "11",
+      "title": "Dagdas katoļu baznīca",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    },
+    {
+      "externalSourceId": "12",
+      "title": "Dagdas pareizticīgo baznīca",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    },
+    {
+      "externalSourceId": "14",
+      "title": "Dagdas ūdensdzirnavas",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    },
+    {
+      "externalSourceId": "16",
+      "title": "Aisbahovas muiža (Eisbahovas muiža, Priežmales muiža, Askirku muiža, Oskierko)",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    },
+    {
+      "externalSourceId": "19",
+      "title": "Valmieras kurlmēmo skola",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    },
+    {
+      "externalSourceId": "22",
+      "title": "Ventspils dzelzceļa stacija",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    },
+    {
+      "externalSourceId": "24",
+      "title": "Limbažu filca fabrika (Cepuru fabrika)",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    },
+    {
+      "externalSourceId": "26",
+      "title": "Lielsalacas luterāņu baznīca",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    },
+    {
+      "externalSourceId": "34",
+      "title": "Limbažu slimnīca",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    },
+    {
+      "externalSourceId": "42",
+      "title": "Ilūkstes luterāņu baznīca",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    },
+    {
+      "externalSourceId": "56",
+      "title": "Ainažu dzelzceļa stacija",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    },
+    {
+      "externalSourceId": "57",
+      "title": "Ainažu pareizticīgo baznīca",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    },
+    {
+      "externalSourceId": "65",
+      "title": "Ērgļu luterāņu baznīca",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    },
+    {
+      "externalSourceId": "67",
+      "title": "Aknīstes katoļu baznīca",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    },
+    {
+      "externalSourceId": "68",
+      "title": "Aknīstes luterāņu baznīca",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    },
+    {
+      "externalSourceId": "70",
+      "title": "Jelgavas ebreju slimnīca",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    },
+    {
+      "externalSourceId": "71",
+      "title": "Liepājas lokomotīvju ūdenstornis",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    },
+    {
+      "externalSourceId": "73",
+      "title": "Liepājas muzejs",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    },
+    {
+      "externalSourceId": "74",
+      "title": "Liepājas Jūrniecības koledža",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    },
+    {
+      "externalSourceId": "75",
+      "title": "Liepājas dzirnavas",
+      "issues": [
+        "missing required fields: object_type, summary_lv, last_verified_at, municipality",
+        "missing required fields: latitude, longitude"
+      ]
+    }
+  ],
+  "bodyTextReclassifiedSample": [
+    {
+      "externalSourceId": "110",
+      "title": "Cēsis, grāfa Karla Gustava fon Zīversa krūšutēls",
+      "phrase": "pils muižu"
+    },
+    {
+      "externalSourceId": "267",
+      "title": "Jūrmala, Raiņa vasarnīca Jaundubultos (Raiņa sēta)",
+      "phrase": "muižu pārvaldnieka"
+    },
+    {
+      "externalSourceId": "311",
+      "title": "Krustpils, Latvijas armijas kazarmas",
+      "phrase": "muižas teritorijā"
+    },
+    {
+      "externalSourceId": "314",
+      "title": "Kokmuižas ūdensdzinavas (Brandeļu HES)",
+      "phrase": "muižas dzirnavas"
+    },
+    {
+      "externalSourceId": "434",
+      "title": "Smiltene, Bērensa dzimtas kapliča pilsētas kapos",
+      "phrase": "muižas pārvaldnieka"
+    },
+    {
+      "externalSourceId": "467",
+      "title": "Iecava, tilts pār Ģedules upīti",
+      "phrase": "muižas parkā"
+    },
+    {
+      "externalSourceId": "515",
+      "title": "Rites skola (Ilzu skola, Rites tautskola)",
+      "phrase": "muižas teritorijā"
+    },
+    {
+      "externalSourceId": "554",
+      "title": "Cēsis, L.Ausēja reālskola",
+      "phrase": "muižas pārvaldniekam"
+    },
+    {
+      "externalSourceId": "565",
+      "title": "Cīravas baznīca",
+      "phrase": "muižas parka"
+    },
+    {
+      "externalSourceId": "591",
+      "title": "Rotkaļu pusmuiža (Rotkaln) Tumes pagastā",
+      "phrase": "muižas teritorijā"
+    },
+    {
+      "externalSourceId": "596",
+      "title": "Ozolnieku skola (Ozolmuižas skola) Jelgavas novadā",
+      "phrase": "muižas skola"
+    },
+    {
+      "externalSourceId": "624",
+      "title": "Lielvārde, Rumbiņas ūdenskritums",
+      "phrase": "muižas parkā"
+    },
+    {
+      "externalSourceId": "633",
+      "title": "Praulienas mācītājmuiža (Lazdonas mācītājmuiža)",
+      "phrase": "muižas teritorijā"
+    },
+    {
+      "externalSourceId": "647",
+      "title": "Mežzīles ūdensdzirnavas",
+      "phrase": "muižas dzirnavas"
+    },
+    {
+      "externalSourceId": "665",
+      "title": "Sofijas pusmuiža (Kaķīšu pusmuiža) Siguldā",
+      "phrase": "muižas saimniecība"
+    },
+    {
+      "externalSourceId": "764",
+      "title": "Vangas ūdensdzirnavas",
+      "phrase": "muižas dzirnavu"
+    },
+    {
+      "externalSourceId": "880",
+      "title": "Kuķēnu pusmuiža (Lejaskuķēnu pusmuiža un Kalna Kuķēnu pusmuiža, Kuiken)",
+      "phrase": "bijušajiem muižas"
+    },
+    {
+      "externalSourceId": "966",
+      "title": "Vārves un Zūru pagastu deportēto iedzīvotāju piemiņas akmens",
+      "phrase": "muižas teritorijā"
+    },
+    {
+      "externalSourceId": "968",
+      "title": "Pasiekstes vējdzirnavas",
+      "phrase": "muižas teritorijā"
+    },
+    {
+      "externalSourceId": "994",
+      "title": "Mordangas ūdensdzirnavas (Mordangu ūdensdzirnavas)",
+      "phrase": "muižas parkā"
+    },
+    {
+      "externalSourceId": "1014",
+      "title": "Matīšu baznīca",
+      "phrase": "muižas pils"
+    },
+    {
+      "externalSourceId": "1023",
+      "title": "Pociema skola (Pīlāgu skola)",
+      "phrase": "muižas pils"
+    },
+    {
+      "externalSourceId": "1075",
+      "title": "Jumpravas ūdenskritums (Jumpravmuižas ūdenskritums) Mežotnes pagastā",
+      "phrase": "muižas parkā"
+    },
+    {
+      "externalSourceId": "1093",
+      "title": "Grašu ūdensdzirnavas",
+      "phrase": "muižas dzirnavām"
+    },
+    {
+      "externalSourceId": "1143",
+      "title": "Ēdoles mācītājmuiža",
+      "phrase": "muižas dzirnavu"
+    },
+    {
+      "externalSourceId": "1222",
+      "title": "Akenstakas ūdensdzirnavas (Klingenbergas ūdensdzirnavas)",
+      "phrase": "muižas dzirnavām"
+    },
+    {
+      "externalSourceId": "1223",
+      "title": "Bērzaunes pamatskola",
+      "phrase": "muižas skolās"
+    },
+    {
+      "externalSourceId": "1272",
+      "title": "Krustpils ūdensdzirnavas",
+      "phrase": "muižas dzirnavās"
+    },
+    {
+      "externalSourceId": "1285",
+      "title": "Felicianovas ūdensdzirnavas",
+      "phrase": "piederēja muižkungam"
+    },
+    {
+      "externalSourceId": "1299",
+      "title": "Ērgļu mācītājmuiža",
+      "phrase": "muižas teritoriju"
+    }
+  ],
+  "imageIdentitySourceCounts": {
+    "drive_file_id": 16800,
+    "original_url": 0,
+    "content_hash": 0
+  }
+}
