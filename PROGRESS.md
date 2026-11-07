@@ -20,25 +20,25 @@ Read it before starting a session and update it before ending a session.
 ## Project position
 
 - **Current roadmap day:** Day 13 ready to start
-- **Last completed-and-merged day:** Day 11; Day 12 is reviewed and awaiting pull-request CI/merge
+- **Last completed-and-merged day:** Day 12
 - **Current issue:** [#7 — Public manor directory and detail pages](https://github.com/EdVialv/muizasmanor26/issues/7)
 - **Next outcome:** Build manor cards and a cursor-paginated server-side directory with loading, empty and error states.
-- **MVP status:** Days 1–11 are merged and verified. Day 12's reusable layout, navigation, typography, colour tokens and responsive breakpoints are reviewed on `codex/day12-reviewed-layout`. The real dataset remains non-destructive: no Day 11 row was staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
+- **MVP status:** Days 1–12 are merged and verified. The reusable layout, navigation, typography, colour tokens and responsive breakpoints are now in `main`. The real dataset remains non-destructive: no Day 11 row was staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                                                                    |
-| ---------------- | ------------------------------------------------------------------------------------------------ |
-| Status           | Day 12 reviewed; awaiting GitHub CI and merge                                                    |
-| Agent            | Codex                                                                                            |
-| Issue            | #7                                                                                               |
-| Branch           | `codex/day12-reviewed-layout`                                                                    |
-| Session goal     | Integrate the reusable layout/design system on top of merged Day 11                              |
-| Started          | 2026-11-07                                                                                       |
-| Expected handoff | Merge after CI, then start Day 13; continue Day 11 editorial data review separately from UI work |
+| Field            | Current value                                                                                       |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
+| Status           | Ready for Day 13                                                                                    |
+| Agent            | None                                                                                                |
+| Issue            | #7                                                                                                  |
+| Branch           | None                                                                                                |
+| Session goal     | Build manor cards and the cursor-paginated server-side directory                                    |
+| Started          | Not started                                                                                         |
+| Expected handoff | Tested directory with loading, empty and error states; Day 11 editorial review continues separately |
 
 ## Required session entry
 
@@ -72,7 +72,7 @@ Copy this template to the top of **Session history** before ending a session.
 
 - **Issues:** [#6 — Supabase and database foundation](https://github.com/EdVialv/muizasmanor26/issues/6) and [#7 — Public manor directory and detail pages](https://github.com/EdVialv/muizasmanor26/issues/7)
 - **Branches:** `codex/day11-reviewed-dry-run`, `codex/day12-reviewed-layout`
-- **Pull requests:** Day 11 [#35](https://github.com/EdVialv/muizasmanor26/pull/35) merged; Day 12 awaiting publication
+- **Pull requests:** Day 11 [#35](https://github.com/EdVialv/muizasmanor26/pull/35) merged; Day 12 [#36](https://github.com/EdVialv/muizasmanor26/pull/36) merged
 - **Session goal:** Review Claude's corrected Day 11 and independent Day 12 bundles, publish them in dependency order and preserve a linear verified history.
 - **Completed:**
   - independently verified all four Day 11 review corrections and their regression tests;
@@ -83,15 +83,15 @@ Copy this template to the top of **Session history** before ending a session.
 - **Verification:**
   - Day 11: format, lint, typecheck, 88 tests, production build and production dependency audit passed locally and GitHub CI passed;
   - Day 12 standalone: format, lint, typecheck, 30 tests, production build and production dependency audit passed;
-  - combined Day 11 + Day 12: format, lint, typecheck, 95 tests, production build and production dependency audit passed.
+  - combined Day 11 + Day 12: format, lint, typecheck, 95 tests, production build and production dependency audit passed locally and in GitHub CI.
 - **Decisions:**
   - Day 12 may proceed because it does not stage or promote raw data and is technically independent of the remaining Day 11 editorial queue;
   - Day 13 is the next engineering day after Day 12 merges.
 - **Blockers or risks:**
   - bulk staging remains blocked until Day 11's open editorial mappings and candidate queues are resolved.
 - **Next exact action:**
-  - publish and merge Day 12 after GitHub CI, then begin Day 13 on a new branch.
-- **Handoff state:** combined verification passed; awaiting publication
+  - begin Day 13 on issue #7 from current `main`.
+- **Handoff state:** merged; ready for Day 13
 
 ### 2026-11-06 Europe/Riga — Claude Code
 
