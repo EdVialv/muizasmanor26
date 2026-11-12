@@ -70,13 +70,13 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 
 ## Current next action
 
-**Days 1–12 are merged and verified.** Day 11's non-destructive dry run processed 16,800 image rows into 3,716 posts, and all four Codex review findings are corrected with regression tests. Nothing from the real dataset was staged, imported, auto-merged or auto-linked.
+**Days 1–13 are merged and verified.** Day 11's non-destructive dry run processed 16,800 image rows into 3,716 posts, and all four Codex review findings are corrected with regression tests. Nothing from the real dataset was staged, imported, auto-merged or auto-linked.
 
 **Day 12 is merged:** the reusable `SiteHeader`, `SiteFooter` and `AppShell`, documented colour/typography/spacing/radius tokens, named responsive breakpoints and keyboard skip link now provide the shared foundation for public pages.
 
-**Day 13 is complete and Codex-reviewed, awaiting merge:** the public directory at `/objects` (`src/app/objects/page.tsx`) is a cursor-paginated (keyset, not offset) Next.js Server Component with tested loading, empty, configuration-error and query-error states, built on the Day 12 design tokens. `HeritageObjectCard` renders every value it has and invents nothing for what it doesn't. `SiteHeader` now computes `aria-current` from the actual route (`usePathname()`) and adds the "Objekti" link, as Day 12 flagged it would need to once a second route existed. Codex removed the original unbounded URL history stack and capped cursor-token input before decoding, preserving the 5,000-object scale constraint. The directory currently shows its real, tested empty state - no `heritage_objects` row is `published` yet. See `docs/DAY13_DIRECTORY_NOTES.md` for the cursor format, the RLS/data-access design, and five recorded decisions.
+**Day 13 is merged:** the public directory at `/objects` (`src/app/objects/page.tsx`) is a cursor-paginated (keyset, not offset) Next.js Server Component with tested loading, empty, configuration-error and query-error states, built on the Day 12 design tokens. `HeritageObjectCard` renders every value it has and invents nothing for what it doesn't. `SiteHeader` now computes `aria-current` from the actual route (`usePathname()`) and adds the "Objekti" link. Codex removed the original unbounded URL history stack and capped cursor-token input before decoding, preserving the 5,000-object scale constraint. GitHub CI passed before PR #38 was merged. The directory currently shows its real, tested empty state - no `heritage_objects` row is `published` yet.
 
-Start **Day 14** on issue [#7](https://github.com/EdVialv/muizasmanor26/issues/7) once Day 13 is merged: build `/objects/[slug]` detail pages with hierarchy, history, condition, ownership and services - the route every card already links to.
+Start **Day 14** on issue [#7](https://github.com/EdVialv/muizasmanor26/issues/7): build `/objects/[slug]` detail pages with hierarchy, history, condition, ownership and services - the route every card already links to.
 
 In parallel, continue the editorial data stream before any bulk staging: assign `object_type`, define municipality mapping, and review the 165 duplicate and 92 relationship candidates documented by Day 11. This does not block the visual directory implementation, but it does block promotion of the real bulk dataset.
 

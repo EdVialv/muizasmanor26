@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 13 complete and Codex-reviewed, awaiting merge
-- **Last completed-and-merged day:** Day 12
+- **Current roadmap day:** Day 14 ready to start
+- **Last completed-and-merged day:** Day 13
 - **Current issue:** [#7 — Public manor directory and detail pages](https://github.com/EdVialv/muizasmanor26/issues/7)
-- **Next outcome:** Merge the reviewed Day 13 directory, then build `/objects/[slug]` detail pages (Day 14).
-- **MVP status:** Days 1–12 are merged and verified. Day 13 adds the reviewed cursor-paginated public directory at `/objects` and is awaiting merge. The real dataset remains non-destructive: no Day 11 row was staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
+- **Next outcome:** Build `/objects/[slug]` detail pages with hierarchy, history, condition, ownership and services (Day 14).
+- **MVP status:** Days 1–13 are merged and verified. The public directory at `/objects` now uses bounded keyset pagination through Supabase's public RLS boundary. The real dataset remains non-destructive: no Day 11 row was staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                                   |
-| ---------------- | --------------------------------------------------------------- |
-| Status           | Day 13 reviewed, awaiting push/CI/merge                         |
-| Agent            | Codex                                                           |
-| Issue            | #7                                                              |
-| Branch           | `codex/day13-reviewed-directory`                                |
-| Session goal     | Review, harden, verify and merge Claude's Day 13 implementation |
-| Started          | 2026-11-12                                                      |
-| Expected handoff | Day 13 merged; Day 14 ready to start                            |
+| Field            | Current value                                                  |
+| ---------------- | -------------------------------------------------------------- |
+| Status           | Ready for Day 14                                               |
+| Agent            | None                                                           |
+| Issue            | #7                                                             |
+| Branch           | None                                                           |
+| Session goal     | Build `/objects/[slug]` detail pages                           |
+| Started          | Not started                                                    |
+| Expected handoff | Tested detail pages and working directory-to-detail navigation |
 
 ## Required session entry
 
@@ -72,7 +72,7 @@ Copy this template to the top of **Session history** before ending a session.
 
 - **Issue:** [#7 — Public manor directory and detail pages](https://github.com/EdVialv/muizasmanor26/issues/7)
 - **Branch:** `codex/day13-reviewed-directory`
-- **Pull request:** pending
+- **Pull request:** [#38 — Day 13: add reviewed public heritage directory](https://github.com/EdVialv/muizasmanor26/pull/38), merged
 - **Session goal:** Review, harden and publish Claude's Day 13 directory implementation.
 - **Completed:**
   - verified Claude's bundle is a clean single commit based directly on current `main`;
@@ -94,8 +94,8 @@ Copy this template to the top of **Session history** before ending a session.
   - `npm audit --omit=dev` — passed, zero vulnerabilities.
 - **Decisions:** explicit previous-page navigation is deferred until it can use a reverse keyset query; browser Back is safe for the current MVP.
 - **Blockers or risks:** no published object exists yet, so the live directory correctly renders its tested empty state; Latvian labels still need product copy review before public launch.
-- **Next exact action:** run the complete quality gate, publish the reviewed branch, merge after CI, then start Day 14.
-- **Handoff state:** verified, awaiting PR/CI/merge.
+- **Next exact action:** start Day 14 from current `main` on a new branch and build `/objects/[slug]` detail pages.
+- **Handoff state:** merged; ready for Day 14.
 
 ### 2026-11-07 Europe/Riga — Claude Code
 
