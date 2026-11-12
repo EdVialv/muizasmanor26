@@ -1,6 +1,13 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import AppShell from "./AppShell";
+
+// AppShell renders SiteHeader, which is a client component calling
+// usePathname() (Day 13 - see SiteHeader.tsx) and needs an App Router
+// context this test does not mount. Stub it the same way
+// SiteHeader.test.tsx does, since AppShell's own tests don't care which
+// route is "current".
+vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
 
 describe("AppShell", () => {
   it("renders a skip link that targets the main-content landmark", () => {

@@ -1,21 +1,29 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 /**
  * The site-wide header: wordmark + primary navigation, shared by every page
  * via the root layout (see src/components/AppShell.tsx).
  *
- * Per the owner's Day 12 decision, the nav deliberately lists only Home for
- * now rather than linking to directory/map/admin/enquiry pages that don't
- * exist yet (Days 13-26) - that would mean either dead links or throwaway
- * stub pages to redo later. Each later Day should add its own <li> to the
- * list below once its page actually ships, not before.
- *
- * `aria-current="page"` is hardcoded on the Home link because Home is the
- * only route that exists today. Once a second nav item is added, switch
- * this to a client component using `usePathname()` from `next/navigation`
- * so the current item is computed per route instead of assumed.
+ * Day 12 shipped this as a server component with a single, hardcoded
+ * "Sākums" link and a hardcoded `aria-current="page"`, because Home was the
+ * only route that existed - see docs/DAY12_DESIGN_SYSTEM_NOTES.md decision
+ * 2, which explicitly flagged that a second nav item would need
+ * `usePathname()` instead. Day 13 adds the directory (`/objects`), so this
+ * is now a client component: `aria-current` is computed per route from the
+ * actual pathname, not assumed. Add a new route's `<li>` to NAV_ITEMS below
+ * once its page ships - no further structural change should be needed.
  */
+const NAV_ITEMS: ReadonlyArray<{ href: string; label: string }> = [
+  { href: "/", label: "Sākums" },
+  { href: "/objects", label: "Objekti" },
+];
+
 export default function SiteHeader() {
+  const pathname = usePathname();
+
   return (
     <header className="siteHeader">
       <div className="siteHeaderInner container">
@@ -24,11 +32,16 @@ export default function SiteHeader() {
         </Link>
         <nav className="siteNav" aria-label="Galvenā navigācija">
           <ul>
-            <li>
-              <Link href="/" aria-current="page">
-                Sākums
-              </Link>
-            </li>
+            {NAV_ITEMS.map((item) => {
+              const isCurrent = pathname === item.href;
+              return (
+                <li key={item.href}>
+                  <Link href={item.href} aria-current={isCurrent ? "page" : undefined}>
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </nav>
       </div>
