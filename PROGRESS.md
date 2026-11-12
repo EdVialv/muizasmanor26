@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 13 ready to start
+- **Current roadmap day:** Day 13 complete and Codex-reviewed, awaiting merge
 - **Last completed-and-merged day:** Day 12
 - **Current issue:** [#7 — Public manor directory and detail pages](https://github.com/EdVialv/muizasmanor26/issues/7)
-- **Next outcome:** Build manor cards and a cursor-paginated server-side directory with loading, empty and error states.
-- **MVP status:** Days 1–12 are merged and verified. The reusable layout, navigation, typography, colour tokens and responsive breakpoints are now in `main`. The real dataset remains non-destructive: no Day 11 row was staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
+- **Next outcome:** Merge the reviewed Day 13 directory, then build `/objects/[slug]` detail pages (Day 14).
+- **MVP status:** Days 1–12 are merged and verified. Day 13 adds the reviewed cursor-paginated public directory at `/objects` and is awaiting merge. The real dataset remains non-destructive: no Day 11 row was staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                                                                       |
-| ---------------- | --------------------------------------------------------------------------------------------------- |
-| Status           | Ready for Day 13                                                                                    |
-| Agent            | None                                                                                                |
-| Issue            | #7                                                                                                  |
-| Branch           | None                                                                                                |
-| Session goal     | Build manor cards and the cursor-paginated server-side directory                                    |
-| Started          | Not started                                                                                         |
-| Expected handoff | Tested directory with loading, empty and error states; Day 11 editorial review continues separately |
+| Field            | Current value                                                   |
+| ---------------- | --------------------------------------------------------------- |
+| Status           | Day 13 reviewed, awaiting push/CI/merge                         |
+| Agent            | Codex                                                           |
+| Issue            | #7                                                              |
+| Branch           | `codex/day13-reviewed-directory`                                |
+| Session goal     | Review, harden, verify and merge Claude's Day 13 implementation |
+| Started          | 2026-11-12                                                      |
+| Expected handoff | Day 13 merged; Day 14 ready to start                            |
 
 ## Required session entry
 
@@ -67,6 +67,83 @@ Copy this template to the top of **Session history** before ending a session.
 ```
 
 ## Session history
+
+### 2026-11-12 Europe/Riga — Codex
+
+- **Issue:** [#7 — Public manor directory and detail pages](https://github.com/EdVialv/muizasmanor26/issues/7)
+- **Branch:** `codex/day13-reviewed-directory`
+- **Pull request:** pending
+- **Session goal:** Review, harden and publish Claude's Day 13 directory implementation.
+- **Completed:**
+  - verified Claude's bundle is a clean single commit based directly on current `main`;
+  - reviewed the directory, Supabase/RLS data access, cards, route states, navigation and tests;
+  - removed an unbounded `back` cursor-history URL parameter that grew linearly with page depth and replaced it with bounded next-only keyset URLs plus browser Back navigation;
+  - added a 2,048-character encoded-cursor limit before Buffer decoding, with a regression test;
+  - aligned the Day 13 notes and handoff documentation with the reviewed implementation.
+- **Files changed:**
+  - `src/lib/directory/cursor.ts`, `cursor.test.ts` — bounded cursor input and next-only URL state;
+  - `src/app/objects/page.tsx`, `page.test.tsx` — removed accumulating history parameter and previous-link behavior;
+  - `src/app/globals.css` — aligned the one-way pagination control;
+  - `docs/DAY13_DIRECTORY_NOTES.md`, `TODO.md`, `PROGRESS.md` — reviewed decisions, counts and handoff state.
+- **Verification:**
+  - `npm run format:check` — passed;
+  - `npm run lint` — passed;
+  - `npm run typecheck` — passed;
+  - `npm test` — passed, 16 files and 139 tests;
+  - `npm run build` — passed; `/objects` is dynamic and `/` remains static;
+  - `npm audit --omit=dev` — passed, zero vulnerabilities.
+- **Decisions:** explicit previous-page navigation is deferred until it can use a reverse keyset query; browser Back is safe for the current MVP.
+- **Blockers or risks:** no published object exists yet, so the live directory correctly renders its tested empty state; Latvian labels still need product copy review before public launch.
+- **Next exact action:** run the complete quality gate, publish the reviewed branch, merge after CI, then start Day 14.
+- **Handoff state:** verified, awaiting PR/CI/merge.
+
+### 2026-11-07 Europe/Riga — Claude Code
+
+- **Issue:** [#7 — Public manor directory and detail pages](https://github.com/EdVialv/muizasmanor26/issues/7)
+- **Branch:** `claude/day13-directory`
+- **Pull request:** not opened (this session has no GitHub write access; see Blockers)
+- **Session goal:** Build heritage-object cards and a cursor-paginated, server-side public directory at `/objects` with loading, empty and error states, per the Day 13 brief.
+- **Completed:**
+  - built `src/lib/directory/cursor.ts`: pure encode/decode/validation for a `(name_lv, id)` keyset cursor, with every decode failing safely to "no cursor" rather than throwing; Codex review removed the original unbounded URL history stack and added a pre-decode token-size cap so pagination remains safe at the 5,000-object baseline;
+  - built `src/lib/directory/queries.ts`: `fetchDirectoryPage()`, the pagination orchestration, against an injectable `DirectoryDataSource` interface (no Supabase import in this file at all);
+  - built `src/lib/directory/supabaseDataSource.ts`: the real Supabase-backed `DirectoryDataSource`, using the anon/publishable-key client (PostgREST) rather than a direct Postgres connection, specifically so the Day 9 RLS policy is the actual boundary, not just this route's own `status = 'published'` filter;
+  - **deliberately avoided a single composite PostgREST `or()`/`and()` filter for the `(name_lv, id)` keyset boundary**, since real titles contain commas and parentheses that would need manual, unverifiable escaping - split it into two simple `.eq()`/`.gt()` requests instead (see decision 1, `docs/DAY13_DIRECTORY_NOTES.md`);
+  - built `src/components/HeritageObjectCard.tsx` and `src/lib/directory/labels.ts` (Latvian enum labels), using the Day 12 design tokens exclusively; the card omits any null optional field rather than inventing placeholder text, and its media area is an explicit, `aria-hidden` decorative block, not a Day 15 image;
+  - built `src/app/objects/page.tsx` (async Server Component), `loading.tsx` (skeleton, via the App Router's implicit Suspense boundary) and `error.tsx` (Client Component boundary that never renders a caught error's own message, to avoid leaking server-side details);
+  - converted `SiteHeader` from Day 12's server component with a hardcoded "Sākums"/`aria-current` into a client component computing `aria-current` from `usePathname()`, and added the "Objekti" nav link - exactly the change Day 12's own notes flagged would be needed once a second route existed;
+  - added `@supabase/supabase-js` as a new dependency;
+  - after Codex review, the suite contains 139 tests (95 → 139): cursor round-tripping and malformed/tampered/oversized-input rejection; `fetchDirectoryPage`'s ordering/page-size/boundary-crossing behaviour against an in-memory fake; the real Supabase implementation's exact filter/order/limit calls (including a regression guard that a name containing commas/parens/quotes is passed as a plain filter argument, never interpolated into a string); card rendering with complete and with missing optional data; all `ObjectsPage` result/error/empty states and next-page-link presence; `SiteHeader`'s per-route `aria-current`;
+  - **manually verified the real pagination end-to-end**, beyond what the brief required: built a throwaway mock PostgREST-shaped HTTP server, pointed the app at it via env vars, ran the real production build with `next start`, and drove it with Playwright - confirmed no horizontal overflow at 1440px/390px, correct keyboard-Tab focus order with a visible outline through the nav and into the card grid, and that clicking "Nākamā lapa" genuinely advances to different rows. Codex review then removed the accumulating previous-page URL history as a scale hardening change; browser Back remains available;
+  - found one real, minor, honestly-documented limitation during that same manual pass: a one-time keyboard-focus reset to `<body>` if a user tabs during the brief loading-skeleton-to-real-content swap, inherent to Next's streaming Suspense mechanism, not this page's own code - noted in "Known limitations," not fixed;
+  - documented route/component structure, the cursor format, RLS/public-data assumptions, environment-variable handling, verification results, five recorded decisions and known limitations in `docs/DAY13_DIRECTORY_NOTES.md`.
+- **Files changed:**
+  - `src/lib/directory/cursor.ts`, `queries.ts`, `supabaseDataSource.ts`, `labels.ts` and their test files — the directory's data-access/pagination layer;
+  - `src/components/HeritageObjectCard.tsx`, `HeritageObjectCard.test.tsx` — the reusable card;
+  - `src/app/objects/page.tsx`, `loading.tsx`, `error.tsx`, `page.test.tsx` — the `/objects` route;
+  - `src/components/SiteHeader.tsx`, `SiteHeader.test.tsx` — per-route `aria-current` and the new "Objekti" link;
+  - `src/components/AppShell.test.tsx` — added the `next/navigation` mock `SiteHeader` now needs;
+  - `src/app/globals.css` — new tokens-only CSS for the card grid, card, directory status/pagination treatments;
+  - `package.json`, `package-lock.json` — added `@supabase/supabase-js`;
+  - `docs/DAY13_DIRECTORY_NOTES.md` — new;
+  - `TODO.md`, `PROGRESS.md` — this entry and the Day 13 status update.
+- **Verification:**
+  - `npm ci` — passed;
+  - `npm run format:check` — passed;
+  - `npm run lint` — passed;
+  - `npm run typecheck` — passed;
+  - `npm run test` — passed after Codex review, 16 files, 139 tests;
+  - `npm run build` — passed; `/objects` correctly marked dynamic (`ƒ`), `/` remains static;
+  - `npm audit --omit=dev` — zero vulnerabilities;
+  - manual end-to-end Playwright verification against a mock PostgREST server — see "Completed" above; full detail in `docs/DAY13_DIRECTORY_NOTES.md`.
+- **Decisions:**
+  - see `docs/DAY13_DIRECTORY_NOTES.md` "Decisions requiring Codex review" for the reviewed pagination boundary and the remaining product/data decisions.
+- **Blockers or risks:**
+  - this session has no tool to push commits or open a pull request, same as every prior day — delivered as a git bundle;
+  - decision 1 (two-query keyset boundary) could not be verified against a live Supabase/PostgREST endpoint from this session - worth a real check against `muizasmanor26-dev` before trusting it fully in production, particularly a title crossing a page boundary with a comma or parenthesis in it;
+  - the one-time loading→loaded keyboard-focus reset (see "Known limitations" in the notes doc) is unfixed.
+- **Next exact action:**
+  - Codex: review the implementation and merge. Once merged, start Day 14 on issue #7: `/objects/[slug]` detail pages, the route every card already links to.
+- **Handoff state:** uncommitted changes at the point this entry was written (about to be committed on `claude/day13-directory`; see the next step in this same session for the actual commit/bundle)
 
 ### 2026-11-07 Europe/Riga — Codex
 

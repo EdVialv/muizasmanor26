@@ -269,6 +269,168 @@ h2 {
   font: 650 var(--text-body)/1.4 var(--font-sans);
 }
 
+/* Public directory (Day 13 — docs/DAY13_DIRECTORY_NOTES.md) */
+.objectsSection {
+  padding-block: var(--space-14) var(--space-28);
+}
+
+.objectsHeading {
+  margin: 0 0 var(--space-10);
+}
+
+.objectsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.objectCard {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+/* Explicitly decorative, aria-hidden placeholder - not a photo and not part
+   of the Day 15 image pipeline (see HeritageObjectCard.tsx). */
+.objectCardMedia {
+  height: 7rem;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(135deg, var(--surface), var(--paper));
+}
+
+.objectCardBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5);
+}
+
+.objectCardType {
+  margin: 0;
+  color: var(--accent);
+  font: 700 var(--text-eyebrow)/1.3 var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.objectCardTitle {
+  margin: 0;
+  font: 700 var(--text-h4)/1.25 var(--font-serif);
+}
+
+.objectCardTitle a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.objectCardTitle a:hover {
+  text-decoration: underline;
+}
+
+.objectCardTitle a:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.objectCardMeta {
+  margin: 0;
+  color: var(--muted);
+  font: 400 var(--text-small)/1.4 var(--font-sans);
+}
+
+.objectCardTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.objectCardTag {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-full);
+  background: var(--paper);
+  padding: 0.25rem var(--space-3);
+  color: var(--muted);
+  font: 600 var(--text-small)/1 var(--font-sans);
+}
+
+/* Loading / empty / error states share one centred, text-only treatment -
+   deliberately plain rather than inventing new visual chrome for states
+   that, by definition, have no real content to show yet. */
+.directoryStatus {
+  max-width: 36rem;
+  margin: 0 auto;
+  padding-block: var(--space-20);
+  text-align: center;
+  color: var(--muted);
+  font: 400 var(--text-body)/1.6 var(--font-sans);
+}
+
+.directoryStatus h2 {
+  max-width: none;
+  margin: 0 0 var(--space-3);
+  color: var(--ink);
+  font: 700 var(--text-h4)/1.3 var(--font-serif);
+}
+
+.directoryStatusNotice {
+  margin: 0 0 var(--space-6);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: var(--space-4) var(--space-5);
+  color: var(--muted);
+  font: 400 var(--text-small)/1.5 var(--font-sans);
+  text-align: start;
+}
+
+.objectCardSkeleton {
+  height: 14rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--surface), var(--paper));
+}
+
+.directoryPagination {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-4);
+  margin-top: var(--space-10);
+}
+
+/* Shared by the <Link> pagination controls and the retry <button> in
+   src/app/objects/error.tsx, so both look identical regardless of element. */
+.directoryPaginationLink {
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-full);
+  background: transparent;
+  cursor: pointer;
+  padding: 0.75rem var(--space-5);
+  color: var(--ink);
+  font: 700 var(--text-small)/1 var(--font-sans);
+  font-family: var(--font-sans);
+  text-decoration: none;
+}
+
+.directoryPaginationLink:hover {
+  background: var(--ink);
+  color: var(--ink-contrast);
+}
+
+.directoryPaginationLink:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* --bp-sm: 40rem (640px) */
 @media (max-width: 40rem) {
   .siteHeaderInner {
@@ -286,5 +448,17 @@ h2 {
 
   .siteFooterInner {
     padding-block: var(--space-7);
+  }
+
+  .objectsSection {
+    padding-block: var(--space-10) var(--space-20);
+  }
+
+  .directoryPagination {
+    flex-direction: column;
+  }
+
+  .directoryPaginationLink {
+    text-align: center;
   }
 }
