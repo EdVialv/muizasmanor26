@@ -19,11 +19,11 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 14 complete, awaiting review/merge
+- **Current roadmap day:** Day 15 complete, awaiting review/merge (Day 14 likewise)
 - **Last completed-and-merged day:** Day 13 ([#38](https://github.com/EdVialv/muizasmanor26/pull/38), `ebc4bca`)
 - **Current issue:** [#7 — Public manor directory and detail pages](https://github.com/EdVialv/muizasmanor26/issues/7)
-- **Next outcome:** Review and merge Day 14, then Day 15 (images, sources, contacts, access information).
-- **MVP status:** Days 1–13 are merged and verified. Day 14 adds `/objects/[slug]` object pages on its own branch, not yet merged. The real dataset remains non-destructive: no Day 11 row was staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
+- **Next outcome:** Review and merge Days 14 and 15 in order, apply the Day 15 migration, then Day 16 (search).
+- **MVP status:** Days 1–13 are merged and verified. Day 14 (object pages) and Day 15 (images, sources, contacts, access information) sit on their own branches, each based on the one before, not yet merged. Day 15 adds a migration that has not been applied anywhere. The real dataset remains non-destructive: no Day 11 row was staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
@@ -32,13 +32,13 @@ Update this section when a session starts. Only one write-enabled session should
 
 | Field            | Current value                                                        |
 | ---------------- | -------------------------------------------------------------------- |
-| Status           | Day 14 complete on its own branch, awaiting review/push              |
+| Status           | Days 14 and 15 complete on their own branches, awaiting review/push  |
 | Agent            | None                                                                 |
 | Issue            | #7                                                                   |
-| Branch           | None (delivered as `claude/day14-object-pages`, see session history) |
-| Session goal     | Day 15: images, sources, contacts and access information             |
+| Branch           | None (delivered as `claude/day15-visual-alpha`, see session history) |
+| Session goal     | Day 16: indexed multilingual search                                  |
 | Started          | Not started                                                          |
-| Expected handoff | Day 14 reviewed and merged, then Day 15 built on top of it           |
+| Expected handoff | Days 14–15 reviewed and merged, migration applied, then Day 16       |
 
 ## Required session entry
 
@@ -67,6 +67,41 @@ Copy this template to the top of **Session history** before ending a session.
 ```
 
 ## Session history
+
+### 2026-11-13 Europe/Riga — Claude Code (Day 15)
+
+- **Issue:** [#7 — Public manor directory and detail pages](https://github.com/EdVialv/muizasmanor26/issues/7)
+- **Branch:** `claude/day15-visual-alpha`, based on the Day 14 commit `018ca0c`
+- **Pull request:** not opened (this session cannot push; delivered as `muizasmanor26-day15.bundle`)
+- **Session goal:** Make the directory and object pages coherent and usable on mobile and desktop: images, credits, sources, contacts, access information.
+- **Completed:**
+  - asked the owner how to handle the missing schema and, on their answer, wrote one unapplied migration: an `object_images` table with column-level public grants and RLS, and nullable visitor-access/accessibility columns;
+  - on the owner's instruction, display images from the workbook's column G URLs; built a Blogger-aware responsive `srcset`, fixed-ratio image boxes, lazy loading and a two-step fallback for failed images;
+  - added cover images and a recorded-access tag to directory cards, embedded in the existing directory requests;
+  - added to the object page: hero image and gallery with credits and licences, source link and verification dates, public contacts with scheme-checked links, and an access section that separates "not recorded" from "not accessible";
+  - aligned the directory heading and grid with the object page, and added an AA-contrast accent text colour;
+  - captured six mobile and desktop screenshots into `docs/day15-screenshots/`;
+  - **follow-up commit on the same branch (owner request):** a picture that cannot be shown is replaced by a link to its own column G URL ("Atvērt attēlu avotā"), and the hero always shows an "Atvērt oriģinālo attēlu" link; gallery thumbnails, already links to the original, fall back to text inside that link. Three more screenshots, `docs/day15-screenshots/fallback-links-*.jpg`.
+- **Files changed:**
+  - `supabase/migrations/20261113090000_object_images_access.sql` — new;
+  - `src/components/ObjectImage.tsx`, `src/components/object/*`, `src/lib/images/bloggerImage.ts`, `src/lib/format/*` and tests — new;
+  - `src/lib/objects/*`, `src/lib/directory/queries.ts`, `supabaseDataSource.ts`, `labels.ts`, `src/components/HeritageObjectCard.tsx`, `src/app/objects/[slug]/page.tsx` and tests — extended;
+  - `src/app/globals.css`; `src/test-support/*`;
+  - `docs/DAY15_VISUAL_ALPHA_NOTES.md`, `docs/day15-screenshots/`, `TODO.md`, `PROGRESS.md`.
+- **Verification (Node 22.23.4; the repo requires ≥ 24, npm warns only):**
+  - `npm run format:check`, `npm run lint`, `npm run typecheck` — passed;
+  - `npm test` — passed, 31 files and 266 tests (200 → 266, including 3 from the picture-link follow-up);
+  - `npm run build` — passed;
+  - `npm audit --omit=dev` — 0 vulnerabilities;
+  - migration applied cleanly to a disposable local PostgreSQL 16 + PostGIS database; through PostgREST as anon: `select=*` and internal columns refused, `not_cleared` and draft-object images hidden, writes refused, embeds returned;
+  - Playwright against `next start` on that stack with the real workbook's names and column G URLs: no overflow at 360 px and 1280 px, slot-sized image requests, zero layout shift on the directory, failed-image fallback, keyboard focus on every link.
+- **Decisions:** see the 7 in `docs/DAY15_VISUAL_ALPHA_NOTES.md`; the two that most need a second look are hotlinking the blog's images (owner's instruction, against the Day 6 proposal) and the unverified Blogger resize parameter.
+- **Blockers or risks:**
+  - the build sandbox cannot reach `blogger.googleusercontent.com`, so no real image was loaded; screenshots show labelled stand-ins;
+  - the migration must be applied before this code is deployed;
+  - no image, contact or access data exists in the real project, and nothing was imported.
+- **Next exact action:** Codex reviews Day 14 then Day 15, checks one real image in a browser, applies the migration to `muizasmanor26-dev`; Day 16 continues from this commit on `claude/day16-search`.
+- **Handoff state:** committed on `claude/day15-visual-alpha`, not pushed.
 
 ### 2026-11-13 Europe/Riga — Claude Code (Day 14)
 

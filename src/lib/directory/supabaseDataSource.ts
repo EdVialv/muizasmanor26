@@ -20,8 +20,15 @@ import {
   type RawDirectoryRow,
 } from "./queries";
 
+/**
+ * Day 15 adds public_access and the embedded cover image. The embed is
+ * filtered to is_primary below, so each card gets at most one image row in
+ * the same request as its object - no per-card image query.
+ */
 const SELECT_COLUMNS =
-  "id, slug, name_lv, object_type, municipality, condition_category, ownership_type";
+  "id, slug, name_lv, object_type, municipality, condition_category, ownership_type, public_access, object_images(source_image_url, alt_text_lv)";
+
+const COVER_FILTER_COLUMN = "object_images.is_primary";
 
 /**
  * Builds a data source from NEXT_PUBLIC_SUPABASE_URL and
@@ -58,13 +65,14 @@ export function createSupabaseDirectoryDataSource(client: SupabaseClient): Direc
         .from(HERITAGE_OBJECTS_TABLE)
         .select(SELECT_COLUMNS)
         .eq("status", "published")
+        .eq(COVER_FILTER_COLUMN, true)
         .order("name_lv", { ascending: true })
         .order("id", { ascending: true })
         .limit(limit);
       if (error) {
         throw error;
       }
-      return (data ?? []) as RawDirectoryRow[];
+      return (data ?? []) as unknown as RawDirectoryRow[];
     },
 
     async fetchSameNameAfterId(name, afterId, limit) {
@@ -72,6 +80,7 @@ export function createSupabaseDirectoryDataSource(client: SupabaseClient): Direc
         .from(HERITAGE_OBJECTS_TABLE)
         .select(SELECT_COLUMNS)
         .eq("status", "published")
+        .eq(COVER_FILTER_COLUMN, true)
         .eq("name_lv", name)
         .gt("id", afterId)
         .order("id", { ascending: true })
@@ -79,7 +88,7 @@ export function createSupabaseDirectoryDataSource(client: SupabaseClient): Direc
       if (error) {
         throw error;
       }
-      return (data ?? []) as RawDirectoryRow[];
+      return (data ?? []) as unknown as RawDirectoryRow[];
     },
 
     async fetchAfterName(name, limit) {
@@ -87,6 +96,7 @@ export function createSupabaseDirectoryDataSource(client: SupabaseClient): Direc
         .from(HERITAGE_OBJECTS_TABLE)
         .select(SELECT_COLUMNS)
         .eq("status", "published")
+        .eq(COVER_FILTER_COLUMN, true)
         .gt("name_lv", name)
         .order("name_lv", { ascending: true })
         .order("id", { ascending: true })
@@ -94,7 +104,7 @@ export function createSupabaseDirectoryDataSource(client: SupabaseClient): Direc
       if (error) {
         throw error;
       }
-      return (data ?? []) as RawDirectoryRow[];
+      return (data ?? []) as unknown as RawDirectoryRow[];
     },
   };
 }

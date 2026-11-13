@@ -51,6 +51,25 @@ export interface RawDirectoryRow {
   municipality: string | null;
   condition_category: string | null;
   ownership_type: string | null;
+  /** Day 15. NULL means "not recorded". */
+  public_access?: string | null;
+  /**
+   * Day 15: the embedded cover image - at most one row, because the query
+   * filters the embed on is_primary and the table allows one cover per
+   * object. Absent or empty when the object has no publishable cover.
+   */
+  object_images?: RawDirectoryCoverRow[] | null;
+}
+
+export interface RawDirectoryCoverRow {
+  source_image_url: string;
+  alt_text_lv: string | null;
+}
+
+export interface DirectoryCoverImage {
+  /** Always https. */
+  sourceUrl: string;
+  altTextLv: string | null;
 }
 
 /** Presentation-ready shape consumed by HeritageObjectCard. */
@@ -63,12 +82,12 @@ export interface DirectoryObjectSummary {
   conditionCategory: string | null;
   ownershipType: string | null;
   /**
-   * Always null today: docs/DATA_MODEL.md and the Day 8/9 migrations define
-   * no public-access column yet. The field exists on this type, and on the
-   * card component, so a later day can add the real source without another
-   * shape change - see docs/DAY13_DIRECTORY_NOTES.md "Known limitations".
+   * heritage_objects.public_access (Day 15 migration), or null when it is
+   * not recorded. The card shows a tag only for a recorded value.
    */
   publicAccessStatus: string | null;
+  /** The object's cover image, or null when it has none. */
+  coverImage: DirectoryCoverImage | null;
 }
 
 export class DirectoryConfigurationError extends Error {
@@ -107,6 +126,22 @@ export interface DirectoryPageResult {
   nextCursor: DirectoryCursor | null;
 }
 
+function toCoverImage(rows: RawDirectoryCoverRow[] | null | undefined): DirectoryCoverImage | null {
+  const cover = rows?.[0];
+  if (!cover || typeof cover.source_image_url !== "string") {
+    return null;
+  }
+  try {
+    if (new URL(cover.source_image_url).protocol !== "https:") {
+      return null;
+    }
+  } catch {
+    return null;
+  }
+  const alt = cover.alt_text_lv?.trim();
+  return { sourceUrl: cover.source_image_url, altTextLv: alt ? alt : null };
+}
+
 function toSummary(row: RawDirectoryRow): DirectoryObjectSummary {
   return {
     id: row.id,
@@ -116,7 +151,8 @@ function toSummary(row: RawDirectoryRow): DirectoryObjectSummary {
     municipality: row.municipality,
     conditionCategory: row.condition_category,
     ownershipType: row.ownership_type,
-    publicAccessStatus: null,
+    publicAccessStatus: row.public_access ?? null,
+    coverImage: toCoverImage(row.object_images),
   };
 }
 

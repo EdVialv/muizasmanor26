@@ -3,6 +3,7 @@ import {
   fetchObjectBySlug,
   fetchObjectRelations,
   isValidObjectSlug,
+  MAX_OBJECT_IMAGES,
   MAX_OWNER_FAMILIES,
   MAX_RELATED_CHILDREN,
   ObjectDetailQueryError,
@@ -10,25 +11,12 @@ import {
   type RawObjectDetailRow,
   type RawRelatedObjectRow,
 } from "./detail";
+import { rawObjectDetailRow } from "@/test-support/objectFixtures";
 
 const ID = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 
 function detailRow(overrides: Partial<RawObjectDetailRow> = {}): RawObjectDetailRow {
-  return {
-    id: ID(1),
-    slug: "rundales-pils",
-    name_lv: "Rundāles pils",
-    object_type: "palace_or_castle",
-    summary_lv: "Baroka pils Zemgalē.",
-    municipality: "Bauskas novads",
-    latitude: 56.4142,
-    longitude: 24.0164,
-    condition_category: "class_a",
-    condition_notes_lv: null,
-    ownership_type: "state",
-    parent_object_id: null,
-    ...overrides,
-  };
+  return rawObjectDetailRow({ id: ID(1), ...overrides });
 }
 
 function related(n: number, name: string): RawRelatedObjectRow {
@@ -69,7 +57,7 @@ describe("fetchObjectBySlug", () => {
   it("maps a complete row onto the presentation shape", async () => {
     const source = dataSource({ fetchPublishedObjectBySlug: vi.fn(async () => detailRow()) });
 
-    await expect(fetchObjectBySlug(source, "rundales-pils")).resolves.toEqual({
+    await expect(fetchObjectBySlug(source, "rundales-pils")).resolves.toMatchObject({
       id: ID(1),
       slug: "rundales-pils",
       nameLv: "Rundāles pils",
@@ -263,5 +251,163 @@ describe("fetchObjectRelations", () => {
     await expect(
       fetchObjectRelations(source, { id: ID(1), parentObjectId: null }),
     ).rejects.toBeInstanceOf(ObjectDetailQueryError);
+  });
+});
+
+describe("fetchObjectBySlug - Day 15 fields", () => {
+  const IMAGE = {
+    id: ID(50),
+    source_image_url: "https://blogger.googleusercontent.com/img/b/x/y/s1600/a.jpg",
+    alt_text_lv: null,
+    caption_lv: null,
+    credit: null,
+    license_name: null,
+    license_url: null,
+    source_attribution_note: "Foto: manasvietas.blogspot.com",
+    is_primary: false,
+    sort_order: 0,
+  };
+
+  async function load(overrides: Partial<RawObjectDetailRow>) {
+    const source = dataSource({
+      fetchPublishedObjectBySlug: vi.fn(async () => detailRow(overrides)),
+    });
+    const object = await fetchObjectBySlug(source, "rundales-pils");
+    if (!object) {
+      throw new Error("expected an object");
+    }
+    return object;
+  }
+
+  it("puts the cover image first, then the recorded order", async () => {
+    const object = await load({
+      object_images: [
+        { ...IMAGE, id: ID(51), sort_order: 2 },
+        { ...IMAGE, id: ID(52), sort_order: 1 },
+        { ...IMAGE, id: ID(53), sort_order: 5, is_primary: true },
+      ],
+    });
+
+    expect(object.images.map((image) => image.id)).toEqual([ID(53), ID(52), ID(51)]);
+    expect(object.images[0]).toMatchObject({
+      isPrimary: true,
+      attributionNote: "Foto: manasvietas.blogspot.com",
+      altTextLv: null,
+      credit: null,
+    });
+  });
+
+  it("drops an image whose URL is not https instead of rendering a broken one", async () => {
+    const object = await load({
+      object_images: [
+        { ...IMAGE, id: ID(51), source_image_url: "http://insecure.example/a.jpg" },
+        { ...IMAGE, id: ID(52), source_image_url: "javascript:alert(1)" },
+        { ...IMAGE, id: ID(53) },
+      ],
+    });
+
+    expect(object.images.map((image) => image.id)).toEqual([ID(53)]);
+  });
+
+  it("caps the gallery and reports that there are more", async () => {
+    const many = Array.from({ length: MAX_OBJECT_IMAGES + 1 }, (_, i) => ({
+      ...IMAGE,
+      id: ID(100 + i),
+      sort_order: i,
+    }));
+
+    const object = await load({ object_images: many });
+
+    expect(object.images).toHaveLength(MAX_OBJECT_IMAGES);
+    expect(object.hasMoreImages).toBe(true);
+  });
+
+  it("treats a missing embed (null) as no images and no contacts", async () => {
+    const object = await load({ object_images: null, object_contacts: null });
+
+    expect(object.images).toEqual([]);
+    expect(object.hasMoreImages).toBe(false);
+    expect(object.contacts).toEqual([]);
+  });
+
+  it("keeps only safe http(s) source and licence URLs", async () => {
+    const object = await load({
+      source_url: "javascript:alert(1)",
+      object_images: [{ ...IMAGE, license_url: "data:text/html,x", license_name: "CC BY 4.0" }],
+    });
+
+    expect(object.sourceUrl).toBeNull();
+    expect(object.images[0].licenseUrl).toBeNull();
+    expect(object.images[0].licenseName).toBe("CC BY 4.0");
+  });
+
+  it("passes recorded verification dates through and never invents one", async () => {
+    const recorded = await load({
+      last_verified_at: "2026-10-08T00:00:00+00:00",
+      ownership_verified_at: "2026-09-01",
+      access_verified_at: "2026-08-15",
+    });
+    const unrecorded = await load({});
+
+    expect(recorded).toMatchObject({
+      lastVerifiedAt: "2026-10-08T00:00:00+00:00",
+      ownershipVerifiedAt: "2026-09-01",
+      accessVerifiedAt: "2026-08-15",
+    });
+    expect(unrecorded).toMatchObject({
+      lastVerifiedAt: null,
+      ownershipVerifiedAt: null,
+      accessVerifiedAt: null,
+    });
+  });
+
+  it("keeps unknown access as null, distinct from not_accessible", async () => {
+    const unknown = await load({ public_access: null, accessibility: null });
+    const closed = await load({ public_access: "not_accessible", accessibility: "not_accessible" });
+
+    expect(unknown.publicAccess).toBeNull();
+    expect(unknown.accessibility).toBeNull();
+    expect(closed.publicAccess).toBe("not_accessible");
+    expect(closed.accessibility).toBe("not_accessible");
+  });
+
+  it("orders contacts with the primary one first and drops blank values", async () => {
+    const contact = {
+      contact_type: "email",
+      label: "Informācija",
+      contact_value: "info@example.org",
+      is_primary: false,
+      verified_at: null,
+    };
+    const object = await load({
+      object_contacts: [
+        contact,
+        { ...contact, label: "Tukšs", contact_value: "   " },
+        {
+          ...contact,
+          contact_type: "website",
+          label: "Mājaslapa",
+          contact_value: " https://example.org ",
+          is_primary: true,
+        },
+      ],
+    });
+
+    expect(object.contacts).toEqual([
+      {
+        type: "website",
+        label: "Mājaslapa",
+        value: "https://example.org",
+        isPrimary: true,
+        verifiedAt: null,
+      },
+      {
+        type: "email",
+        label: "Informācija",
+        value: "info@example.org",
+        isPrimary: false,
+        verifiedAt: null,
+      },
+    ]);
   });
 });

@@ -61,7 +61,10 @@ describe("createSupabaseDirectoryDataSource", () => {
       await dataSource.fetchFirstPage(25);
 
       expect(calls.from).toEqual(["heritage_objects"]);
-      expect(calls.eq).toEqual([["status", "published"]]);
+      expect(calls.eq).toEqual([
+        ["status", "published"],
+        ["object_images.is_primary", true],
+      ]);
       expect(calls.order).toEqual([
         ["name_lv", { ascending: true }],
         ["id", { ascending: true }],
@@ -95,6 +98,7 @@ describe("createSupabaseDirectoryDataSource", () => {
 
       expect(calls.eq).toEqual([
         ["status", "published"],
+        ["object_images.is_primary", true],
         ["name_lv", "Rundāles pils"],
       ]);
       expect(calls.gt).toEqual([["id", "some-id"]]);
@@ -110,7 +114,10 @@ describe("createSupabaseDirectoryDataSource", () => {
 
       await dataSource.fetchAfterName("Rundāles pils", 10);
 
-      expect(calls.eq).toEqual([["status", "published"]]);
+      expect(calls.eq).toEqual([
+        ["status", "published"],
+        ["object_images.is_primary", true],
+      ]);
       expect(calls.gt).toEqual([["name_lv", "Rundāles pils"]]);
       expect(calls.order).toEqual([
         ["name_lv", { ascending: true }],

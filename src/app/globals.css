@@ -20,6 +20,11 @@
   --paper: #f7f4ec;
   --surface: #fffdf8;
   --accent: #a6602b;
+  /* Day 15: --accent on --paper is 4.41:1, just under WCAG AA for small
+     text. This darker step (5.13:1 on --paper, 5.54:1 on --surface) is used
+     wherever the accent colours text; --accent itself stays for borders,
+     focus rings and large shapes. */
+  --accent-text: #985726;
   --line: #d8d2c4;
 
   /* Typography — same two font stacks the landing page already used
@@ -154,7 +159,7 @@ main {
 }
 
 .siteNav a[aria-current="page"] {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .siteNav a:hover,
@@ -201,7 +206,7 @@ main {
 
 .eyebrow {
   margin: 0 0 var(--space-4);
-  color: var(--accent);
+  color: var(--accent-text);
   font: 700 var(--text-eyebrow)/1.4 var(--font-sans);
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -274,13 +279,20 @@ h2 {
   padding-block: var(--space-14) var(--space-28);
 }
 
+/* Day 15: the same title scale as an object page's own heading, instead
+   of the landing page's display size. */
 .objectsHeading {
+  max-width: 24ch;
   margin: 0 0 var(--space-10);
+  font-size: var(--text-h2);
+  line-height: 1.05;
 }
 
 .objectsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  /* auto-fill, not auto-fit: a page with one or two cards keeps them at
+     card width instead of stretching them across the row. */
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
   gap: var(--space-6);
   margin: 0;
   padding: 0;
@@ -296,12 +308,11 @@ h2 {
   background: var(--surface);
 }
 
-/* Explicitly decorative, aria-hidden placeholder - not a photo and not part
-   of the Day 15 image pipeline (see HeritageObjectCard.tsx). */
+/* The card's media box. Its size comes from .objectImageFrame's aspect
+   ratio, so a card looks the same with a cover image, without one, and
+   while one is loading. */
 .objectCardMedia {
-  height: 7rem;
   border-bottom: 1px solid var(--line);
-  background: linear-gradient(135deg, var(--surface), var(--paper));
 }
 
 .objectCardBody {
@@ -314,7 +325,7 @@ h2 {
 
 .objectCardType {
   margin: 0;
-  color: var(--accent);
+  color: var(--accent-text);
   font: 700 var(--text-eyebrow)/1.3 var(--font-sans);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -438,19 +449,25 @@ h2 {
 }
 
 .objectBackNav a,
-.objectPlainList a {
+.objectPlainList a,
+.objectFacts a,
+.objectHero figcaption a {
   color: var(--ink);
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
 
 .objectBackNav a:hover,
-.objectPlainList a:hover {
-  color: var(--accent);
+.objectPlainList a:hover,
+.objectFacts a:hover,
+.objectHero figcaption a:hover {
+  color: var(--accent-text);
 }
 
 .objectBackNav a:focus-visible,
-.objectPlainList a:focus-visible {
+.objectPlainList a:focus-visible,
+.objectFacts a:focus-visible,
+.objectHero figcaption a:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 2px;
 }
@@ -542,6 +559,124 @@ h2 {
   font: 400 var(--text-small)/1.5 var(--font-sans);
 }
 
+/* Images (Day 15 — docs/DAY15_VISUAL_ALPHA_NOTES.md) */
+
+/* Every photograph sits in a box with a fixed aspect ratio. The box - not
+   the file - sets the layout size, so nothing moves when an image arrives,
+   is still loading, or fails. */
+.objectImageFrame {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 3 / 2;
+  background: linear-gradient(135deg, var(--surface), var(--paper));
+}
+
+.objectImage {
+  object-fit: cover;
+}
+
+.objectImageFallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  color: var(--muted);
+  font: 400 var(--text-small)/1.4 var(--font-sans);
+  text-align: center;
+}
+
+.objectImageFallbackLink {
+  display: inline-block;
+  margin-top: var(--space-2);
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  overflow-wrap: anywhere;
+}
+
+.objectImageFallbackLink:hover {
+  color: var(--accent-text);
+}
+
+.objectImageFallbackLink:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.objectImageSourceLink {
+  display: block;
+  margin-top: var(--space-2);
+}
+
+.objectHero {
+  max-width: 48rem;
+  margin: 0 0 var(--space-10);
+}
+
+.objectHeroFrame {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.objectHero figcaption,
+.objectGallery figcaption {
+  margin-top: var(--space-2);
+  color: var(--muted);
+  font: 400 var(--text-small)/1.5 var(--font-sans);
+  overflow-wrap: anywhere;
+}
+
+.objectImageCaption {
+  display: block;
+  color: var(--ink);
+}
+
+.objectGallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.objectGallery figure {
+  margin: 0;
+}
+
+.objectGalleryFrame {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.objectGalleryFrame:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.objectUnknown {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.objectContactType {
+  display: block;
+  font-weight: 400;
+}
+
+/* Present for assistive technology, absent from the visual layout. */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .directoryStatus h1 {
   max-width: none;
   margin: 0 0 var(--space-3);
@@ -590,5 +725,10 @@ h2 {
   .objectFacts > div {
     grid-template-columns: 1fr;
     gap: 0;
+  }
+
+  .objectGallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
   }
 }

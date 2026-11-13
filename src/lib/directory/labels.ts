@@ -59,3 +59,42 @@ export function conditionCategoryLabel(value: string): { label: string; note?: s
 export function ownershipTypeLabel(value: string): string {
   return OWNERSHIP_TYPE_LABELS[value] ?? value;
 }
+
+/**
+ * Day 15 labels. Like the object-type and ownership labels above, this
+ * wording is this session's own and needs a product copy review
+ * (docs/DAY15_VISUAL_ALPHA_NOTES.md).
+ */
+const PUBLIC_ACCESS_LABELS: Record<string, string> = {
+  open: "Atvērts apmeklētājiem",
+  by_appointment: "Apmeklējums pēc pieraksta",
+  exterior_only: "Apskatāms tikai no ārpuses",
+  not_accessible: "Nav pieejams apmeklētājiem",
+};
+
+const ACCESSIBILITY_LABELS: Record<string, string> = {
+  accessible: "Pieejams cilvēkiem ar kustību traucējumiem",
+  partially_accessible: "Daļēji pieejams cilvēkiem ar kustību traucējumiem",
+  not_accessible: "Nav pieejams cilvēkiem ar kustību traucējumiem",
+};
+
+const CONTACT_TYPE_LABELS: Record<string, string> = {
+  email: "E-pasts",
+  phone: "Tālrunis",
+  website: "Mājaslapa",
+  address: "Adrese",
+  social: "Sociālie tīkli",
+  booking: "Rezervācija",
+};
+
+export function publicAccessLabel(value: string): string {
+  return PUBLIC_ACCESS_LABELS[value] ?? value;
+}
+
+export function accessibilityLabel(value: string): string {
+  return ACCESSIBILITY_LABELS[value] ?? value;
+}
+
+export function contactTypeLabel(value: string): string {
+  return CONTACT_TYPE_LABELS[value] ?? value;
+}

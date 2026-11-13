@@ -2,12 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import ObjectAccessSection from "@/components/object/ObjectAccessSection";
+import ObjectContactsSection from "@/components/object/ObjectContactsSection";
+import { ObjectGallery, ObjectHeroImage } from "@/components/object/ObjectGallery";
+import ObjectSourcesSection from "@/components/object/ObjectSourcesSection";
 import {
   conditionCategoryLabel,
   objectTypeLabel,
   ownershipTypeLabel,
 } from "@/lib/directory/labels";
 import { buildDirectoryHref, parseDirectoryContext } from "@/lib/directory/links";
+import { formatLatvianDate } from "@/lib/format/dates";
 import type { ObjectDetail } from "@/lib/objects/detail";
 import { loadObject } from "./loadObject";
 import { buildObjectMetadata } from "./objectMetadata";
@@ -96,6 +101,8 @@ export default async function ObjectPage({ params, searchParams }: ObjectPagePro
     ? conditionCategoryLabel(object.conditionCategory)
     : null;
   const summaryParagraphs = object.summaryLv ? toParagraphs(object.summaryLv) : [];
+  const [heroImage, ...galleryImages] = object.images;
+  const ownershipVerified = formatLatvianDate(object.ownershipVerifiedAt);
 
   return (
     <article className="objectsSection objectDetail">
@@ -113,6 +120,8 @@ export default async function ObjectPage({ params, searchParams }: ObjectPagePro
             <p className="objectDetailLocation">{object.municipality}</p>
           ) : null}
         </header>
+
+        {heroImage ? <ObjectHeroImage image={heroImage} objectName={object.nameLv} /> : null}
 
         {summaryParagraphs.length > 0 ? (
           <section className="objectSection" aria-labelledby="object-summary">
@@ -163,11 +172,31 @@ export default async function ObjectPage({ params, searchParams }: ObjectPagePro
             {object.ownershipType ? (
               <div>
                 <dt>Īpašuma forma</dt>
-                <dd>{ownershipTypeLabel(object.ownershipType)}</dd>
+                <dd>
+                  {ownershipTypeLabel(object.ownershipType)}
+                  {ownershipVerified && object.ownershipVerifiedAt ? (
+                    <p className="objectFactNote">
+                      Pārbaudīts:{" "}
+                      <time dateTime={object.ownershipVerifiedAt}>{ownershipVerified}</time>
+                    </p>
+                  ) : null}
+                </dd>
               </div>
             ) : null}
           </dl>
         </section>
+
+        <ObjectAccessSection object={object} />
+
+        <ObjectGallery
+          images={galleryImages}
+          objectName={object.nameLv}
+          hasMore={object.hasMoreImages}
+        />
+
+        <ObjectContactsSection contacts={object.contacts} />
+
+        <ObjectSourcesSection object={object} />
 
         <Suspense fallback={<ObjectRelationsSkeleton />}>
           <ObjectRelationsSection
