@@ -8,6 +8,8 @@ export interface RecordedQuery {
   filters: Array<[method: string, column: string, value: unknown]>;
   order: Array<[column: string, options: unknown]>;
   limit?: number;
+  /** Limits applied to an embedded table, keyed by that table's name. */
+  embeddedLimits: Record<string, number>;
 }
 
 /**
@@ -47,8 +49,16 @@ export function createRecordingSupabaseClient(
         query.order.push([column, options]);
         return builder;
       }),
-      limit: vi.fn((count: number) => {
-        query.limit = count;
+      neq: vi.fn((column: string, value: unknown) => {
+        query.filters.push(["neq", column, value]);
+        return builder;
+      }),
+      limit: vi.fn((count: number, options?: { referencedTable?: string }) => {
+        if (options?.referencedTable) {
+          query.embeddedLimits[options.referencedTable] = count;
+        } else {
+          query.limit = count;
+        }
         return builder;
       }),
       then: (
@@ -61,12 +71,17 @@ export function createRecordingSupabaseClient(
 
   const client = {
     from: vi.fn((table: string) => {
-      const query: RecordedQuery = { table, filters: [], order: [] };
+      const query: RecordedQuery = { table, filters: [], order: [], embeddedLimits: {} };
       queries.push(query);
       return builderFor(query);
     }),
     rpc: vi.fn((name: string, args: unknown) => {
-      const query: RecordedQuery = { rpc: { name, args }, filters: [], order: [] };
+      const query: RecordedQuery = {
+        rpc: { name, args },
+        filters: [],
+        order: [],
+        embeddedLimits: {},
+      };
       queries.push(query);
       return builderFor(query);
     }),

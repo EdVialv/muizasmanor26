@@ -1,20 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { ObjectDetail } from "@/lib/objects/detail";
+import { sparseObjectDetail } from "@/test-support/objectFixtures";
 import { buildObjectMetadata, truncateForDescription } from "./objectMetadata";
 
-const OBJECT: ObjectDetail = {
-  id: "11111111-2222-4333-8444-555555555555",
-  slug: "rundales-pils",
-  nameLv: "Rundāles pils",
-  objectType: "palace_or_castle",
-  summaryLv: null,
-  municipality: "Bauskas novads",
-  coordinates: null,
-  conditionCategory: null,
-  conditionNotesLv: null,
-  ownershipType: null,
-  parentObjectId: null,
-};
+const OBJECT: ObjectDetail = sparseObjectDetail({ municipality: "Bauskas novads" });
 
 describe("buildObjectMetadata", () => {
   it("describes a record with no summary by its type and municipality only", () => {

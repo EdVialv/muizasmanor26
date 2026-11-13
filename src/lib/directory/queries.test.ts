@@ -131,6 +131,7 @@ describe("fetchDirectoryPage", () => {
       conditionCategory: null,
       ownershipType: null,
       publicAccessStatus: null,
+      coverImage: null,
     });
   });
 
@@ -157,5 +158,43 @@ describe("fetchDirectoryPage", () => {
     await expect(fetchDirectoryPage(dataSource, null, 24)).rejects.toBeInstanceOf(
       DirectoryQueryError,
     );
+  });
+
+  it("maps the recorded public-access value and the embedded cover image", async () => {
+    const fixture: RawDirectoryRow[] = [
+      {
+        ...row("Alpha", ID(1)),
+        public_access: "by_appointment",
+        object_images: [
+          {
+            source_image_url: "https://blogger.googleusercontent.com/img/b/x/y/s1600/a.jpg",
+            alt_text_lv: "  Alfa muižas kungu māja  ",
+          },
+        ],
+      },
+    ];
+
+    const result = await fetchDirectoryPage(fakeDataSource(fixture), null, 24);
+
+    expect(result.items[0].publicAccessStatus).toBe("by_appointment");
+    expect(result.items[0].coverImage).toEqual({
+      sourceUrl: "https://blogger.googleusercontent.com/img/b/x/y/s1600/a.jpg",
+      altTextLv: "Alfa muižas kungu māja",
+    });
+  });
+
+  it("gives an object with no cover, or a non-https cover URL, no image at all", async () => {
+    const fixture: RawDirectoryRow[] = [
+      { ...row("Alpha", ID(1)), object_images: [] },
+      { ...row("Beta", ID(2)), object_images: null },
+      {
+        ...row("Gamma", ID(3)),
+        object_images: [{ source_image_url: "http://insecure.example/a.jpg", alt_text_lv: null }],
+      },
+    ];
+
+    const result = await fetchDirectoryPage(fakeDataSource(fixture), null, 24);
+
+    expect(result.items.map((item) => item.coverImage)).toEqual([null, null, null]);
   });
 });

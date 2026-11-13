@@ -7,6 +7,7 @@ import {
   type RawObjectDetailRow,
 } from "@/lib/objects/detail";
 import { PublicDataConfigurationError } from "@/lib/supabase/publicClient";
+import { rawObjectDetailRow } from "@/test-support/objectFixtures";
 
 /**
  * ObjectPage reaches Supabase only through
@@ -47,21 +48,18 @@ const OBJECT_ID = "11111111-2222-4333-8444-555555555555";
 const PARENT_ID = "99999999-2222-4333-8444-555555555555";
 
 function detailRow(overrides: Partial<RawObjectDetailRow> = {}): RawObjectDetailRow {
-  return {
+  return rawObjectDetailRow({
     id: OBJECT_ID,
     slug: "rundales-pils-parks",
     name_lv: "Rundāles pils franču dārzs un parks",
     object_type: "park_or_garden",
     summary_lv: "Regulārs franču dārzs pils dienvidu pusē.\n\nIerīkots 18. gadsimtā.",
     municipality: "Bauskas novads (Rundāles pagasts)",
-    latitude: 56.4142,
-    longitude: 24.0164,
     condition_category: "class_b",
     condition_notes_lv: "Parteris atjaunots.",
-    ownership_type: "state",
     parent_object_id: PARENT_ID,
     ...overrides,
-  };
+  });
 }
 
 function dataSourceReturning(row: RawObjectDetailRow | null): ObjectDetailDataSource {
@@ -144,9 +142,17 @@ describe("ObjectPage", () => {
     ]) {
       expect(screen.queryByText(label)).not.toBeInTheDocument();
     }
-    expect(screen.queryByText(/nav zināms|nav norādīts|—/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/nav norādīts|—/i)).not.toBeInTheDocument();
     // The one fact every record has is still shown.
     expect(screen.getByText("Veids")).toBeInTheDocument();
+    // Day 15: no image, no gallery, no contacts and no source section - and
+    // access is reported as not yet collected, never as "not accessible".
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    for (const heading of ["Attēli", "Kontakti", "Avots un pārbaude"]) {
+      expect(screen.queryByRole("heading", { name: heading })).not.toBeInTheDocument();
+    }
+    expect(screen.getByText(/vēl nav apkopota/i)).toBeInTheDocument();
+    expect(screen.queryByText(/nav pieejams/i)).not.toBeInTheDocument();
   });
 
   it("supports heritage-object types beyond manors, and unknown types without guessing a label", async () => {
@@ -274,5 +280,112 @@ describe("generateMetadata", () => {
     });
 
     await expect(metadataFor("rundales-pils-parks")).resolves.toEqual({ title: "Objekts" });
+  });
+});
+
+describe("ObjectPage - images, sources, contacts and access (Day 15)", () => {
+  beforeEach(() => {
+    notFound.mockClear();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  const IMAGE = {
+    id: "aaaaaaaa-0000-4000-8000-000000000001",
+    source_image_url: "https://blogger.googleusercontent.com/img/b/x/y/s3000/a.jpg",
+    alt_text_lv: null,
+    caption_lv: null,
+    credit: null,
+    license_name: null,
+    license_url: null,
+    source_attribution_note: "Foto: manasvietas.blogspot.com",
+    is_primary: true,
+    sort_order: 0,
+  };
+
+  it("shows the cover image first, the rest as a gallery, with their attribution", async () => {
+    createObjectDetailDataSourceFromEnv.mockReturnValue(
+      dataSourceReturning(
+        detailRow({
+          object_images: [
+            IMAGE,
+            {
+              ...IMAGE,
+              id: "aaaaaaaa-0000-4000-8000-000000000002",
+              is_primary: false,
+              sort_order: 1,
+            },
+            {
+              ...IMAGE,
+              id: "aaaaaaaa-0000-4000-8000-000000000003",
+              is_primary: false,
+              sort_order: 2,
+            },
+          ],
+        }),
+      ),
+    );
+
+    await renderObjectPage("rundales-pils-parks");
+
+    const images = screen.getAllByRole("img");
+    expect(images).toHaveLength(3);
+    expect(images[0]).toHaveAttribute("loading", "eager");
+    expect(images[1]).toHaveAttribute("loading", "lazy");
+    expect(screen.getByRole("heading", { name: "Attēli" })).toBeInTheDocument();
+    expect(screen.getAllByText(/Foto: manasvietas\.blogspot\.com/).length).toBeGreaterThan(0);
+  });
+
+  it("shows the recorded source, verification dates, access and public contacts", async () => {
+    createObjectDetailDataSourceFromEnv.mockReturnValue(
+      dataSourceReturning(
+        detailRow({
+          source_url: "https://rundale.net/lv/",
+          last_verified_at: "2026-10-08T00:00:00+00:00",
+          ownership_verified_at: "2026-09-01",
+          public_access: "open",
+          accessibility: "not_accessible",
+          object_contacts: [
+            {
+              contact_type: "email",
+              label: "Informācija",
+              contact_value: "info@example.org",
+              is_primary: true,
+              verified_at: null,
+            },
+          ],
+        }),
+      ),
+    );
+
+    await renderObjectPage("rundales-pils-parks");
+
+    expect(screen.getByRole("link", { name: "rundale.net" })).toHaveAttribute(
+      "href",
+      "https://rundale.net/lv/",
+    );
+    expect(screen.getByText("2026. gada 8. oktobris")).toBeInTheDocument();
+    expect(screen.getByText("2026. gada 1. septembris")).toBeInTheDocument();
+    expect(screen.getByText("Atvērts apmeklētājiem")).toBeInTheDocument();
+    expect(screen.getByText("Nav pieejams cilvēkiem ar kustību traucējumiem")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "info@example.org" })).toHaveAttribute(
+      "href",
+      "mailto:info@example.org",
+    );
+  });
+
+  it("keeps a single h1 and an unbroken heading order", async () => {
+    createObjectDetailDataSourceFromEnv.mockReturnValue(
+      dataSourceReturning(detailRow({ source_url: "https://rundale.net/lv/" })),
+    );
+
+    await renderObjectPage("rundales-pils-parks");
+
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    const levels = screen
+      .getAllByRole("heading")
+      .map((heading) => Number(heading.tagName.slice(1)));
+    for (let i = 1; i < levels.length; i++) {
+      expect(levels[i] - levels[i - 1]).toBeLessThanOrEqual(1);
+    }
   });
 });

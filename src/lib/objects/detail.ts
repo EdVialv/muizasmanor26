@@ -19,8 +19,13 @@
  *                           page after the object itself.
  */
 
+import { safeHttpUrl } from "@/lib/format/safeLinks";
+
 export const MAX_RELATED_CHILDREN = 50;
 export const MAX_OWNER_FAMILIES = 50;
+/** Day 15: images shown on one object page (a cover plus a gallery). */
+export const MAX_OBJECT_IMAGES = 24;
+export const MAX_OBJECT_CONTACTS = 20;
 
 /**
  * The slug shape scripts/import/rawDatasetTransform.ts's slugify() produces:
@@ -48,6 +53,41 @@ export interface RawObjectDetailRow {
   condition_notes_lv: string | null;
   ownership_type: string | null;
   parent_object_id: string | null;
+  // Day 15 (docs/DAY15_VISUAL_ALPHA_NOTES.md).
+  ownership_verified_at: string | null;
+  source_url: string | null;
+  last_verified_at: string | null;
+  public_access: string | null;
+  public_access_notes_lv: string | null;
+  accessibility: string | null;
+  accessibility_notes_lv: string | null;
+  access_verified_at: string | null;
+  /** Embedded rows; RLS returns only images that may be shown publicly. */
+  object_images: RawObjectImageRow[] | null;
+  /** Embedded rows; RLS returns only contacts with visibility = 'public'. */
+  object_contacts: RawObjectContactRow[] | null;
+}
+
+/** The public columns of object_images - the internal drive_* columns are not granted to anon. */
+export interface RawObjectImageRow {
+  id: string;
+  source_image_url: string;
+  alt_text_lv: string | null;
+  caption_lv: string | null;
+  credit: string | null;
+  license_name: string | null;
+  license_url: string | null;
+  source_attribution_note: string | null;
+  is_primary: boolean;
+  sort_order: number | null;
+}
+
+export interface RawObjectContactRow {
+  contact_type: string;
+  label: string;
+  contact_value: string;
+  is_primary: boolean;
+  verified_at: string | null;
 }
 
 export interface RawRelatedObjectRow {
@@ -75,6 +115,44 @@ export interface ObjectDetail {
   conditionNotesLv: string | null;
   ownershipType: string | null;
   parentObjectId: string | null;
+  // Day 15.
+  ownershipVerifiedAt: string | null;
+  /** Only ever an http(s) URL; anything else is dropped. */
+  sourceUrl: string | null;
+  lastVerifiedAt: string | null;
+  /** null means "not recorded" - never the same as "not_accessible". */
+  publicAccess: string | null;
+  publicAccessNotesLv: string | null;
+  /** null means "not recorded" - never the same as "not_accessible". */
+  accessibility: string | null;
+  accessibilityNotesLv: string | null;
+  accessVerifiedAt: string | null;
+  /** Cover first, then source order; at most MAX_OBJECT_IMAGES. */
+  images: ObjectImageInfo[];
+  hasMoreImages: boolean;
+  contacts: ObjectContact[];
+}
+
+export interface ObjectImageInfo {
+  id: string;
+  /** Always https. */
+  sourceUrl: string;
+  altTextLv: string | null;
+  captionLv: string | null;
+  credit: string | null;
+  licenseName: string | null;
+  /** Only ever an http(s) URL. */
+  licenseUrl: string | null;
+  attributionNote: string | null;
+  isPrimary: boolean;
+}
+
+export interface ObjectContact {
+  type: string;
+  label: string;
+  value: string;
+  isPrimary: boolean;
+  verifiedAt: string | null;
 }
 
 export interface RelatedObject {
@@ -149,7 +227,67 @@ function toCoordinates(row: RawObjectDetailRow): ObjectDetail["coordinates"] {
   return { latitude, longitude };
 }
 
+function isHttpsUrl(value: unknown): value is string {
+  if (typeof value !== "string") {
+    return false;
+  }
+  try {
+    return new URL(value).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Cover image first, then the recorded order. Rows without a usable https
+ * URL are dropped rather than rendered as a broken image.
+ */
+export function toObjectImages(rows: RawObjectImageRow[] | null | undefined): ObjectImageInfo[] {
+  return (rows ?? [])
+    .filter((row) => isHttpsUrl(row.source_image_url))
+    .map((row, index) => ({ row, index }))
+    .sort((a, b) => {
+      if (a.row.is_primary !== b.row.is_primary) {
+        return a.row.is_primary ? -1 : 1;
+      }
+      const order = (a.row.sort_order ?? 0) - (b.row.sort_order ?? 0);
+      return order !== 0 ? order : a.index - b.index;
+    })
+    .map(({ row }) => ({
+      id: row.id,
+      sourceUrl: row.source_image_url,
+      altTextLv: trimToNull(row.alt_text_lv),
+      captionLv: trimToNull(row.caption_lv),
+      credit: trimToNull(row.credit),
+      licenseName: trimToNull(row.license_name),
+      licenseUrl: safeHttpUrl(row.license_url),
+      attributionNote: trimToNull(row.source_attribution_note),
+      isPrimary: row.is_primary === true,
+    }));
+}
+
+function toObjectContacts(rows: RawObjectContactRow[] | null | undefined): ObjectContact[] {
+  return (rows ?? [])
+    .map((row, index) => ({ row, index }))
+    .filter(({ row }) => trimToNull(row.contact_value) !== null)
+    .sort((a, b) => {
+      if (a.row.is_primary !== b.row.is_primary) {
+        return a.row.is_primary ? -1 : 1;
+      }
+      return a.index - b.index;
+    })
+    .slice(0, MAX_OBJECT_CONTACTS)
+    .map(({ row }) => ({
+      type: row.contact_type,
+      label: row.label.trim(),
+      value: row.contact_value.trim(),
+      isPrimary: row.is_primary === true,
+      verifiedAt: row.verified_at,
+    }));
+}
+
 function toObjectDetail(row: RawObjectDetailRow): ObjectDetail {
+  const allImages = toObjectImages(row.object_images);
   return {
     id: row.id,
     slug: row.slug,
@@ -162,6 +300,17 @@ function toObjectDetail(row: RawObjectDetailRow): ObjectDetail {
     conditionNotesLv: trimToNull(row.condition_notes_lv),
     ownershipType: row.ownership_type,
     parentObjectId: row.parent_object_id,
+    ownershipVerifiedAt: row.ownership_verified_at ?? null,
+    sourceUrl: safeHttpUrl(row.source_url),
+    lastVerifiedAt: row.last_verified_at ?? null,
+    publicAccess: row.public_access ?? null,
+    publicAccessNotesLv: trimToNull(row.public_access_notes_lv),
+    accessibility: row.accessibility ?? null,
+    accessibilityNotesLv: trimToNull(row.accessibility_notes_lv),
+    accessVerifiedAt: row.access_verified_at ?? null,
+    images: allImages.slice(0, MAX_OBJECT_IMAGES),
+    hasMoreImages: allImages.length > MAX_OBJECT_IMAGES,
+    contacts: toObjectContacts(row.object_contacts),
   };
 }
 

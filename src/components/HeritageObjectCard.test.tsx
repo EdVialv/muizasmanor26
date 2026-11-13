@@ -19,6 +19,7 @@ const COMPLETE_OBJECT: DirectoryObjectSummary = {
   conditionCategory: "class_a",
   ownershipType: "state",
   publicAccessStatus: null,
+  coverImage: null,
 };
 
 describe("HeritageObjectCard", () => {
@@ -77,6 +78,7 @@ describe("HeritageObjectCard", () => {
       conditionCategory: null,
       ownershipType: null,
       publicAccessStatus: null,
+      coverImage: null,
     };
     render(wrapInList(<HeritageObjectCard object={object} />));
 
@@ -108,5 +110,55 @@ describe("HeritageObjectCard", () => {
       "href",
       "/objects/rundales-pils?from=abc_123-token",
     );
+  });
+
+  it("shows the cover image, lazily, with the recorded alt text", () => {
+    const object: DirectoryObjectSummary = {
+      ...COMPLETE_OBJECT,
+      coverImage: {
+        sourceUrl: "https://blogger.googleusercontent.com/img/b/x/y/s3000/pils.jpg",
+        altTextLv: "Pils fasāde no dārza puses",
+      },
+    };
+    render(wrapInList(<HeritageObjectCard object={object} />));
+
+    const image = screen.getByRole("img", { name: "Pils fasāde no dārza puses" });
+    expect(image).toHaveAttribute("loading", "lazy");
+    expect(image.getAttribute("srcset")).toContain("/s640/pils.jpg");
+  });
+
+  it("gives a cover with no recorded alt text an empty alt, since the heading already names the object", () => {
+    const object: DirectoryObjectSummary = {
+      ...COMPLETE_OBJECT,
+      coverImage: {
+        sourceUrl: "https://blogger.googleusercontent.com/img/b/x/y/s3000/pils.jpg",
+        altTextLv: null,
+      },
+    };
+    const { container } = render(wrapInList(<HeritageObjectCard object={object} />));
+
+    expect(container.querySelector("img")).toHaveAttribute("alt", "");
+  });
+
+  it("keeps a neutral, hidden media box when there is no cover image", () => {
+    const { container } = render(wrapInList(<HeritageObjectCard object={COMPLETE_OBJECT} />));
+
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.querySelector(".objectCardMedia")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("labels a recorded public-access value and shows nothing for an unrecorded one", () => {
+    const { unmount } = render(
+      wrapInList(
+        <HeritageObjectCard
+          object={{ ...COMPLETE_OBJECT, publicAccessStatus: "by_appointment" }}
+        />,
+      ),
+    );
+    expect(screen.getByText("Apmeklējums pēc pieraksta")).toBeInTheDocument();
+    unmount();
+
+    render(wrapInList(<HeritageObjectCard object={COMPLETE_OBJECT} />));
+    expect(screen.queryByText(/apmeklē|pieejams/i)).not.toBeInTheDocument();
   });
 });

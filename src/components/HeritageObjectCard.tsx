@@ -1,29 +1,34 @@
 import Link from "next/link";
 import type { DirectoryObjectSummary } from "@/lib/directory/queries";
+import ObjectImage from "./ObjectImage";
 import {
   conditionCategoryLabel,
   objectTypeLabel,
   ownershipTypeLabel,
+  publicAccessLabel,
 } from "@/lib/directory/labels";
 import { buildObjectHref, type DirectoryContext } from "@/lib/directory/links";
 
 /**
- * A reusable card for one published heritage object, used by the Day 13
- * public directory (src/app/objects/page.tsx) and intended for reuse
- * wherever else a compact object summary is needed later (e.g. a future
- * map popup or related-objects list).
+ * Three or four cards per row on desktop, two on a tablet, one on a phone
+ * (the .objectsGrid breakpoints) - so the browser never downloads a cover
+ * wider than the card it sits in.
+ */
+const CARD_IMAGE_SIZES = "(max-width: 40rem) 100vw, (max-width: 64rem) 50vw, 25vw";
+
+/**
+ * A reusable card for one published heritage object, used by the public
+ * directory (src/app/objects/(directory)/page.tsx).
  *
  * Shows every value DirectoryObjectSummary actually has and silently omits
- * any that are null - condition_category, ownership_type and
- * publicAccessStatus are all genuinely optional per docs/DATA_MODEL.md (or,
- * for publicAccessStatus, not yet a real column at all - see
- * docs/DAY13_DIRECTORY_NOTES.md). Nothing here invents a placeholder value
- * to fill a gap.
+ * any that are null: condition, ownership and public access are optional
+ * per docs/DATA_MODEL.md, and nothing here invents a placeholder for them.
  *
- * Images are a Day 15 task (docs/DAY13_DIRECTORY_NOTES.md scope boundary):
- * this card's media area is a restrained, explicitly decorative block
- * (aria-hidden, no implied photo), not a placeholder photo and not any part
- * of the real image pipeline.
+ * Day 15: the media area shows the object's cover image when it has one.
+ * Its box has a fixed aspect ratio either way, so cards with and without a
+ * photograph line up and nothing shifts when an image loads or fails. The
+ * cover's alt text is the recorded one, or empty - the card's own heading
+ * already names the object, so repeating the name would only be read twice.
  */
 export default function HeritageObjectCard({
   object,
@@ -42,7 +47,17 @@ export default function HeritageObjectCard({
 
   return (
     <li className="objectCard">
-      <div className="objectCardMedia" aria-hidden="true" />
+      {object.coverImage ? (
+        <div className="objectCardMedia objectImageFrame">
+          <ObjectImage
+            src={object.coverImage.sourceUrl}
+            alt={object.coverImage.altTextLv ?? ""}
+            sizes={CARD_IMAGE_SIZES}
+          />
+        </div>
+      ) : (
+        <div className="objectCardMedia objectImageFrame" aria-hidden="true" />
+      )}
       <div className="objectCardBody">
         <p className="objectCardType">{objectTypeLabel(object.objectType)}</p>
         <h3 className="objectCardTitle">
@@ -59,7 +74,7 @@ export default function HeritageObjectCard({
             <li className="objectCardTag">{ownershipTypeLabel(object.ownershipType)}</li>
           ) : null}
           {object.publicAccessStatus ? (
-            <li className="objectCardTag">{object.publicAccessStatus}</li>
+            <li className="objectCardTag">{publicAccessLabel(object.publicAccessStatus)}</li>
           ) : null}
         </ul>
       </div>
