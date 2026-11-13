@@ -143,4 +143,39 @@ describe("ObjectsPage", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "A" })).toBeInTheDocument();
   });
+
+  it("links first-page cards straight to their object pages", async () => {
+    createDirectoryDataSourceFromEnv.mockReturnValue(fakeDataSource([row("Alfa muiža", ID(1))]));
+
+    await renderObjectsPage();
+
+    expect(screen.getByRole("link", { name: "Alfa muiža" })).toHaveAttribute(
+      "href",
+      "/objects/alfa-mui%C5%BEa",
+    );
+  });
+
+  it("gives cards on a later page the current cursor, so the object page can link back to it", async () => {
+    const { encodeCursor } = await import("@/lib/directory/cursor");
+    const token = encodeCursor({ name: "Alfa muiža", id: ID(1) });
+    createDirectoryDataSourceFromEnv.mockReturnValue(
+      fakeDataSource([row("Alfa muiža", ID(1)), row("Beta muiža", ID(2))]),
+    );
+
+    await renderObjectsPage({ cursor: token });
+
+    expect(screen.getByRole("link", { name: "Beta muiža" }).getAttribute("href")).toMatch(
+      new RegExp(`\\?from=${token}$`),
+    );
+  });
+
+  it("does not pass an invalid cursor on to card links", async () => {
+    createDirectoryDataSourceFromEnv.mockReturnValue(fakeDataSource([row("Alfa muiža", ID(1))]));
+
+    await renderObjectsPage({ cursor: "not-a-valid-cursor-token" });
+
+    expect(screen.getByRole("link", { name: "Alfa muiža" }).getAttribute("href")).not.toContain(
+      "from=",
+    );
+  });
 });

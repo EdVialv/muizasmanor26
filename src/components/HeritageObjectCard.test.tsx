@@ -93,4 +93,20 @@ describe("HeritageObjectCard", () => {
 
     expect(screen.getByText("future_new_type")).toBeInTheDocument();
   });
+
+  it("carries the directory context on its link when one is given", () => {
+    render(
+      wrapInList(
+        <HeritageObjectCard
+          object={COMPLETE_OBJECT}
+          directoryContext={{ cursor: "abc_123-token" }}
+        />,
+      ),
+    );
+
+    expect(screen.getByRole("link", { name: "Rundāles pils" })).toHaveAttribute(
+      "href",
+      "/objects/rundales-pils?from=abc_123-token",
+    );
+  });
 });

@@ -5,6 +5,7 @@ import {
   objectTypeLabel,
   ownershipTypeLabel,
 } from "@/lib/directory/labels";
+import { buildObjectHref, type DirectoryContext } from "@/lib/directory/links";
 
 /**
  * A reusable card for one published heritage object, used by the Day 13
@@ -24,7 +25,17 @@ import {
  * (aria-hidden, no implied photo), not a placeholder photo and not any part
  * of the real image pipeline.
  */
-export default function HeritageObjectCard({ object }: { object: DirectoryObjectSummary }) {
+export default function HeritageObjectCard({
+  object,
+  directoryContext,
+}: {
+  object: DirectoryObjectSummary;
+  /**
+   * Where in the directory this card is being shown, so the object page can
+   * link back to the same page of results (src/lib/directory/links.ts).
+   */
+  directoryContext?: DirectoryContext;
+}) {
   const condition = object.conditionCategory
     ? conditionCategoryLabel(object.conditionCategory)
     : null;
@@ -35,7 +46,7 @@ export default function HeritageObjectCard({ object }: { object: DirectoryObject
       <div className="objectCardBody">
         <p className="objectCardType">{objectTypeLabel(object.objectType)}</p>
         <h3 className="objectCardTitle">
-          <Link href={`/objects/${object.slug}`}>{object.nameLv}</Link>
+          <Link href={buildObjectHref(object.slug, directoryContext)}>{object.nameLv}</Link>
         </h3>
         {object.municipality ? <p className="objectCardMeta">{object.municipality}</p> : null}
         <ul className="objectCardTags">
