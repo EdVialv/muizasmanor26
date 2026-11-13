@@ -27,7 +27,15 @@ export interface DirectoryCursor {
   name: string;
   /** heritage_objects.id (UUID) of the last row on the previous page. */
   id: string;
+  /**
+   * Day 16: present only on a cursor issued by a search, holding
+   * searchScope() of that search's normalised query. A cursor is only ever
+   * applied to the listing it came from - see cursorMatchesScope().
+   */
+  scope?: string;
 }
+
+import { SEARCH_SCOPE_PATTERN } from "./searchQuery";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -42,7 +50,14 @@ function isValidCursorShape(value: unknown): value is DirectoryCursor {
   }
   const candidate = value as Record<string, unknown>;
   const keys = Object.keys(candidate);
-  if (keys.length !== 2 || !keys.includes("name") || !keys.includes("id")) {
+  const allowed = new Set(["name", "id", "scope"]);
+  if (!keys.includes("name") || !keys.includes("id") || keys.some((key) => !allowed.has(key))) {
+    return false;
+  }
+  if (
+    keys.includes("scope") &&
+    (typeof candidate.scope !== "string" || !SEARCH_SCOPE_PATTERN.test(candidate.scope))
+  ) {
     return false;
   }
   if (typeof candidate.name !== "string" || candidate.name.length === 0) {
@@ -58,7 +73,11 @@ function isValidCursorShape(value: unknown): value is DirectoryCursor {
 }
 
 export function encodeCursor(cursor: DirectoryCursor): string {
-  const json = JSON.stringify({ name: cursor.name, id: cursor.id });
+  const json = JSON.stringify(
+    cursor.scope === undefined
+      ? { name: cursor.name, id: cursor.id }
+      : { name: cursor.name, id: cursor.id, scope: cursor.scope },
+  );
   return Buffer.from(json, "utf8").toString("base64url");
 }
 
@@ -96,17 +115,41 @@ export function decodeCursor(raw: string | undefined | null): DirectoryCursor | 
   if (!isValidCursorShape(parsed)) {
     return null;
   }
-  return { name: parsed.name, id: parsed.id };
+  return parsed.scope === undefined
+    ? { name: parsed.name, id: parsed.id }
+    : { name: parsed.name, id: parsed.id, scope: parsed.scope };
+}
+
+/**
+ * True only when a decoded cursor belongs to the listing it is about to be
+ * used for: an unscoped cursor for the unfiltered directory, and a cursor
+ * scoped to exactly this search for a search. Anything else - a directory
+ * cursor carried into a search, one search's cursor carried into another,
+ * or a search cursor on the plain directory - is rejected, so the page
+ * starts that listing from its first page instead of silently resuming at
+ * a position that belongs to different results.
+ */
+export function cursorMatchesScope(cursor: DirectoryCursor, scope: string | undefined): boolean {
+  return cursor.scope === scope;
 }
 
 export interface DirectoryPageLinkParams {
+  q?: string;
   cursor?: string;
   // Index signature so this is directly usable as a Next.js <Link> query
   // object (ParsedUrlQueryInput) without a cast at every call site.
   [key: string]: string | undefined;
 }
 
-/** Query params for the next page. Browser Back provides reverse navigation. */
-export function buildNextPageParams(nextCursor: DirectoryCursor): DirectoryPageLinkParams {
-  return { cursor: encodeCursor(nextCursor) };
+/**
+ * Query params for the next page. Browser Back provides reverse navigation.
+ * A search keeps its query alongside the (search-scoped) cursor.
+ */
+export function buildNextPageParams(
+  nextCursor: DirectoryCursor,
+  query?: string | null,
+): DirectoryPageLinkParams {
+  return query
+    ? { q: query, cursor: encodeCursor(nextCursor) }
+    : { cursor: encodeCursor(nextCursor) };
 }

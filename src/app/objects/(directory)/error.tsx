@@ -3,7 +3,7 @@
 /**
  * Next.js error boundaries must be Client Components. This only catches
  * genuinely unexpected exceptions that escape ObjectsPage's own try/catch
- * (src/app/objects/page.tsx already handles the two known failure modes -
+ * (src/app/objects/(directory)/page.tsx already handles the two known failure modes -
  * missing configuration and a failed query - as ordinary render states).
  * Deliberately never renders `error.message` or `error.digest`: an
  * unexpected server-side error could in principle carry details (a
@@ -17,21 +17,17 @@ export default function ObjectsError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  // Rendered inside ./layout.tsx, which already provides the section,
+  // container, heading and search field.
   return (
-    <section className="objectsSection">
-      <div className="container">
-        <div className="directoryStatus" role="alert">
-          <h2>Neizdevās ielādēt sarakstu</h2>
-          <p>
-            Šobrīd nevaram ielādēt muižu sarakstu. Lūdzu, pārlādējiet lapu vai apmeklējiet vēlāk.
-          </p>
-          <p>
-            <button type="button" className="directoryPaginationLink" onClick={() => reset()}>
-              Mēģināt vēlreiz
-            </button>
-          </p>
-        </div>
-      </div>
-    </section>
+    <div className="directoryStatus" role="alert">
+      <h2>Neizdevās ielādēt sarakstu</h2>
+      <p>Šobrīd nevaram ielādēt muižu sarakstu. Lūdzu, pārlādējiet lapu vai apmeklējiet vēlāk.</p>
+      <p>
+        <button type="button" className="directoryPaginationLink" onClick={() => reset()}>
+          Mēģināt vēlreiz
+        </button>
+      </p>
+    </div>
   );
 }

@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 15 complete, awaiting review/merge (Day 14 likewise)
+- **Current roadmap day:** Day 16 complete, awaiting review/merge (Days 14 and 15 likewise)
 - **Last completed-and-merged day:** Day 13 ([#38](https://github.com/EdVialv/muizasmanor26/pull/38), `ebc4bca`)
-- **Current issue:** [#7 — Public manor directory and detail pages](https://github.com/EdVialv/muizasmanor26/issues/7)
-- **Next outcome:** Review and merge Days 14 and 15 in order, apply the Day 15 migration, then Day 16 (search).
-- **MVP status:** Days 1–13 are merged and verified. Day 14 (object pages) and Day 15 (images, sources, contacts, access information) sit on their own branches, each based on the one before, not yet merged. Day 15 adds a migration that has not been applied anywhere. The real dataset remains non-destructive: no Day 11 row was staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
+- **Current issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
+- **Next outcome:** Review and merge Days 14, 15 and 16 in order, apply the Day 15 and Day 16 migrations (in that order), then Day 17 (filters).
+- **MVP status:** Days 1–13 are merged and verified. Day 14 (object pages), Day 15 (images, sources, contacts, access information) and Day 16 (search) sit on their own branches, each based on the one before, not yet merged. Days 15 and 16 each add a migration that has not been applied anywhere. The real dataset remains non-destructive: no Day 11 row was staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                                        |
-| ---------------- | -------------------------------------------------------------------- |
-| Status           | Days 14 and 15 complete on their own branches, awaiting review/push  |
-| Agent            | None                                                                 |
-| Issue            | #7                                                                   |
-| Branch           | None (delivered as `claude/day15-visual-alpha`, see session history) |
-| Session goal     | Day 16: indexed multilingual search                                  |
-| Started          | Not started                                                          |
-| Expected handoff | Days 14–15 reviewed and merged, migration applied, then Day 16       |
+| Field            | Current value                                                                 |
+| ---------------- | ----------------------------------------------------------------------------- |
+| Status           | Days 14, 15 and 16 complete on their own branches, awaiting review/push       |
+| Agent            | None                                                                          |
+| Issue            | #9                                                                            |
+| Branch           | None (delivered as `claude/day16-search`, see session history)                |
+| Session goal     | Day 17: object-type, region, access and service filters                       |
+| Started          | Not started                                                                   |
+| Expected handoff | Days 14–16 reviewed and merged in order, both migrations applied, then Day 17 |
 
 ## Required session entry
 
@@ -67,6 +67,45 @@ Copy this template to the top of **Session history** before ending a session.
 ```
 
 ## Session history
+
+### 2026-11-13 Europe/Riga — Claude Code (Day 16)
+
+- **Issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
+- **Branch:** `claude/day16-search`, based on the Day 15 commit `027a7e0`
+- **Pull request:** not opened (this session cannot push; delivered as `muizasmanor26-day16.bundle`)
+- **Session goal:** Indexed multilingual search of the directory by object name and location.
+- **Completed:**
+  - inspected Day 9's trigram indexes and found them insufficient on their own: diacritic-sensitive, and unable to serve one search across two tables with keyset pagination in a single parameterised request;
+  - wrote one unapplied migration: a trigger-maintained, `unaccent`-folded `search_document` (name, municipality, all `object_names`), a trigram GIN index, a partial `(name_lv, id)` index, and a `SECURITY INVOKER` search function backed by an ids-only `SECURITY DEFINER` helper, because RLS stops PostgreSQL using an index for the non-leakproof `LIKE`;
+  - while re-measuring, found and fixed a plan problem: the functions' default 1,000-row estimate made the planner hash-join against every published row (~4 ms at 10,835 rows); declaring `ROWS 50` brought it to ~0.2 ms;
+  - built the server side: query normalisation and bounds, a search data source calling the function with bound RPC arguments, and search-scoped cursors that cannot carry over to another search or to the plain directory;
+  - built the debounced, labelled, URL-synchronised search field, in a layout above the loading boundary so it keeps focus, with pending, no-match, error and clear states and a no-JavaScript GET fallback;
+  - carried the search through object pages' "back to the directory" links (`fromQ`);
+  - verified matching, pagination and triggers in SQL on a local PostgreSQL, and the whole flow with Playwright through a real PostgREST, including a deliberately delayed older search; measured performance at 10,835 local rows.
+- **Files changed:**
+  - `supabase/migrations/20261113120000_directory_search.sql` — new;
+  - `src/lib/directory/searchQuery.ts`, `search.ts`, `supabaseSearchDataSource.ts` and tests — new;
+  - `src/lib/directory/cursor.ts`, `queries.ts`, `links.ts` and tests — search scope, shared page building, search context;
+  - `src/components/DirectorySearchField.tsx` and test — new;
+  - `src/app/objects/(directory)/layout.tsx` — new; `page.tsx`, `loading.tsx`, `error.tsx`, `page.test.tsx` — search mode and states;
+  - `src/app/objects/[slug]/page.tsx`, `page.test.tsx` — search-aware back link;
+  - `src/app/globals.css` — search field styles from existing tokens;
+  - `docs/DAY16_SEARCH_NOTES.md`, `docs/day16-screenshots/` — new; `TODO.md`, `PROGRESS.md`.
+- **Verification:**
+  - `npm run format:check`, `npm run lint`, `npm run typecheck` — passed;
+  - `npm test` — passed, 35 files, 322 tests (266 → 322);
+  - `npm run build` — passed;
+  - `npm audit --omit=dev` — 0 vulnerabilities;
+  - local SQL checks, page walks against ground truth and 23/23 Playwright checks — passed (details in `docs/DAY16_SEARCH_NOTES.md`);
+  - run on Node 22.23.4 (the repo requires ≥ 24; npm warns only).
+- **Decisions:** see `docs/DAY16_SEARCH_NOTES.md` "Decisions requiring Codex review" (6), most importantly the ids-only `SECURITY DEFINER` helper and searching unverified alternate names.
+- **Blockers or risks:**
+  - the migration has not been applied anywhere, and `unaccent` availability on the real project was not checked;
+  - when editors later write as `authenticated` (Days 21–22), the search-document trigger function needs an `EXECUTE` grant or `SECURITY DEFINER`;
+  - this session cannot push — delivered as a git bundle.
+- **Next exact action:**
+  - Codex: review and merge Days 14, 15 and 16 in order; apply the Day 15 then Day 16 migration to `muizasmanor26-dev`; run `VACUUM ANALYZE heritage_objects`; check one real Blogger image and one real search in a browser.
+- **Handoff state:** committed on `claude/day16-search`, not pushed; awaiting review
 
 ### 2026-11-13 Europe/Riga — Claude Code (Day 15)
 

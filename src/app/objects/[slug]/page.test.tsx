@@ -71,7 +71,10 @@ function dataSourceReturning(row: RawObjectDetailRow | null): ObjectDetailDataSo
   };
 }
 
-async function renderObjectPage(slug: string, searchParams: { from?: string | string[] } = {}) {
+async function renderObjectPage(
+  slug: string,
+  searchParams: { from?: string | string[]; fromQ?: string | string[] } = {},
+) {
   const { default: ObjectPage } = await import("./page");
   const element = await ObjectPage({
     params: Promise.resolve({ slug }),
@@ -204,6 +207,23 @@ describe("ObjectPage", () => {
     expect(relations).toHaveAttribute("data-cursor", token);
     expect(relations).toHaveAttribute("data-object-id", OBJECT_ID);
     expect(relations).toHaveAttribute("data-parent-id", PARENT_ID);
+  });
+
+  it("links back to the search the visitor came from (Day 16)", async () => {
+    const { searchScope } = await import("@/lib/directory/searchQuery");
+    const token = encodeCursor({
+      name: "Mežotnes pils",
+      id: PARENT_ID,
+      scope: searchScope("pils"),
+    });
+    createObjectDetailDataSourceFromEnv.mockReturnValue(dataSourceReturning(detailRow()));
+
+    await renderObjectPage("rundales-pils-parks", { from: token, fromQ: "pils" });
+
+    expect(screen.getByRole("link", { name: /atpakaļ uz katalogu/i })).toHaveAttribute(
+      "href",
+      `/objects?q=pils&cursor=${token}`,
+    );
   });
 
   it("ignores a tampered `from` value instead of putting it in a link", async () => {
