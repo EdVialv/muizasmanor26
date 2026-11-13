@@ -50,7 +50,7 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 |  11 | Run an import dry run, inspect failures, fix transformations and document resume/rollback procedures.         | [#6](https://github.com/EdVialv/muizasmanor26/issues/6)   | Claude Code + manual QA             |  [x]   |
 |  12 | Establish reusable layout, navigation, typography, colour tokens and responsive breakpoints.                  | [#7](https://github.com/EdVialv/muizasmanor26/issues/7)   | Claude Code                         |  [x]   |
 |  13 | Build cards and a cursor-paginated server-side directory with loading, empty and error states.                | [#7](https://github.com/EdVialv/muizasmanor26/issues/7)   | Claude Code                         |  [x]   |
-|  14 | Build `/objects/[slug]` detail pages with hierarchy, history, condition, ownership and services.              | [#7](https://github.com/EdVialv/muizasmanor26/issues/7)   | Claude Code                         |  [ ]   |
+|  14 | Build `/objects/[slug]` detail pages with hierarchy, history, condition, ownership and services.              | [#7](https://github.com/EdVialv/muizasmanor26/issues/7)   | Claude Code                         |  [x]   |
 |  15 | Add lazy responsive images, credits, sources, verification dates, contacts and accessibility text.            | [#7](https://github.com/EdVialv/muizasmanor26/issues/7)   | Claude Code + manual content review |  [ ]   |
 |  16 | Implement indexed multilingual name/location search with debouncing and no-result guidance.                   | [#9](https://github.com/EdVialv/muizasmanor26/issues/9)   | Claude Code                         |  [ ]   |
 |  17 | Add object-type, region, public-access, accommodation, catering and event filters.                            | [#9](https://github.com/EdVialv/muizasmanor26/issues/9)   | Claude Code                         |  [ ]   |
@@ -70,13 +70,15 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 
 ## Current next action
 
-**Days 1–13 are merged and verified.** Day 11's non-destructive dry run processed 16,800 image rows into 3,716 posts, and all four Codex review findings are corrected with regression tests. Nothing from the real dataset was staged, imported, auto-merged or auto-linked.
+**Days 1–12 are merged and verified.** Day 11's non-destructive dry run processed 16,800 image rows into 3,716 posts, and all four Codex review findings are corrected with regression tests. Nothing from the real dataset was staged, imported, auto-merged or auto-linked.
 
 **Day 12 is merged:** the reusable `SiteHeader`, `SiteFooter` and `AppShell`, documented colour/typography/spacing/radius tokens, named responsive breakpoints and keyboard skip link now provide the shared foundation for public pages.
 
-**Day 13 is merged:** the public directory at `/objects` (`src/app/objects/page.tsx`) is a cursor-paginated (keyset, not offset) Next.js Server Component with tested loading, empty, configuration-error and query-error states, built on the Day 12 design tokens. `HeritageObjectCard` renders every value it has and invents nothing for what it doesn't. `SiteHeader` now computes `aria-current` from the actual route (`usePathname()`) and adds the "Objekti" link. Codex removed the original unbounded URL history stack and capped cursor-token input before decoding, preserving the 5,000-object scale constraint. GitHub CI passed before PR #38 was merged. The directory currently shows its real, tested empty state - no `heritage_objects` row is `published` yet.
+**Day 13 is merged** ([#38](https://github.com/EdVialv/muizasmanor26/pull/38), `ebc4bca`): the public directory at `/objects` is a cursor-paginated (keyset, not offset) Next.js Server Component with tested loading, empty, configuration-error and query-error states. Codex's review removed the unbounded URL history stack and capped cursor-token input; pagination is next-only. See `docs/DAY13_DIRECTORY_NOTES.md`.
 
-Start **Day 14** on issue [#7](https://github.com/EdVialv/muizasmanor26/issues/7): build `/objects/[slug]` detail pages with hierarchy, history, condition, ownership and services - the route every card already links to.
+**Day 14 is complete on `claude/day14-object-pages`, not yet merged:** `/objects/[slug]` shows a published object's name, type, location, description, condition, ownership category, verified historical owners and its parent/child objects, each linked. Unknown, malformed and unpublished slugs return a real HTTP 404. Cards and related-object links carry the visitor's directory page as a single `from` token, so "back to the directory" returns to the same page. Services, images, sources, contacts and access information are not shown: the schema has no service fields at all, and the rest is Day 15. See `docs/DAY14_OBJECT_PAGES_NOTES.md` for 7 recorded decisions.
+
+Next is **Day 15** on issue [#7](https://github.com/EdVialv/muizasmanor26/issues/7): images, credits, sources, verification dates, contacts and access information, based on the Day 14 commit.
 
 In parallel, continue the editorial data stream before any bulk staging: assign `object_type`, define municipality mapping, and review the 165 duplicate and 92 relationship candidates documented by Day 11. This does not block the visual directory implementation, but it does block promotion of the real bulk dataset.
 

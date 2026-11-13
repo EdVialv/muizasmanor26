@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import HeritageObjectCard from "@/components/HeritageObjectCard";
 import { buildNextPageParams, decodeCursor } from "@/lib/directory/cursor";
+import type { DirectoryContext } from "@/lib/directory/links";
 import {
   DIRECTORY_PAGE_SIZE,
   DirectoryConfigurationError,
@@ -66,6 +67,10 @@ export default async function ObjectsPage({
   // An invalid cursor fails safely to "no cursor" (the first page) rather
   // than reaching the query or throwing - see src/lib/directory/cursor.ts.
   const outcome = await loadPage(decodedCursor);
+  // Cards carry the current (validated) cursor so an object page can link
+  // back to this same page of the directory - see src/lib/directory/links.ts.
+  const directoryContext: DirectoryContext =
+    decodedCursor && rawCursor ? { cursor: rawCursor } : {};
 
   return (
     <section className="objectsSection">
@@ -102,7 +107,11 @@ export default async function ObjectsPage({
           <>
             <ul className="objectsGrid">
               {outcome.result.items.map((object) => (
-                <HeritageObjectCard key={object.id} object={object} />
+                <HeritageObjectCard
+                  key={object.id}
+                  object={object}
+                  directoryContext={directoryContext}
+                />
               ))}
             </ul>
 

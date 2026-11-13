@@ -431,6 +431,131 @@ h2 {
   outline-offset: 2px;
 }
 
+/* Object page (Day 14 — docs/DAY14_OBJECT_PAGES_NOTES.md) */
+.objectBackNav {
+  margin: 0 0 var(--space-10);
+  font: 600 var(--text-small)/1.4 var(--font-sans);
+}
+
+.objectBackNav a,
+.objectPlainList a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.objectBackNav a:hover,
+.objectPlainList a:hover {
+  color: var(--accent);
+}
+
+.objectBackNav a:focus-visible,
+.objectPlainList a:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.objectDetailHeader {
+  margin: 0 0 var(--space-10);
+}
+
+.objectDetailTitle {
+  max-width: 24ch;
+  font-size: var(--text-h2);
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.objectDetailLocation {
+  margin: var(--space-4) 0 0;
+  color: var(--muted);
+  font: 400 var(--text-body-lg)/1.5 var(--font-sans);
+}
+
+.objectSection {
+  max-width: 48rem;
+  margin: 0 0 var(--space-10);
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-7);
+}
+
+.objectSection h2 {
+  max-width: none;
+  margin: 0 0 var(--space-4);
+  font: 700 var(--text-h4)/1.3 var(--font-serif);
+}
+
+.objectSection h3 {
+  margin: var(--space-5) 0 var(--space-2);
+  color: var(--muted);
+  font: 700 var(--text-small)/1.4 var(--font-sans);
+}
+
+.objectSummaryText {
+  margin: 0 0 var(--space-4);
+  font: 400 var(--text-body)/1.7 var(--font-sans);
+  overflow-wrap: anywhere;
+}
+
+.objectFacts {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.objectFacts > div {
+  display: grid;
+  grid-template-columns: 12rem 1fr;
+  gap: var(--space-4);
+}
+
+.objectFacts dt {
+  color: var(--muted);
+  font: 600 var(--text-small)/1.5 var(--font-sans);
+}
+
+.objectFacts dd {
+  margin: 0;
+  font: 400 var(--text-body)/1.5 var(--font-sans);
+  overflow-wrap: anywhere;
+}
+
+.objectFactNote,
+.objectSectionNote {
+  margin: var(--space-2) 0 0;
+  color: var(--muted);
+  font: 400 var(--text-small)/1.5 var(--font-sans);
+}
+
+.objectPlainList {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 400 var(--text-body)/1.5 var(--font-sans);
+}
+
+.objectRelatedType {
+  margin-inline-start: var(--space-3);
+  color: var(--muted);
+  font: 400 var(--text-small)/1.5 var(--font-sans);
+}
+
+.directoryStatus h1 {
+  max-width: none;
+  margin: 0 0 var(--space-3);
+  color: var(--ink);
+  font: 700 var(--text-h4)/1.3 var(--font-serif);
+}
+
+.directoryStatusActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
 /* --bp-sm: 40rem (640px) */
 @media (max-width: 40rem) {
   .siteHeaderInner {
@@ -460,5 +585,10 @@ h2 {
 
   .directoryPaginationLink {
     text-align: center;
+  }
+
+  .objectFacts > div {
+    grid-template-columns: 1fr;
+    gap: 0;
   }
 }

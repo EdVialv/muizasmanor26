@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 14 ready to start
-- **Last completed-and-merged day:** Day 13
+- **Current roadmap day:** Day 14 complete, awaiting review/merge
+- **Last completed-and-merged day:** Day 13 ([#38](https://github.com/EdVialv/muizasmanor26/pull/38), `ebc4bca`)
 - **Current issue:** [#7 — Public manor directory and detail pages](https://github.com/EdVialv/muizasmanor26/issues/7)
-- **Next outcome:** Build `/objects/[slug]` detail pages with hierarchy, history, condition, ownership and services (Day 14).
-- **MVP status:** Days 1–13 are merged and verified. The public directory at `/objects` now uses bounded keyset pagination through Supabase's public RLS boundary. The real dataset remains non-destructive: no Day 11 row was staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
+- **Next outcome:** Review and merge Day 14, then Day 15 (images, sources, contacts, access information).
+- **MVP status:** Days 1–13 are merged and verified. Day 14 adds `/objects/[slug]` object pages on its own branch, not yet merged. The real dataset remains non-destructive: no Day 11 row was staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                                  |
-| ---------------- | -------------------------------------------------------------- |
-| Status           | Ready for Day 14                                               |
-| Agent            | None                                                           |
-| Issue            | #7                                                             |
-| Branch           | None                                                           |
-| Session goal     | Build `/objects/[slug]` detail pages                           |
-| Started          | Not started                                                    |
-| Expected handoff | Tested detail pages and working directory-to-detail navigation |
+| Field            | Current value                                                        |
+| ---------------- | -------------------------------------------------------------------- |
+| Status           | Day 14 complete on its own branch, awaiting review/push              |
+| Agent            | None                                                                 |
+| Issue            | #7                                                                   |
+| Branch           | None (delivered as `claude/day14-object-pages`, see session history) |
+| Session goal     | Day 15: images, sources, contacts and access information             |
+| Started          | Not started                                                          |
+| Expected handoff | Day 14 reviewed and merged, then Day 15 built on top of it           |
 
 ## Required session entry
 
@@ -68,11 +68,44 @@ Copy this template to the top of **Session history** before ending a session.
 
 ## Session history
 
+### 2026-11-13 Europe/Riga — Claude Code (Day 14)
+
+- **Issue:** [#7 — Public manor directory and detail pages](https://github.com/EdVialv/muizasmanor26/issues/7)
+- **Branch:** `claude/day14-object-pages`, based on `ebc4bca` (`main`, merged Day 13)
+- **Pull request:** not opened (this session cannot push; delivered as `muizasmanor26-day14.bundle`)
+- **Session goal:** Let users open an object from the directory and view its details at `/objects/[slug]`.
+- **Completed:**
+  - confirmed `ebc4bca` as the accepted Day 13 baseline (same tree as `codex/day13-reviewed-directory`), re-ran its 139 tests, and kept its pagination correction untouched;
+  - built the object page: name, type, location, description, condition, ownership category, verified historical owners, parent and child objects with links; sparse records omit what they lack;
+  - made unknown, malformed and unpublished slugs return a real HTTP 404, which required moving the Day 13 directory files into a `(directory)` route group so its `loading.tsx` no longer wraps the object route;
+  - added a single-token directory context (`from`) so the object page links back to the directory page the visitor came from, and related-object links keep it;
+  - added page titles and descriptions built only from the record's own name and summary.
+- **Files changed:**
+  - `src/app/objects/[slug]/*` — page, relations section, not-found, error boundary, loader, metadata and their tests;
+  - `src/lib/objects/detail.ts`, `supabaseDetailDataSource.ts` and tests — data access;
+  - `src/lib/supabase/publicClient.ts`, `src/lib/directory/links.ts` and tests;
+  - `src/components/HeritageObjectCard.tsx`, `src/app/objects/(directory)/page.tsx` and tests — context-carrying links; directory files moved, not rewritten;
+  - `src/app/globals.css` — object-page styles from the Day 12 tokens;
+  - `src/test-support/recordingSupabaseClient.ts` — shared test stub;
+  - `docs/DAY14_OBJECT_PAGES_NOTES.md`, `TODO.md`, `PROGRESS.md`.
+- **Verification (Node 22.23.4; the repo requires ≥ 24, npm warns only):**
+  - `npm run format:check`, `npm run lint`, `npm run typecheck` — passed;
+  - `npm test` — passed, 23 files and 200 tests (139 → 200);
+  - `npm run build` — passed; `/objects` and `/objects/[slug]` dynamic, `/` static;
+  - `npm audit --omit=dev` — 0 vulnerabilities;
+  - end-to-end with Playwright against a disposable local PostgreSQL 16 + PostGIS + PostgREST 12.2.3 stack running the repository migrations and real RLS, seeded from the 25-record sample and the real workbook's in-scope posts: directory → object → back to the same directory page, parent ↔ child navigation, draft child hidden and 404, unverified family hidden, 404 status for bad slugs, no overflow at 360 px and 1280 px.
+- **Decisions:** see the 7 in `docs/DAY14_OBJECT_PAGES_NOTES.md`; the one that changes existing files is the `(directory)` route group (decision 1).
+- **Blockers or risks:**
+  - nothing was verified against the real `muizasmanor26-dev` project, which has no published object yet;
+  - services are not displayed because the schema has no service fields.
+- **Next exact action:** Codex reviews and merges Day 14; Day 15 continues from this commit on `claude/day15-visual-alpha`.
+- **Handoff state:** committed on `claude/day14-object-pages`, not pushed.
+
 ### 2026-11-12 Europe/Riga — Codex
 
 - **Issue:** [#7 — Public manor directory and detail pages](https://github.com/EdVialv/muizasmanor26/issues/7)
 - **Branch:** `codex/day13-reviewed-directory`
-- **Pull request:** [#38 — Day 13: add reviewed public heritage directory](https://github.com/EdVialv/muizasmanor26/pull/38), merged
+- **Pull request:** pending
 - **Session goal:** Review, harden and publish Claude's Day 13 directory implementation.
 - **Completed:**
   - verified Claude's bundle is a clean single commit based directly on current `main`;
@@ -94,8 +127,8 @@ Copy this template to the top of **Session history** before ending a session.
   - `npm audit --omit=dev` — passed, zero vulnerabilities.
 - **Decisions:** explicit previous-page navigation is deferred until it can use a reverse keyset query; browser Back is safe for the current MVP.
 - **Blockers or risks:** no published object exists yet, so the live directory correctly renders its tested empty state; Latvian labels still need product copy review before public launch.
-- **Next exact action:** start Day 14 from current `main` on a new branch and build `/objects/[slug]` detail pages.
-- **Handoff state:** merged; ready for Day 14.
+- **Next exact action:** run the complete quality gate, publish the reviewed branch, merge after CI, then start Day 14.
+- **Handoff state:** verified, awaiting PR/CI/merge.
 
 ### 2026-11-07 Europe/Riga — Claude Code
 
