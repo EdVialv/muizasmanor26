@@ -193,13 +193,31 @@ export async function fetchDirectoryPage(
     throw new DirectoryQueryError("Failed to fetch the directory page.", error);
   }
 
+  return toPageResult(rows, pageSize);
+}
+
+/**
+ * Turns an over-fetched batch (up to pageSize + 1 rows, already in
+ * (name_lv, id) order) into one page plus the cursor for the next. `scope`
+ * is stamped into that cursor for a search (see cursor.ts), so the next
+ * page can only ever be requested for the same search.
+ */
+export function toPageResult(
+  rows: RawDirectoryRow[],
+  pageSize: number,
+  scope?: string,
+): DirectoryPageResult {
   const hasNextPage = rows.length > pageSize;
   const pageRows = hasNextPage ? rows.slice(0, pageSize) : rows;
   const lastRow = pageRows[pageRows.length - 1];
 
-  return {
-    items: pageRows.map(toSummary),
-    hasNextPage,
-    nextCursor: hasNextPage && lastRow ? { name: lastRow.name_lv, id: lastRow.id } : null,
-  };
+  let nextCursor: DirectoryCursor | null = null;
+  if (hasNextPage && lastRow) {
+    nextCursor =
+      scope === undefined
+        ? { name: lastRow.name_lv, id: lastRow.id }
+        : { name: lastRow.name_lv, id: lastRow.id, scope };
+  }
+
+  return { items: pageRows.map(toSummary), hasNextPage, nextCursor };
 }
