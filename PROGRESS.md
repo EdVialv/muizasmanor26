@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 16 complete, awaiting review/merge (Days 14 and 15 likewise)
-- **Last completed-and-merged day:** Day 13 ([#38](https://github.com/EdVialv/muizasmanor26/pull/38), `ebc4bca`)
+- **Current roadmap day:** Day 17 ready to start
+- **Last completed-and-merged day:** Day 16 ([#42](https://github.com/EdVialv/muizasmanor26/pull/42), `5d15f23`)
 - **Current issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
-- **Next outcome:** Review and merge Days 14, 15 and 16 in order, apply the Day 15 and Day 16 migrations (in that order), then Day 17 (filters).
-- **MVP status:** Days 1–13 are merged and verified. Day 14 (object pages), Day 15 (images, sources, contacts, access information) and Day 16 (search) sit on their own branches, each based on the one before, not yet merged. Days 15 and 16 each add a migration that has not been applied anywhere. The real dataset remains non-destructive: no Day 11 row was staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
+- **Next outcome:** Apply the Day 15 and Day 16 migrations to `muizasmanor26-dev` in order, then build Day 17 object-type, region, access and service filters.
+- **MVP status:** Days 1–16 are merged and verified. Day 14 added object pages, Day 15 added the first visual alpha and its image/access migration, and Day 16 added indexed multilingual search and its search migration. The two new migrations remain unapplied to the real development database. The real dataset remains non-destructive: no Day 11 row was bulk-staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                                                 |
-| ---------------- | ----------------------------------------------------------------------------- |
-| Status           | Days 14, 15 and 16 complete on their own branches, awaiting review/push       |
-| Agent            | None                                                                          |
-| Issue            | #9                                                                            |
-| Branch           | None (delivered as `claude/day16-search`, see session history)                |
-| Session goal     | Day 17: object-type, region, access and service filters                       |
-| Started          | Not started                                                                   |
-| Expected handoff | Days 14–16 reviewed and merged in order, both migrations applied, then Day 17 |
+| Field            | Current value                                           |
+| ---------------- | ------------------------------------------------------- |
+| Status           | Ready for Day 17                                        |
+| Agent            | None                                                    |
+| Issue            | #9                                                      |
+| Branch           | None                                                    |
+| Session goal     | Build object-type, region, access and service filters   |
+| Started          | Not started                                             |
+| Expected handoff | Tested, URL-synchronised filters ready for Codex review |
 
 ## Required session entry
 
@@ -67,6 +67,29 @@ Copy this template to the top of **Session history** before ending a session.
 ```
 
 ## Session history
+
+### 2026-11-13 Europe/Riga — Codex (Days 14–16 review and merge)
+
+- **Issue:** #7 and #9 — object pages, visual alpha and search
+- **Branch:** `codex/day14-reviewed-object-pages`, `codex/day15-reviewed-visual-alpha`, `codex/day16-reviewed-search`
+- **Pull request:** #40, #41 and #42, all merged
+- **Session goal:** Review Claude's Day 14–16 chain, verify it and integrate it into `main` in roadmap order.
+- **Completed:**
+  - rebased all three days onto the current `main` without application-code conflicts;
+  - reviewed public RLS boundaries, bounded queries, safe external links, image fallbacks, search cursor scoping and the Day 15/16 migrations;
+  - merged Day 14 object pages, Day 15 visual alpha and Day 16 indexed multilingual search sequentially.
+- **Verification:**
+  - `npm run format:check`, `npm run lint`, `npm run typecheck` — passed;
+  - `npm test` — 35 files and 322 tests passed;
+  - `npm run build` — passed;
+  - `npm audit --omit=dev` — 0 vulnerabilities;
+  - GitHub Actions CI on PRs #40, #41 and #42 — passed.
+- **Decisions:**
+  - kept the Day 15 and Day 16 migrations unapplied because no live Supabase credentials were available in this review environment;
+  - retained direct Blogger image delivery with safe fallback links, as explicitly requested by the owner and documented in Day 15 notes.
+- **Blockers or risks:** Day 15 and Day 16 application code must not be deployed before both new migrations are applied in order.
+- **Next exact action:** Apply `20261113090000_object_images_access.sql`, then `20261113120000_directory_search.sql` to `muizasmanor26-dev`; verify the public directory and search, then start Day 17.
+- **Handoff state:** merged; no active writer branch
 
 ### 2026-11-13 Europe/Riga — Claude Code (Day 16)
 
