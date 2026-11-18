@@ -77,8 +77,9 @@ No value is backfilled. Nothing in the source workbook records these services, a
 - **`src/lib/directory/supabaseSearchDataSource.ts`:** bound RPC arguments, with `null` for an empty category.
 - **`src/lib/directory/regionOptions.ts`:** loads the region options once per full page load, in the layout, capped at 500. A failure shows "Novadu saraksts šobrīd nav pieejams" instead of breaking the page.
 - **`src/app/objects/(directory)/page.tsx`:** filtered and searched results, the invalid-value notice, and a filter-specific no-results state with "Notīrīt filtrus, paturēt meklēšanu".
+- **`src/components/DirectoryListingProvider.tsx`:** the one shared, current search-and-filter state of the search field and the panel (see "Corrections after Codex review").
 - **`src/components/DirectoryFilterPanel.tsx`:** the panel (below).
-- **`src/components/DirectorySearchField.tsx`:** a new search keeps the active filters and drops the cursor.
+- **`src/components/DirectorySearchField.tsx`:** a new search keeps the latest intended filters and drops the cursor. Without JavaScript its GET form carries the active filters as hidden inputs.
 - **`src/lib/directory/links.ts` and `src/app/objects/[slug]/page.tsx`:** object pages carry `fromFilters`, so "back to the directory" returns to the same page of the same filtered results.
 
 ### URL model and cursors
@@ -101,12 +102,12 @@ Example: `/objects?q=pils&type=palace_or_castle&region=Bauskas%20novads&access=o
   - An "OR within a group, AND between groups" hint sits above the groups.
   - The access group says that access is unrelated to ownership.
   - The services group says a service must be recorded, and that all ticked services are required.
-- **Applying changes:** every change applies at once. Navigations run in a React transition, so the newest choice wins and a slower older response cannot overwrite it. "Atlasa…" is announced in a polite live region.
+- **Applying changes:** every change applies at once, through the shared listing state. Navigations run in one shared React transition, so the newest choice wins and a slower older response cannot overwrite it. "Atlasa…" (filters) or "Meklē…" (search) is announced in a polite live region.
 - **Active filters and clearing:**
   - each chip removes one filter ("Noņemt filtru: …");
   - "Notīrīt filtrus (paturēt meklēšanu)" clears filters and keeps the search;
   - "Notīrīt meklēšanu un filtrus" clears both.
-- **Without JavaScript:** a GET form with a "Rādīt rezultātus" button.
+- **Without JavaScript:** the panel is a GET form with a "Rādīt rezultātus" button, and the search field's GET form keeps the active filters (see below).
 - **Styling:** existing tokens only, with a 3 px accent focus outline on the summary, checkboxes, select, chips and buttons.
 
 Screenshots (local fixture data, see "Verification") are in `docs/day17-screenshots/`:
@@ -153,10 +154,60 @@ The final migration was applied fresh, then `VACUUM ANALYZE` was run on **10,632
 8. **Region options loaded once per full page load** in the layout, uncached.
 9. **Labels need copy review:** "Naktsmītnes", "Ēdināšana", "Pasākumu rīkošana", the group names and hints. This is this session's own wording, like the earlier labels.
 
-## Verification
+## Corrections after Codex review
+
+Codex's review accepted the database design, RLS boundary, query limits, cursor scoping and interface, and asked for two interaction defects to be fixed before merging. The migration is unchanged.
+
+### 1. Search and filter changes no longer overwrite each other
+
+**The defect.** `DirectorySearchField` and `DirectoryFilterPanel` each built their navigation URL from their own `useSearchParams()` snapshot. A change in one, made while the other's navigation was still in flight, was built on a URL that did not yet contain that change, and erased it. For example, typing a search and ticking a filter at once lost the search, and the reverse lost the filter. Reproduced on the uncorrected build: `?q=rund` + "Pils" ended at `?type=palace_or_castle`.
+
+**The solution: one shared listing state.** `src/components/DirectoryListingProvider.tsx` is a small client context placed in the directory layout around both controls. It owns:
+
+- **`listing`:** the latest _intended_ search and filters, always canonical.
+- **`setQuery(q)`, `updateFilters(current => next)` and `setListing(listing)`:** the only ways either control changes the listing. Each derives the new listing from the latest intended one, kept in a React ref, which is updated immediately on every change and after every commit. Two changes in the same tick, or a debounced search that fires after a filter change, therefore still build on each other. Nothing is read from a URL snapshot.
+- **Navigation:** every change navigates to `buildListingHref(pathname, listing)` with **no cursor**, so the listing starts on page 1. A change that leaves the canonical listing unchanged does nothing.
+- **One `useTransition` for both controls.** The App Router renders only the newest navigation. While _any_ navigation of either control is in flight, the intended listing is never reset from the URL, so an older, slower navigation that lands first cannot change the controls or the results.
+- **Following the URL.** When the URL changes and nothing is in flight (Back/Forward, a link, or the settled newest navigation), the listing follows the URL. This is a render-time state adjustment, as in Day 17, keyed on the URL itself, so the visitor's in-flight choice is kept until the URL actually changes.
+- **Status messages.** A `pendingSource` tells each control whether the busy navigation is its own, so "Meklē…" and "Atlasa…" stay accurate.
+
+URL parsing is not duplicated: the provider uses `parseListing`, `canonicalFilters`, `listingKey` and `buildListingHref` from `src/lib/directory/filters.ts`. There is no global mutable state outside React (context, state and a ref only) and no timing workaround.
+
+### 2. The no-JavaScript search form keeps the filters
+
+**The defect.** The search field's GET form submitted only `q`, so a search without JavaScript dropped every active filter. The layout's Suspense fallback form did the same.
+
+**The fix:**
+
+- The form renders the active filters as hidden inputs from `filtersToEntries(listing.filters)`. These are repeated `type`, `region`, `access` and `service` inputs, already validated and in canonical order. Invalid values are absent because `parseListing` dropped them, and `cursor` is never included.
+- Without JavaScript, "Notīrīt" is a link to the same filters with no search. With JavaScript it is the existing button. Submitting an empty search also keeps the filters.
+- The Suspense boundaries and the reduced fallback form are gone. The directory layout now declares `export const dynamic = "force-dynamic"`. The route was already rendered per request, so behaviour is unchanged, but the build no longer tries to prerender it. `useSearchParams()` therefore renders on the server with the real URL, and the server HTML is the complete form.
+- With JavaScript the hidden inputs are inert, because submission is handled in code.
+
+### Regression tests
+
+**`src/components/DirectoryListingProvider.test.tsx`**, 14 tests. Both controls are rendered under one provider. The router's navigations stay in flight until the test lands them, out of order if needed. The tests cover:
+
+- a delayed search followed by a filter change;
+- a delayed filter change followed by a search change;
+- six rapid alternating changes landing out of order;
+- a debounced search firing after a filter change;
+- a search change with filters active, and a filter change with a search active, each dropping the cursor;
+- both clear actions dropping the cursor;
+- the correct busy message;
+- Back/Forward restoring combined states, and a change after Back building on the restored state;
+- the server-rendered (`renderToString`) no-JavaScript form:
+  - every canonical filter present as repeated hidden inputs;
+  - invalid values and the cursor absent;
+  - a native GET submission (`FormData`) giving the combined URL;
+  - an emptied search, or the clear link, keeping the filters;
+  - a search with no filters submitting only `q`, as before.
+
+The existing field and panel tests now render inside the provider and pass unchanged.
 
 - **Quality gate:** `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test` and `npm run build` passed, as did typecheck after the build. `npm audit --omit=dev` found 0 vulnerabilities.
-  - Tests: 38 files, 379 tests (322 → 379).
+  - Tests: 39 files, 393 tests (379 at first delivery, plus the 14 regression tests above).
+  - After the corrections, everything above was run again after a clean `npm ci`.
   - The gate ran on Node 22.23.4; the repo asks for ≥ 24, and npm only warns.
 - **Unit and component tests:**
   - each filter on its own;
@@ -182,6 +233,20 @@ The final migration was applied fresh, then `VACUUM ANALYZE` was run on **10,632
   - The keyboard reaches the summary, checkboxes and chips, each with a visible 3 px outline.
   - The object page's back link returns to the same filtered page.
   - There is no horizontal overflow at 1280 px or 360 px.
+- **Browser checks for the corrections: 19 of 19 passed.** These ran against the production build, the local PostgREST and the local database, with requests for "rund" and for accommodation held back 2.5 s.
+  - A delayed search followed by a filter kept both, in the URL, the controls and the results (which equalled the database). So did a delayed filter followed by a search.
+  - Six rapid alternating changes ended on the newest combined state.
+  - Typing (debounced) with a filter ticked at the same moment kept both.
+  - A filter change and a search change each dropped the cursor and kept the other part.
+  - Back, Back, Forward, Forward restored each combined state: URL, field, checkboxes and results.
+  - Without JavaScript:
+    - the search form carried exactly the valid canonical filters;
+    - submitting a new search gave `?q=muiza&type=manor_estate&type=palace_or_castle&region=…&access=open&service=catering`, dropping invalid values and the cursor, and the server applied every filter;
+    - "Notīrīt" and an empty search kept the filters;
+    - a search with no filters submitted only `q`.
+  - At 1280 px and 360 px there was no overflow, and the keyboard reached the field and the filter summary with a visible 3 px outline.
+  - The same script on the uncorrected build failed the race and no-JavaScript checks, which confirms they detect the defects.
+  - The original 27-check Day 17 browser run also passed again on the corrected build.
 - **Blocked or not done:**
   - nothing ran against the real Supabase project (no credentials in this session, and no migrations may be applied);
   - no measurement on Supabase hardware;

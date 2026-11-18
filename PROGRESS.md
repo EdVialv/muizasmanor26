@@ -32,7 +32,7 @@ Update this section when a session starts. Only one write-enabled session should
 
 | Field            | Current value                                           |
 | ---------------- | ------------------------------------------------------- |
-| Status           | Day 17 awaiting Codex review                            |
+| Status           | Day 17 corrections awaiting Codex review                |
 | Agent            | Claude Code (session ended)                             |
 | Issue            | #9                                                      |
 | Branch           | `claude/day17-directory-filters`                        |
@@ -67,6 +67,41 @@ Copy this template to the top of **Session history** before ending a session.
 ```
 
 ## Session history
+
+### 2026-11-14 Europe/Riga — Claude Code (Day 17 corrections after Codex review)
+
+- **Issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
+- **Branch:** `claude/day17-directory-filters` (on `main` `f3311e7`)
+- **Pull request:** not opened (this session cannot push; delivered as `muizasmanor26-day17-corrected.bundle`)
+- **Session goal:** Fix the two interaction defects Codex found in Day 17; nothing else.
+- **Completed:**
+  - Shared listing state: `DirectoryListingProvider`, a client context, now owns the latest intended search and filters for both the search field and the panel.
+    - Every change derives from it, never from a URL snapshot, and navigates to page 1.
+    - One shared transition keeps an older, delayed navigation from replacing the newest state.
+    - Back/Forward still restore everything.
+  - No-JavaScript search form: it carries the active filters as canonical hidden inputs (`filtersToEntries`), with no invalid values and no cursor. Its clear link keeps the filters.
+  - The Suspense fallback form is removed. The layout is declared `force-dynamic`, so the server renders the real form.
+  - The migration and all accepted Day 17 decisions are unchanged.
+- **Files changed:**
+  - `src/components/DirectoryListingProvider.tsx` and its test — new;
+  - `src/components/DirectorySearchField.tsx`, `DirectoryFilterPanel.tsx` and their tests;
+  - `src/app/objects/(directory)/layout.tsx`;
+  - `src/app/globals.css` — the no-JavaScript clear link;
+  - `docs/DAY17_DIRECTORY_FILTERS_NOTES.md`, `PROGRESS.md`.
+- **Verification:**
+  - `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run build` and typecheck after the build — passed.
+  - `npm test` — passed, 39 files, 393 tests (379 → 393).
+  - `npm audit --omit=dev` — 0 vulnerabilities. The full `npm ci` audit still lists 12 advisories in development dependencies; the lockfile is unchanged.
+  - Browser checks for the corrections — 19/19 passed; the uncorrected build fails them.
+  - The original Day 17 browser run — 27/27 passed.
+  - No Supabase migration or data write was performed.
+- **Decisions:** the layout is `force-dynamic` instead of keeping a Suspense fallback that could not know the filters. The route was already rendered per request.
+- **Blockers or risks:**
+  - The Day 18 branch (`claude/day18-condition-ownership-family`) was built on the uncorrected Day 17 and needs rebasing onto this commit before its review.
+  - This session cannot push: the work is delivered as a git bundle.
+- **Next exact action:**
+  - Codex: review the corrections on `claude/day17-directory-filters` and merge Day 17. Apply the Day 15, 16 and 17 migrations to `muizasmanor26-dev` in order.
+- **Handoff state:** committed on `claude/day17-directory-filters`, not pushed; awaiting review
 
 ### 2026-11-13 Europe/Riga — Claude Code (Day 17)
 
