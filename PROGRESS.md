@@ -19,10 +19,10 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Days 17, 18 and 19 implemented, awaiting Codex review
+- **Current roadmap day:** Days 17–20 implemented, awaiting Codex review
 - **Last completed-and-merged day:** Day 16 ([#42](https://github.com/EdVialv/muizasmanor26/pull/42), `5d15f23`)
 - **Current issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
-- **Next outcome:** Codex reviews Day 17 (`claude/day17-directory-filters`), Day 18 (`claude/day18-condition-ownership-family`) and Day 19 (`claude/day19-map`), each stacked on the previous one. After that, apply the Day 15–19 migrations to `muizasmanor26-dev` in order, choose a tile provider, and start Day 20 (shareable URLs).
+- **Next outcome:** Codex reviews Day 17 (`claude/day17-directory-filters`, `e46b81c`), Day 18 (`claude/day18-condition-ownership-family`, `9b13fdb`), Day 19 (`claude/day19-map`, rebased to `9de61a3`) and Day 20 (`claude/day20-url-state`), each stacked on the previous one. After that, apply the Day 15–19 migrations to `muizasmanor26-dev` in order (Day 20 has none), choose a tile provider, and start Day 21 (authentication).
 - **MVP status:** Days 1–16 are merged and verified; Days 17–18 (filters) and Day 19 (map) await review. Day 14 added object pages, Day 15 added the first visual alpha and its image/access migration, and Day 16 added indexed multilingual search and its search migration. The two new migrations remain unapplied to the real development database. The real dataset remains non-destructive: no Day 11 row was bulk-staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
 - **Detailed plan:** [TODO.md](TODO.md)
 
@@ -30,15 +30,15 @@ Read it before starting a session and update it before ending a session.
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                 |
-| ---------------- | --------------------------------------------- |
-| Status           | Days 17, 18 and 19 awaiting Codex review      |
-| Agent            | Claude Code (session ended)                   |
-| Issue            | #9                                            |
-| Branch           | `claude/day19-map` (on Day 18, on Day 17)     |
-| Session goal     | Interactive Leaflet map with viewport queries |
-| Started          | 2026-11-18                                    |
-| Expected handoff | Tested map ready for Codex review             |
+| Field            | Current value                                     |
+| ---------------- | ------------------------------------------------- |
+| Status           | Days 17–20 awaiting Codex review                  |
+| Agent            | Claude Code (session ended)                       |
+| Issue            | #9                                                |
+| Branch           | `claude/day20-url-state` (on Days 19, 18, 17)     |
+| Session goal     | Shareable URL state for list and map              |
+| Started          | 2026-11-18                                        |
+| Expected handoff | Tested URL synchronisation ready for Codex review |
 
 ## Required session entry
 
@@ -67,6 +67,29 @@ Copy this template to the top of **Session history** before ending a session.
 ```
 
 ## Session history
+
+### 2026-11-18 Europe/Riga — Claude Code (Day 20)
+
+- **Issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
+- **Branch:** `claude/day20-url-state`, based on Day 19 rebased onto the owner-pushed Day 18 (`9b13fdb`, on Day 17 `e46b81c`): `claude/day19-map` = `9de61a3`, same tree as the delivered Day 19. `main` is still `f3311e7`.
+- **Pull request:** not opened (the push returns 403; delivered as `muizasmanor26-day20.bundle`, which needs `9de61a3`).
+- **Session goal:** Opening, refreshing or sharing a list or map URL restores the same search, filters, list page and map position; Back/Forward works.
+- **Completed:**
+  - One canonical URL model (`src/lib/directory/browseState.ts`, `src/lib/map/position.ts`): listing params unchanged, `cursor`, and `lat`/`lng`/`zoom` (centre and zoom are authoritative). Defaults omitted; values validated, deduplicated, ordered and bounded.
+  - `DirectoryListingProvider` owns listing, cursor and position. Filter changes push and reset the cursor; a typing burst pushes once and then replaces; map moves `replaceState` after a 400 ms debounce; Back/Forward wins over navigations in flight and invalidates pending debounced writes. Stale landings and non-canonical URLs are corrected once, with no loops.
+  - The map opens at the URL position before its first data request and never writes programmatic moves back.
+  - The view switch, object links (`fromLat`/`fromLng`/`fromZoom`, and the cursor from the map too), "Nākamā lapa" and the no-JS forms carry cursor and position.
+  - "Kopēt saiti" with success status and a manual-copy fallback.
+  - Fixed during browser verification: client-side cursor decoding now uses `atob`/`TextDecoder` (a `Buffer` polyfill rejected tokens containing `-`/`_`).
+- **Files changed:** see `docs/DAY20_URL_STATE_NOTES.md` "Files"; `docs/day20-screenshots/` — new; `TODO.md`, `PROGRESS.md`.
+- **Verification:**
+  - Format, lint, typecheck, tests (52 files, 549 tests), build, `npm audit --omit=dev` (0) and `git diff --check` — passed.
+  - Browser: 66/66 Day 20 checks (desktop and mobile journeys, races, canonicalisation, no-JS), plus the Day 17/18/19 regressions (27/27, 19/19, 27/27, 6/6, 22/22).
+  - Not verified: Supabase itself, real tiles, non-Chromium browsers.
+- **Decisions:** see `docs/DAY20_URL_STATE_NOTES.md` "Limitations and decisions for review" (5).
+- **Blockers or risks:** stacked on unreviewed Days 17–19. No migration.
+- **Next exact action:** Codex reviews Days 17–20 in order; then Day 21 (authentication).
+- **Handoff state:** committed on `claude/day20-url-state`, not pushed; awaiting review
 
 ### 2026-11-18 Europe/Riga — Claude Code (Day 19)
 
