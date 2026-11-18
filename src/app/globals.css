@@ -418,6 +418,13 @@ h2 {
   font: 700 var(--text-small)/1 var(--font-sans);
 }
 
+/* The no-JavaScript "clear search" is a link to the same filters. */
+a.directorySearchClear {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
 .directorySearchClear:hover {
   background: var(--ink);
   color: var(--ink-contrast);

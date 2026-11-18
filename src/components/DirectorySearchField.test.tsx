@@ -11,6 +11,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(navigation.search),
 }));
 
+import { DirectoryListingProvider } from "./DirectoryListingProvider";
 import DirectorySearchField, { buildSearchHref, SEARCH_DEBOUNCE_MS } from "./DirectorySearchField";
 
 function input() {
@@ -36,7 +37,11 @@ describe("DirectorySearchField", () => {
   });
 
   it("is a labelled search landmark with a hint and a live status region", () => {
-    render(<DirectorySearchField />);
+    render(
+      <DirectoryListingProvider>
+        <DirectorySearchField />
+      </DirectoryListingProvider>,
+    );
 
     expect(screen.getByRole("search")).toBeInTheDocument();
     expect(input()).toHaveAttribute("type", "search");
@@ -47,13 +52,21 @@ describe("DirectorySearchField", () => {
 
   it("starts from the query in the URL", () => {
     navigation.search = "q=Rund%C4%81le";
-    render(<DirectorySearchField />);
+    render(
+      <DirectoryListingProvider>
+        <DirectorySearchField />
+      </DirectoryListingProvider>,
+    );
 
     expect(input().value).toBe("Rundāle");
   });
 
   it("commits to the URL only after 300 ms without typing", () => {
-    render(<DirectorySearchField />);
+    render(
+      <DirectoryListingProvider>
+        <DirectorySearchField />
+      </DirectoryListingProvider>,
+    );
 
     fireEvent.change(input(), { target: { value: "r" } });
     act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS - 50));
@@ -70,7 +83,11 @@ describe("DirectorySearchField", () => {
 
   it("does nothing when an edit leaves the normalised query unchanged", () => {
     navigation.search = "q=pils";
-    render(<DirectorySearchField />);
+    render(
+      <DirectoryListingProvider>
+        <DirectorySearchField />
+      </DirectoryListingProvider>,
+    );
 
     fireEvent.change(input(), { target: { value: "  pils  " } });
     act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS));
@@ -79,7 +96,11 @@ describe("DirectorySearchField", () => {
   });
 
   it("commits at once on Enter, cancelling the pending debounce", () => {
-    render(<DirectorySearchField />);
+    render(
+      <DirectoryListingProvider>
+        <DirectorySearchField />
+      </DirectoryListingProvider>,
+    );
 
     fireEvent.change(input(), { target: { value: "cēsis" } });
     fireEvent.submit(screen.getByRole("search"));
@@ -91,7 +112,11 @@ describe("DirectorySearchField", () => {
 
   it("clears to the plain directory at once and keeps keyboard focus in the field", () => {
     navigation.search = "q=pils";
-    render(<DirectorySearchField />);
+    render(
+      <DirectoryListingProvider>
+        <DirectorySearchField />
+      </DirectoryListingProvider>,
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Notīrīt" }));
 
@@ -103,7 +128,11 @@ describe("DirectorySearchField", () => {
 
   it("clearing the text by typing also returns to the plain directory", () => {
     navigation.search = "q=pils";
-    render(<DirectorySearchField />);
+    render(
+      <DirectoryListingProvider>
+        <DirectorySearchField />
+      </DirectoryListingProvider>,
+    );
 
     fireEvent.change(input(), { target: { value: "" } });
     act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS));
@@ -113,16 +142,28 @@ describe("DirectorySearchField", () => {
 
   it("follows the URL when it changes from elsewhere (browser Back/Forward)", () => {
     navigation.search = "q=pils";
-    const { rerender } = render(<DirectorySearchField />);
+    const { rerender } = render(
+      <DirectoryListingProvider>
+        <DirectorySearchField />
+      </DirectoryListingProvider>,
+    );
 
     navigation.search = "q=mui%C5%BEa";
-    rerender(<DirectorySearchField />);
+    rerender(
+      <DirectoryListingProvider>
+        <DirectorySearchField />
+      </DirectoryListingProvider>,
+    );
 
     expect(input().value).toBe("muiža");
   });
 
   it("does not overwrite newer typing when its own earlier search lands in the URL", () => {
-    const { rerender } = render(<DirectorySearchField />);
+    const { rerender } = render(
+      <DirectoryListingProvider>
+        <DirectorySearchField />
+      </DirectoryListingProvider>,
+    );
 
     fireEvent.change(input(), { target: { value: "rund" } });
     act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS));
@@ -132,7 +173,11 @@ describe("DirectorySearchField", () => {
     fireEvent.change(input(), { target: { value: "rundāle" } });
     // ...then the older URL arrives.
     navigation.search = "q=rund";
-    rerender(<DirectorySearchField />);
+    rerender(
+      <DirectoryListingProvider>
+        <DirectorySearchField />
+      </DirectoryListingProvider>,
+    );
 
     expect(input().value).toBe("rundāle");
     act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS));
@@ -140,14 +185,22 @@ describe("DirectorySearchField", () => {
   });
 
   it("caps input length at the server's bound", () => {
-    render(<DirectorySearchField />);
+    render(
+      <DirectoryListingProvider>
+        <DirectorySearchField />
+      </DirectoryListingProvider>,
+    );
 
     expect(input()).toHaveAttribute("maxLength", "200");
   });
 
   it("keeps the active filters when the search changes, and still drops the cursor (Day 17)", () => {
     navigation.search = "q=pils&type=palace_or_castle&service=catering&cursor=abc";
-    render(<DirectorySearchField />);
+    render(
+      <DirectoryListingProvider>
+        <DirectorySearchField />
+      </DirectoryListingProvider>,
+    );
 
     fireEvent.change(input(), { target: { value: "muiža" } });
     act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS));

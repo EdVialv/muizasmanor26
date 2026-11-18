@@ -1,14 +1,20 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useId, useRef, useState, useTransition, type FormEvent } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
+import { useDirectoryListing } from "@/components/DirectoryListingProvider";
 import {
   EMPTY_FILTERS,
   buildListingHref,
-  parseFilters,
+  filtersToEntries,
   type DirectoryFilters,
 } from "@/lib/directory/filters";
 import { MAX_SEARCH_QUERY_LENGTH, normalizeSearchQuery } from "@/lib/directory/searchQuery";
+
+/** For useSyncExternalStore: "hydrated" never changes once true. */
+function subscribeToNothing() {
+  return () => {};
+}
 
 export const SEARCH_DEBOUNCE_MS = 300;
 
@@ -27,38 +33,41 @@ export function buildSearchHref(
 /**
  * The directory's search field (docs/DAY16_SEARCH_NOTES.md).
  *
- * The URL is the single source of truth: `?q=` decides what the server
- * renders, so refresh, sharing and browser Back/Forward all work. This
- * component only edits the URL:
+ * The URL decides what the server renders, so refresh, sharing and browser
+ * Back/Forward all work. The field changes the URL only through the shared
+ * listing controller (DirectoryListingProvider), together with the filter
+ * panel, so neither can erase the other's newest change:
  *
- * - typing commits the query to the URL 300 ms after the last keystroke;
- *   Enter or the clear button commit at once;
- * - a committed query always drops any `cursor`, so a new search starts on
- *   its first page (the server also refuses a cursor from another search),
- *   and keeps the active Day 17 filters;
+ * - typing commits the query 300 ms after the last keystroke; Enter or the
+ *   clear button commit at once;
+ * - a committed query keeps the latest intended filters and always drops
+ *   any `cursor`, so a new search starts on its first page (the server also
+ *   refuses a cursor from another search);
  * - a change that does not alter the normalised query (extra spaces) does
  *   nothing, so it cannot reset the visitor's page;
- * - navigations run in a React transition. The App Router renders only the
- *   newest navigation, and the server renders results for the URL that
- *   reached it, so a slow response for an older query can never replace
- *   the results of a newer one. While a search is in flight the field says
- *   so in a polite live region.
- * - if the URL changes from elsewhere (Back/Forward, a link), the field
- *   follows it - but never overwrites what the visitor is still typing.
+ * - while a search is in flight the field says so in a polite live region;
+ * - if the listing changes from elsewhere (Back/Forward, "clear search and
+ *   filters"), the field follows it - but never overwrites what the visitor
+ *   is still typing.
  *
- * Without JavaScript it is still a plain GET form to the same URL.
+ * Without JavaScript it is still a plain GET form to the same URL, carrying
+ * the active filters as hidden inputs - in their canonical, validated form
+ * (filtersToEntries) and never with a cursor - so a search keeps them.
  */
 export default function DirectorySearchField() {
-  const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const urlQuery = normalizeSearchQuery(searchParams.get("q"));
+  const { listing, setQuery, pendingSource } = useDirectoryListing();
+  const intendedQuery = listing.q;
+  const hydrated = useSyncExternalStore(
+    subscribeToNothing,
+    () => true,
+    () => false,
+  );
 
-  const [value, setValue] = useState(urlQuery ?? "");
-  const [isPending, startTransition] = useTransition();
+  const [value, setValue] = useState(intendedQuery ?? "");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** The query this field last sent to the URL. */
-  const committedRef = useRef<string | null>(urlQuery);
+  /** The query this field last committed. */
+  const committedRef = useRef<string | null>(intendedQuery);
   const inputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
   const hintId = useId();
@@ -74,24 +83,20 @@ export default function DirectorySearchField() {
     clearTimer();
     const next = normalizeSearchQuery(raw);
     committedRef.current = next;
-    if (next === urlQuery) {
-      return;
-    }
-    startTransition(() => {
-      router.push(buildSearchHref(pathname, next, parseFilters(searchParams).filters), {
-        scroll: false,
-      });
-    });
+    // Built on the latest intended filters, not on a URL snapshot; a no-op
+    // when the normalised query is unchanged.
+    setQuery(next);
   }
 
-  // Follow URL changes this field did not make (Back/Forward, links).
+  // Follow listing changes this field did not make (Back/Forward, links,
+  // "clear search and filters").
   useEffect(() => {
-    if (urlQuery !== committedRef.current) {
+    if (intendedQuery !== committedRef.current) {
       clearTimer();
-      committedRef.current = urlQuery;
-      setValue(urlQuery ?? "");
+      committedRef.current = intendedQuery;
+      setValue(intendedQuery ?? "");
     }
-  }, [urlQuery]);
+  }, [intendedQuery]);
 
   useEffect(() => clearTimer, []);
 
@@ -138,17 +143,30 @@ export default function DirectorySearchField() {
           enterKeyHint="search"
           aria-describedby={hintId}
         />
-        {value ? (
+        {value && hydrated ? (
           <button type="button" className="directorySearchClear" onClick={handleClear}>
             Notīrīt
           </button>
+        ) : intendedQuery && !hydrated ? (
+          // Without JavaScript: a link to the same filters with no search.
+          <a
+            className="directorySearchClear"
+            href={buildListingHref(pathname, { q: null, filters: listing.filters })}
+          >
+            Notīrīt
+          </a>
         ) : null}
       </div>
+      {/* Active filters for a no-JavaScript submit: canonical and validated,
+          never a cursor. */}
+      {filtersToEntries(listing.filters).map(([name, filterValue]) => (
+        <input key={`${name}=${filterValue}`} type="hidden" name={name} value={filterValue} />
+      ))}
       <p id={hintId} className="directorySearchHint">
         Piemēram, „Rundāle” vai „Krāslavas novads”. Garumzīmes un lielie burti nav jāievēro.
       </p>
       <p className="directorySearchStatus" role="status" aria-live="polite">
-        {isPending ? "Meklē…" : ""}
+        {pendingSource === "search" ? "Meklē…" : ""}
       </p>
     </form>
   );

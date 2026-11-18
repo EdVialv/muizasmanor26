@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Suspense } from "react";
 import DirectoryFilterPanel from "@/components/DirectoryFilterPanel";
+import { DirectoryListingProvider } from "@/components/DirectoryListingProvider";
 import DirectorySearchField from "@/components/DirectorySearchField";
 import { loadRegionOptionsFromEnv } from "@/lib/directory/regionOptions";
 
@@ -13,6 +13,14 @@ import { loadRegionOptionsFromEnv } from "@/lib/directory/regionOptions";
  * while a search or a page of results is loading only the results area
  * changes - the field and the panel keep their state, caret and keyboard focus.
  */
+/**
+ * The directory is rendered per request (its page reads searchParams). This
+ * says so explicitly, so the build never tries to prerender it: the search
+ * field and filter panel below read useSearchParams() without a Suspense
+ * fallback, and render on the server with the real, validated listing.
+ */
+export const dynamic = "force-dynamic";
+
 export default async function DirectoryLayout({ children }: { children: ReactNode }) {
   // Loaded once per full page load: a layout is not re-rendered when only
   // the search parameters change. Null when unavailable - the panel says so
@@ -23,35 +31,19 @@ export default async function DirectoryLayout({ children }: { children: ReactNod
     <section className="objectsSection">
       <div className="container">
         <h1 className="objectsHeading">Muižu un kultūrvēsturisko objektu katalogs</h1>
-        {/* useSearchParams() needs a Suspense boundary; on this dynamic route
-            the fallback is only a no-JavaScript stand-in. */}
-        <Suspense fallback={<SearchFieldFallback />}>
+        {/* One shared listing state for the search field and the filter
+            panel, so neither can erase the other's newest change. No
+            Suspense boundary: the route is dynamic (above), so
+            useSearchParams() renders with the real URL on the server and
+            never suspends. The server HTML is
+            therefore the complete no-JavaScript form, active filters
+            included - there is no reduced fallback that could drop them. */}
+        <DirectoryListingProvider>
           <DirectorySearchField />
-        </Suspense>
-        <Suspense fallback={null}>
           <DirectoryFilterPanel regionOptions={regionOptions} />
-        </Suspense>
+        </DirectoryListingProvider>
         {children}
       </div>
     </section>
-  );
-}
-
-function SearchFieldFallback() {
-  return (
-    <form className="directorySearch" role="search" action="/objects" method="get">
-      <label className="directorySearchLabel" htmlFor="directory-search-fallback">
-        Meklēt pēc nosaukuma vai vietas
-      </label>
-      <div className="directorySearchControls">
-        <input
-          id="directory-search-fallback"
-          className="directorySearchInput"
-          type="search"
-          name="q"
-          autoComplete="off"
-        />
-      </div>
-    </form>
   );
 }
