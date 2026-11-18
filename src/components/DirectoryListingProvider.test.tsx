@@ -21,6 +21,12 @@ const { router, navigation } = vi.hoisted(() => {
             inFlight.push({ href, settle: resolve });
           }),
       ),
+      replace: vi.fn(
+        (href: string) =>
+          new Promise<void>((resolve) => {
+            inFlight.push({ href, settle: resolve });
+          }),
+      ),
     },
   };
 });
@@ -79,6 +85,7 @@ function popState(search: string, rerender: (ui: ReactElement) => void) {
 describe("shared listing state: search and filters never overwrite each other", () => {
   beforeEach(() => {
     router.push.mockClear();
+    router.replace.mockClear();
     router.inFlight.length = 0;
     navigation.search = "";
   });
@@ -188,6 +195,30 @@ describe("shared listing state: search and filters never overwrite each other", 
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("keeps both when the newer navigation completes first and the older one last", async () => {
+    const { rerender } = render(tree());
+
+    search("muiža");
+    fireEvent.click(box("Pils"));
+    fireEvent.click(box("Ēdināšana"));
+    search("pils");
+
+    // Newest first, then every older one - an order the App Router should
+    // never produce, which must still not lose anything.
+    for (const index of [3, 2, 1, 0]) {
+      await land(index, rerender);
+      expect(searchInput().value).toBe("pils");
+      expect(box("Pils")).toBeChecked();
+      expect(box("Ēdināšana")).toBeChecked();
+    }
+    expect(router.replace).toHaveBeenLastCalledWith(
+      "/objects?q=pils&type=palace_or_castle&service=catering",
+      { scroll: false },
+    );
+    await land(router.inFlight.length - 1, rerender);
+    expect(navigation.search).toBe("q=pils&type=palace_or_castle&service=catering");
   });
 
   it("keeps active filters and drops the cursor when the search changes", () => {

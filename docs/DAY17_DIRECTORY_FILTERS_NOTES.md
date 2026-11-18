@@ -169,6 +169,7 @@ Codex's review accepted the database design, RLS boundary, query limits, cursor 
 - **Navigation:** every change navigates to `buildListingHref(pathname, listing)` with **no cursor**, so the listing starts on page 1. A change that leaves the canonical listing unchanged does nothing.
 - **One `useTransition` for both controls.** The App Router renders only the newest navigation. While _any_ navigation of either control is in flight, the intended listing is never reset from the URL, so an older, slower navigation that lands first cannot change the controls or the results.
 - **Following the URL.** When the URL changes and nothing is in flight (Back/Forward, a link, or the settled newest navigation), the listing follows the URL. This is a render-time state adjustment, as in Day 17, keyed on the URL itself, so the visitor's in-flight choice is kept until the URL actually changes.
+- **Any completion order (second review).** The App Router should never let an older navigation commit after a newer one, but the provider no longer relies on that. It remembers the listings it navigated to since the URL last matched its newest one. If the URL settles on one of those _earlier_ targets, the provider treats it as a stale landing, not a visitor's choice: it keeps the newest listing and corrects the URL with `router.replace()`. Any other URL change (Back/Forward, a link) is followed as before, and the memory is cleared whenever the URL matches the newest target.
 - **Status messages.** A `pendingSource` tells each control whether the busy navigation is its own, so "Meklē…" and "Atlasa…" stay accurate.
 
 URL parsing is not duplicated: the provider uses `parseListing`, `canonicalFilters`, `listingKey` and `buildListingHref` from `src/lib/directory/filters.ts`. There is no global mutable state outside React (context, state and a ref only) and no timing workaround.
@@ -186,7 +187,9 @@ URL parsing is not duplicated: the provider uses `parseListing`, `canonicalFilte
 
 ### Regression tests
 
-**`src/components/DirectoryListingProvider.test.tsx`**, 14 tests. Both controls are rendered under one provider. The router's navigations stay in flight until the test lands them, out of order if needed. The tests cover:
+**`src/components/DirectoryListingProvider.test.tsx`**, 15 tests. These are integration tests: both controls are rendered under one provider. The router's navigations stay in flight until the test lands them, in any order. The tests cover:
+
+- (second review) a search, two filters and another search whose navigations land newest-first and oldest-last, with the stale landing corrected by `router.replace()`;
 
 - a delayed search followed by a filter change;
 - a delayed filter change followed by a search change;
@@ -206,7 +209,7 @@ URL parsing is not duplicated: the provider uses `parseListing`, `canonicalFilte
 The existing field and panel tests now render inside the provider and pass unchanged.
 
 - **Quality gate:** `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test` and `npm run build` passed, as did typecheck after the build. `npm audit --omit=dev` found 0 vulnerabilities.
-  - Tests: 39 files, 393 tests (379 at first delivery, plus the 14 regression tests above).
+  - Tests: 39 files, 394 tests (379 at first delivery, plus the 15 regression tests above).
   - After the corrections, everything above was run again after a clean `npm ci`.
   - The gate ran on Node 22.23.4; the repo asks for ≥ 24, and npm only warns.
 - **Unit and component tests:**

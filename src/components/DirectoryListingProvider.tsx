@@ -5,6 +5,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -45,6 +46,15 @@ interface DirectoryListingController {
 
 const DirectoryListingContext = createContext<DirectoryListingController | null>(null);
 
+interface OwnTargets {
+  latest: string | null;
+  earlier: string[];
+}
+
+const NO_TARGETS: OwnTargets = { latest: null, earlier: [] };
+/** Enough for any burst of changes made before the URL catches up. */
+const MAX_REMEMBERED_TARGETS = 50;
+
 function canonical(listing: DirectoryListing): DirectoryListing {
   return { q: normalizeSearchQuery(listing.q), filters: canonicalFilters(listing.filters) };
 }
@@ -69,6 +79,12 @@ function canonical(listing: DirectoryListing): DirectoryListing {
  *   never replace the newest state, in the controls or in the results.
  * - When the URL changes and nothing of ours is in flight (Back/Forward, a
  *   link, the settled newest navigation), the listing follows the URL.
+ * - Completion order does not matter. The provider remembers the listings
+ *   it has navigated to since the URL last matched its newest one. If the
+ *   URL settles on one of those *earlier* targets (an older navigation
+ *   completing last), that is a stale landing, not a visitor's choice: the
+ *   newest listing is kept and the URL is corrected to it with
+ *   router.replace(). Any other URL (Back/Forward, a link) is followed.
  *
  * URL parsing stays in src/lib/directory/filters.ts; nothing is duplicated.
  */
@@ -87,13 +103,36 @@ export function DirectoryListingProvider({ children }: { children: ReactNode }) 
   const [pendingSource, setPendingSource] = useState<ListingChangeSource | null>(null);
   const [isPending, startTransition] = useTransition();
   const latestRef = useRef<DirectoryListing>(urlListing);
+  // Canonical keys of this provider's own navigation targets since the URL
+  // last matched the newest one.
+  const [ownTargets, setOwnTargets] = useState<OwnTargets>(NO_TARGETS);
 
-  // Follow the URL when it changes and none of our navigations is in flight
-  // (adjusting state during render, as React recommends over an effect).
-  if (!isPending && syncedUrlKey !== urlKey) {
+  const urlListingKey = listingKey(urlListing);
+  const staleLanding =
+    !isPending &&
+    ownTargets.latest !== null &&
+    urlListingKey !== ownTargets.latest &&
+    ownTargets.earlier.includes(urlListingKey);
+
+  // Follow the URL when it changes, none of our navigations is in flight and
+  // it is not an older target of ours landing last (adjusting state during
+  // render, as React recommends over an effect).
+  if (!isPending && !staleLanding && syncedUrlKey !== urlKey) {
     setSyncedUrlKey(urlKey);
     setListingState(urlListing);
+    if (ownTargets.latest !== null) {
+      setOwnTargets(NO_TARGETS);
+    }
   }
+
+  // A stale landing: put the newest intended listing back in the URL.
+  useEffect(() => {
+    if (staleLanding) {
+      startTransition(() =>
+        router.replace(buildListingHref(pathname, latestRef.current), { scroll: false }),
+      );
+    }
+  }, [staleLanding, pathname, router]);
 
   // Keep the ref equal to the committed listing (after a URL sync too).
   useLayoutEffect(() => {
@@ -109,6 +148,14 @@ export function DirectoryListingProvider({ children }: { children: ReactNode }) 
       latestRef.current = target;
       setListingState(target);
       setPendingSource(source);
+      const key = listingKey(target);
+      setOwnTargets((previous) => ({
+        latest: key,
+        earlier:
+          previous.latest === null
+            ? previous.earlier
+            : [...previous.earlier, previous.latest].slice(-MAX_REMEMBERED_TARGETS),
+      }));
       startTransition(() => router.push(buildListingHref(pathname, target), { scroll: false }));
     },
     [pathname, router],

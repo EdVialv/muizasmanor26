@@ -68,6 +68,14 @@ Copy this template to the top of **Session history** before ending a session.
 
 ## Session history
 
+### 2026-11-18 Europe/Riga — Claude Code (Day 17, second correction round)
+
+- **Issue:** [#9](https://github.com/EdVialv/muizasmanor26/issues/9). **Branch:** `claude/day17-directory-filters`.
+- **Completed:** `DirectoryListingProvider` no longer depends on navigations completing in order. If an older navigation's URL settles after the newest, it is treated as a stale landing: the newest search and filters are kept and the URL is corrected with `router.replace()`. Back/Forward and links are followed as before. A new integration test lands a search, filters and another search newest-first and oldest-last.
+- **Verification:** format, lint, typecheck, 394 tests, build and `npm audit --omit=dev` (0) — passed. No Supabase migration or write.
+- **Next exact action:** Codex reviews Day 17 together with the rebased Day 18 branch.
+- **Handoff state:** committed, not pushed (bundle); awaiting review
+
 ### 2026-11-14 Europe/Riga — Claude Code (Day 17 corrections after Codex review)
 
 - **Issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
