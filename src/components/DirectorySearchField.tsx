@@ -2,13 +2,26 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition, type FormEvent } from "react";
+import {
+  EMPTY_FILTERS,
+  buildListingHref,
+  parseFilters,
+  type DirectoryFilters,
+} from "@/lib/directory/filters";
 import { MAX_SEARCH_QUERY_LENGTH, normalizeSearchQuery } from "@/lib/directory/searchQuery";
 
 export const SEARCH_DEBOUNCE_MS = 300;
 
-/** The directory URL for a query: a new search always starts at its first page. */
-export function buildSearchHref(pathname: string, query: string | null): string {
-  return query ? `${pathname}?${new URLSearchParams({ q: query }).toString()}` : pathname;
+/**
+ * The directory URL for a query: a new search always starts at its first
+ * page, and keeps the active filters (Day 17).
+ */
+export function buildSearchHref(
+  pathname: string,
+  query: string | null,
+  filters: DirectoryFilters = EMPTY_FILTERS,
+): string {
+  return buildListingHref(pathname, { q: query, filters });
 }
 
 /**
@@ -21,7 +34,8 @@ export function buildSearchHref(pathname: string, query: string | null): string 
  * - typing commits the query to the URL 300 ms after the last keystroke;
  *   Enter or the clear button commit at once;
  * - a committed query always drops any `cursor`, so a new search starts on
- *   its first page (the server also refuses a cursor from another search);
+ *   its first page (the server also refuses a cursor from another search),
+ *   and keeps the active Day 17 filters;
  * - a change that does not alter the normalised query (extra spaces) does
  *   nothing, so it cannot reset the visitor's page;
  * - navigations run in a React transition. The App Router renders only the
@@ -64,7 +78,9 @@ export default function DirectorySearchField() {
       return;
     }
     startTransition(() => {
-      router.push(buildSearchHref(pathname, next), { scroll: false });
+      router.push(buildSearchHref(pathname, next, parseFilters(searchParams).filters), {
+        scroll: false,
+      });
     });
   }
 

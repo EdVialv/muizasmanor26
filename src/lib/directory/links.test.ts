@@ -96,3 +96,45 @@ describe("search context (Day 16)", () => {
     ).toEqual({ q: "pils", cursor: SEARCH_TOKEN });
   });
 });
+
+describe("filter context (Day 17)", () => {
+  const filters = {
+    types: ["palace_or_castle" as const],
+    regions: ["Cēsu novads"],
+    access: [],
+    services: ["catering" as const],
+  };
+
+  it("carries filters to the object page and back", async () => {
+    const { listingScope } = await import("./filters");
+    const token = encodeCursor({
+      name: "Cēsu pils",
+      id: "11111111-2222-4333-8444-555555555555",
+      scope: listingScope({ q: "pils", filters }),
+    });
+    const href = buildObjectHref("cesu-pils", { q: "pils", filters, cursor: token });
+    const url = new URL(href, "http://localhost");
+
+    const context = parseDirectoryContext(
+      url.searchParams.get("from") ?? undefined,
+      url.searchParams.get("fromQ") ?? undefined,
+      url.searchParams.get("fromFilters") ?? undefined,
+    );
+
+    expect(context).toEqual({ q: "pils", filters, cursor: token });
+    expect(buildDirectoryHref(context)).toBe(
+      `/objects?q=pils&type=palace_or_castle&region=C%C4%93su+novads&service=catering&cursor=${token}`,
+    );
+  });
+
+  it("drops a cursor that belongs to different filters, keeping the listing itself", () => {
+    const context = parseDirectoryContext(TOKEN, undefined, "type=palace_or_castle");
+    expect(context).toEqual({
+      filters: { types: ["palace_or_castle"], regions: [], access: [], services: [] },
+    });
+  });
+
+  it("drops unknown filter values from a tampered link", () => {
+    expect(parseDirectoryContext(undefined, undefined, "type=castle&service=spa")).toEqual({});
+  });
+});

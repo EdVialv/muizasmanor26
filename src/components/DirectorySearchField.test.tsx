@@ -144,4 +144,17 @@ describe("DirectorySearchField", () => {
 
     expect(input()).toHaveAttribute("maxLength", "200");
   });
+
+  it("keeps the active filters when the search changes, and still drops the cursor (Day 17)", () => {
+    navigation.search = "q=pils&type=palace_or_castle&service=catering&cursor=abc";
+    render(<DirectorySearchField />);
+
+    fireEvent.change(input(), { target: { value: "muiža" } });
+    act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS));
+
+    expect(push).toHaveBeenLastCalledWith(
+      "/objects?q=mui%C5%BEa&type=palace_or_castle&service=catering",
+      { scroll: false },
+    );
+  });
 });

@@ -12,69 +12,106 @@
  *
  * Day 16: when the visitor came from a search, its query travels as
  * `fromQ` next to `from`, and "back" returns to the same search results.
+ * Day 17: active filters travel as `fromFilters`, one parameter holding the
+ * canonical filter query string (bounded by the filter limits in
+ * filters.ts), so "back" returns to the same filtered listing too.
  *
- * `from` and `fromQ` are untrusted URL input like any other. Each is only
+ * `from`, `fromQ` and `fromFilters` are untrusted URL input like any other. Each is only
  * used after it validates (see parseDirectoryContext); anything else is
  * dropped and the back link points at the first page.
  */
 
 import { cursorMatchesScope, decodeCursor } from "./cursor";
-import { normalizeSearchQuery, searchScope } from "./searchQuery";
+import {
+  EMPTY_FILTERS,
+  buildListingHref,
+  canonicalFilters,
+  filtersToEntries,
+  hasActiveFilters,
+  listingScope,
+  parseFilters,
+  type DirectoryFilters,
+} from "./filters";
+import { normalizeSearchQuery } from "./searchQuery";
 
 export interface DirectoryContext {
-  /** A cursor token that has already passed decodeCursor() and matches `q`. */
+  /** A cursor token that has already passed decodeCursor() and matches this listing. */
   cursor?: string;
   /** Day 16: a normalised search query, when the visitor came from a search. */
   q?: string;
+  /** Day 17: canonical active filters, when the visitor came from a filtered listing. */
+  filters?: DirectoryFilters;
 }
 
 export const DIRECTORY_PATH = "/objects";
 
+function single(value: string | string[] | undefined): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
 /**
  * Rebuilds the directory context an object link carried: `from` is the
- * directory's cursor token and `fromQ` its search query. Each is kept only
- * when valid - the query must normalise to something, and the cursor must
- * decode and belong to that same query (or to no query). An invalid cursor
- * is dropped while a valid query is kept, so "back" still returns to the
- * search, just at its first page.
+ * directory's cursor token, `fromQ` its search query and `fromFilters` its
+ * filters. Each is kept only when valid - the query must normalise to
+ * something, filter values must be known, and the cursor must decode and
+ * belong to exactly that listing. An invalid cursor is dropped while a
+ * valid search and filters are kept, so "back" still returns to the same
+ * listing, just at its first page.
  */
 export function parseDirectoryContext(
   from: string | string[] | undefined,
   fromQ?: string | string[] | undefined,
+  fromFilters?: string | string[] | undefined,
 ): DirectoryContext {
   const q = normalizeSearchQuery(fromQ) ?? undefined;
-  const context: DirectoryContext = q ? { q } : {};
-  if (typeof from === "string") {
-    const cursor = decodeCursor(from);
-    if (cursor && cursorMatchesScope(cursor, q ? searchScope(q) : undefined)) {
-      context.cursor = from;
+  const rawFilters = single(fromFilters);
+  const filters = rawFilters
+    ? parseFilters(new URLSearchParams(rawFilters)).filters
+    : EMPTY_FILTERS;
+
+  const context: DirectoryContext = {};
+  if (q) {
+    context.q = q;
+  }
+  if (hasActiveFilters(filters)) {
+    context.filters = filters;
+  }
+
+  const rawCursor = single(from);
+  if (rawCursor) {
+    const cursor = decodeCursor(rawCursor);
+    const scope = listingScope({ q: q ?? null, filters });
+    if (cursor && cursorMatchesScope(cursor, scope)) {
+      context.cursor = rawCursor;
     }
   }
   return context;
 }
 
-function withQuery(path: string, params: Array<[string, string | undefined]>): string {
-  const search = new URLSearchParams();
-  for (const [key, value] of params) {
-    if (value) {
-      search.set(key, value);
-    }
-  }
-  const encoded = search.toString();
-  return encoded ? `${path}?${encoded}` : path;
-}
-
-/** The directory listing the visitor came from: same search, same page. */
+/** The directory listing the visitor came from: same search, same filters, same page. */
 export function buildDirectoryHref(context: DirectoryContext = {}): string {
-  return withQuery(DIRECTORY_PATH, [
-    ["q", context.q],
-    ["cursor", context.cursor],
-  ]);
+  return buildListingHref(
+    DIRECTORY_PATH,
+    { q: context.q ?? null, filters: context.filters ?? EMPTY_FILTERS },
+    context.cursor,
+  );
 }
 
 export function buildObjectHref(slug: string, context: DirectoryContext = {}): string {
-  return withQuery(`${DIRECTORY_PATH}/${encodeURIComponent(slug)}`, [
-    ["fromQ", context.q],
-    ["from", context.cursor],
-  ]);
+  const params = new URLSearchParams();
+  if (context.q) {
+    params.set("fromQ", context.q);
+  }
+  if (context.filters && hasActiveFilters(context.filters)) {
+    params.set(
+      "fromFilters",
+      new URLSearchParams(filtersToEntries(canonicalFilters(context.filters))).toString(),
+    );
+  }
+  if (context.cursor) {
+    params.set("from", context.cursor);
+  }
+  const path = `${DIRECTORY_PATH}/${encodeURIComponent(slug)}`;
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
 }

@@ -98,3 +98,19 @@ export function accessibilityLabel(value: string): string {
 export function contactTypeLabel(value: string): string {
   return CONTACT_TYPE_LABELS[value] ?? value;
 }
+
+/**
+ * Day 17 filter labels for the three recorded services
+ * (docs/DAY17_DIRECTORY_FILTERS_NOTES.md). This session's own wording, for
+ * product copy review like the labels above. "Pasākumi" means event
+ * services or a venue, not a calendar of dated events.
+ */
+const SERVICE_LABELS: Record<string, string> = {
+  accommodation: "Naktsmītnes",
+  catering: "Ēdināšana",
+  events: "Pasākumu rīkošana",
+};
+
+export function serviceLabel(value: string): string {
+  return SERVICE_LABELS[value] ?? value;
+}

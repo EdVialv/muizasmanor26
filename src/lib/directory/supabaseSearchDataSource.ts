@@ -2,8 +2,9 @@
  * Supabase-backed DirectorySearchDataSource (docs/DAY16_SEARCH_NOTES.md).
  *
  * Calls one database function, search_public_heritage_objects, through the
- * anon/publishable-key client. The query and the keyset position travel as
- * named RPC arguments - JSON values bound as function parameters - so no
+ * anon/publishable-key client - for a search, for filters (Day 17), or both
+ * at once, in one query. The query, the filters and the keyset position
+ * travel as named RPC arguments - JSON values bound as function parameters - so no
  * user input is ever spliced into SQL or into a PostgREST filter string.
  * The function is SECURITY INVOKER: every row it returns is read under the
  * caller's Row Level Security, exactly like the plain directory.
@@ -19,7 +20,7 @@ import type { DirectorySearchDataSource } from "./search";
 
 export const SEARCH_FUNCTION = "search_public_heritage_objects";
 
-/** The function's result row (supabase/migrations/20261113120000_directory_search.sql). */
+/** The function's result row (supabase/migrations/20261114090000_directory_filters.sql). */
 interface RawSearchRow {
   id: string;
   slug: string;
@@ -69,9 +70,16 @@ export function createSupabaseDirectorySearchDataSource(
   client: SupabaseClient,
 ): DirectorySearchDataSource {
   return {
-    async searchPublishedObjects(query, after, limit) {
+    async searchPublishedObjects(query, filters, after, limit) {
       const { data, error } = await client.rpc(SEARCH_FUNCTION, {
         search_query: query,
+        // Empty categories are sent as null: "no filter on this category".
+        object_types: filters.types.length > 0 ? filters.types : null,
+        municipalities: filters.regions.length > 0 ? filters.regions : null,
+        access_types: filters.access.length > 0 ? filters.access : null,
+        accommodation: filters.services.includes("accommodation"),
+        catering: filters.services.includes("catering"),
+        event_facilities: filters.services.includes("events"),
         after_name: after?.name ?? null,
         after_id: after?.id ?? null,
         page_size: limit,

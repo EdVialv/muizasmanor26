@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createRecordingSupabaseClient } from "@/test-support/recordingSupabaseClient";
+import { EMPTY_FILTERS } from "./filters";
 import { DirectoryConfigurationError } from "./queries";
 import {
   createDirectorySearchDataSourceFromEnv,
@@ -15,6 +16,7 @@ describe("createSupabaseDirectorySearchDataSource", () => {
 
     await createSupabaseDirectorySearchDataSource(client).searchPublishedObjects(
       "rundales",
+      EMPTY_FILTERS,
       null,
       25,
     );
@@ -22,7 +24,18 @@ describe("createSupabaseDirectorySearchDataSource", () => {
     expect(queries).toHaveLength(1);
     expect(queries[0].rpc).toEqual({
       name: SEARCH_FUNCTION,
-      args: { search_query: "rundales", after_name: null, after_id: null, page_size: 25 },
+      args: {
+        search_query: "rundales",
+        object_types: null,
+        municipalities: null,
+        access_types: null,
+        accommodation: false,
+        catering: false,
+        event_facilities: false,
+        after_name: null,
+        after_id: null,
+        page_size: 25,
+      },
     });
     expect(queries[0].filters).toEqual([]);
   });
@@ -33,15 +46,49 @@ describe("createSupabaseDirectorySearchDataSource", () => {
 
     await createSupabaseDirectorySearchDataSource(client).searchPublishedObjects(
       "' or 1=1 --",
+      EMPTY_FILTERS,
       { name: trickyName, id: OBJECT_ID, scope: "0123456789abcdef" },
       25,
     );
 
-    expect(queries[0].rpc?.args).toEqual({
+    expect(queries[0].rpc?.args).toMatchObject({
       search_query: "' or 1=1 --",
       after_name: trickyName,
       after_id: OBJECT_ID,
       page_size: 25,
+    });
+  });
+
+  it("passes every filter as its own bound argument, in the same call as the search (Day 17)", async () => {
+    const { client, queries } = createRecordingSupabaseClient();
+
+    await createSupabaseDirectorySearchDataSource(client).searchPublishedObjects(
+      null,
+      {
+        types: ["manor_estate", "palace_or_castle"],
+        regions: ["Bauskas novads (Rundāles pagasts)", "Cēsu novads"],
+        access: ["open"],
+        services: ["accommodation", "events"],
+      },
+      null,
+      25,
+    );
+
+    expect(queries).toHaveLength(1);
+    expect(queries[0].rpc).toEqual({
+      name: SEARCH_FUNCTION,
+      args: {
+        search_query: null,
+        object_types: ["manor_estate", "palace_or_castle"],
+        municipalities: ["Bauskas novads (Rundāles pagasts)", "Cēsu novads"],
+        access_types: ["open"],
+        accommodation: true,
+        catering: false,
+        event_facilities: true,
+        after_name: null,
+        after_id: null,
+        page_size: 25,
+      },
     });
   });
 
@@ -78,6 +125,7 @@ describe("createSupabaseDirectorySearchDataSource", () => {
 
     const rows = await createSupabaseDirectorySearchDataSource(client).searchPublishedObjects(
       "pils",
+      EMPTY_FILTERS,
       null,
       25,
     );
@@ -105,7 +153,12 @@ describe("createSupabaseDirectorySearchDataSource", () => {
     const { client } = createRecordingSupabaseClient({ data: null, error: new Error("boom") });
 
     await expect(
-      createSupabaseDirectorySearchDataSource(client).searchPublishedObjects("x", null, 25),
+      createSupabaseDirectorySearchDataSource(client).searchPublishedObjects(
+        "x",
+        EMPTY_FILTERS,
+        null,
+        25,
+      ),
     ).rejects.toThrow("boom");
   });
 });

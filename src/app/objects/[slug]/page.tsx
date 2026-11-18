@@ -20,7 +20,11 @@ import ObjectRelationsSection, { ObjectRelationsSkeleton } from "./ObjectRelatio
 
 interface ObjectPageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ from?: string | string[]; fromQ?: string | string[] }>;
+  searchParams: Promise<{
+    from?: string | string[];
+    fromQ?: string | string[];
+    fromFilters?: string | string[];
+  }>;
 }
 
 export async function generateMetadata({ params }: ObjectPageProps): Promise<Metadata> {
@@ -58,7 +62,7 @@ function toParagraphs(text: string): string[] {
  */
 export default async function ObjectPage({ params, searchParams }: ObjectPageProps) {
   const [{ slug }, query] = await Promise.all([params, searchParams]);
-  const context = parseDirectoryContext(query.from, query.fromQ);
+  const context = parseDirectoryContext(query.from, query.fromQ, query.fromFilters);
   const directoryHref = buildDirectoryHref(context);
 
   const outcome = await loadObject(slug);
