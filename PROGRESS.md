@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Days 17 and 18 implemented, awaiting Codex review
+- **Current roadmap day:** Days 17, 18 and 19 implemented, awaiting Codex review
 - **Last completed-and-merged day:** Day 16 ([#42](https://github.com/EdVialv/muizasmanor26/pull/42), `5d15f23`)
 - **Current issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
-- **Next outcome:** Codex reviews Day 17 (`claude/day17-directory-filters`), then Day 18 (`claude/day18-condition-ownership-family`, stacked on Day 17). After that, apply the Day 15–18 migrations to `muizasmanor26-dev` in order and start Day 19 (map).
-- **MVP status:** Days 1–16 are merged and verified; Days 17–18 (filters) await review. Day 14 added object pages, Day 15 added the first visual alpha and its image/access migration, and Day 16 added indexed multilingual search and its search migration. The two new migrations remain unapplied to the real development database. The real dataset remains non-destructive: no Day 11 row was bulk-staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
+- **Next outcome:** Codex reviews Day 17 (`claude/day17-directory-filters`), Day 18 (`claude/day18-condition-ownership-family`) and Day 19 (`claude/day19-map`), each stacked on the previous one. After that, apply the Day 15–19 migrations to `muizasmanor26-dev` in order, choose a tile provider, and start Day 20 (shareable URLs).
+- **MVP status:** Days 1–16 are merged and verified; Days 17–18 (filters) and Day 19 (map) await review. Day 14 added object pages, Day 15 added the first visual alpha and its image/access migration, and Day 16 added indexed multilingual search and its search migration. The two new migrations remain unapplied to the real development database. The real dataset remains non-destructive: no Day 11 row was bulk-staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                           |
-| ---------------- | ------------------------------------------------------- |
-| Status           | Days 17 and 18 awaiting Codex review                    |
-| Agent            | Claude Code (session ended)                             |
-| Issue            | #9                                                      |
-| Branch           | `claude/day18-condition-ownership-family` (on Day 17)   |
-| Session goal     | Condition, ownership and historical-family filters      |
-| Started          | 2026-11-13                                              |
-| Expected handoff | Tested, URL-synchronised filters ready for Codex review |
+| Field            | Current value                                 |
+| ---------------- | --------------------------------------------- |
+| Status           | Days 17, 18 and 19 awaiting Codex review      |
+| Agent            | Claude Code (session ended)                   |
+| Issue            | #9                                            |
+| Branch           | `claude/day19-map` (on Day 18, on Day 17)     |
+| Session goal     | Interactive Leaflet map with viewport queries |
+| Started          | 2026-11-18                                    |
+| Expected handoff | Tested map ready for Codex review             |
 
 ## Required session entry
 
@@ -67,6 +67,52 @@ Copy this template to the top of **Session history** before ending a session.
 ```
 
 ## Session history
+
+### 2026-11-18 Europe/Riga — Claude Code (Day 19)
+
+- **Issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
+- **Branch:** `claude/day19-map`, based on the corrected Day 18 `8e92f7c`. Days 17–18 were not yet accepted: `main` is still `f3311e7`.
+- **Pull request:** not opened (this session cannot push; delivered as `muizasmanor26-day19.bundle`, which needs `8e92f7c`).
+- **Session goal:** Interactive Leaflet map with viewport queries, clustering and list-to-map navigation.
+- **Completed:**
+  - **Migration:** one unapplied migration.
+    - Moves the Day 16–18 parsing and matching rules into a shared parser and an inlinable matcher, now used by both the list and the map. List signatures and behaviour are unchanged.
+    - Adds `public_map_objects`: the viewport is validated and clamped to the Latvia box; it returns every point up to 500, otherwise exact grid clusters.
+    - Adds the `SECURITY DEFINER` id and cluster helpers and a partial GiST expression index.
+  - **API route:** `/api/directory/map` validates the viewport and parses search and filters exactly as the list does.
+  - **Page:** `/map` shares one frame and one `DirectoryListingProvider` with the list, with a Saraksts/Karte switch and a "Karte" header link.
+  - **Map behaviour:**
+    - Leaflet loads browser-only, with canvas points.
+    - Supercluster clusters, and same-position stacks with list popups.
+    - Popups with name, type and object link.
+    - Debounced, aborting requests that ignore stale answers; no requests while the page is hidden.
+    - Loading, no-results, error, tile-failure, missing-base-map, chunk-failure and no-JavaScript states.
+    - An accessible in-view list.
+    - Wheel zoom only while the map is in use; markers are not Tab stops.
+    - Object pages link "Atpakaļ uz karti".
+  - **Tiles:** configured by `MAP_TILE_URL`, `MAP_TILE_ATTRIBUTION` and `MAP_TILE_MAX_ZOOM` (documented in `.env.example`). The OSM standard tiles are used in development only; no paid service is enabled.
+- **Files changed:**
+  - `supabase/migrations/20261116090000_directory_map.sql` and `supabase/tests/directory_map.test.sql` — new.
+  - New, with tests: `src/lib/map/*` and `src/components/map/*`; `src/app/map/*` and `src/app/api/directory/map/*`; `src/components/DirectoryFrame.tsx` and `DirectoryViewSwitch.tsx`.
+  - `src/app/objects/(directory)/layout.tsx`, `src/components/SiteHeader.tsx`, `src/lib/directory/links.ts`, `supabaseSearchDataSource.ts`, the object page, `globals.css`.
+  - `package.json` and `package-lock.json` (`leaflet`, `supercluster`, `@types/leaflet`), `.env.example`.
+  - `docs/DAY19_MAP_NOTES.md` and `docs/day19-screenshots/` — new; `TODO.md`, `PROGRESS.md`.
+- **Verification:**
+  - Format, lint, typecheck, `npm test -- --run` (49 files, 503 tests), build, `npm audit --omit=dev` (0) and `git diff --check` — passed.
+  - SQL: the map and family-name regression tests passed, and the Day 17/18 ground-truth walks (16/16, 23/23) passed again.
+  - Browser: 22/22 Day 19 checks, plus the Day 17/18 regressions (27/27, 19/19, 27/27, 6/6).
+  - Timed locally at 10,643 objects: see the notes.
+  - Not verified: any real tile provider, Supabase itself, and browsers other than Chromium.
+- **Decisions:** see `docs/DAY19_MAP_NOTES.md` "Decisions requiring Codex review" (10).
+- **Blockers or risks:**
+  - The branch is stacked on unreviewed Days 17–18.
+  - A production tile provider must be chosen by the owner; free plans are non-commercial.
+  - The whole-Latvia unfiltered view takes about 20 ms per uncached request at 10,000 objects.
+- **Next exact action:**
+  - Codex: review Days 17, 18 and 19 in order.
+  - Apply the Day 15–19 migrations to `muizasmanor26-dev`, then run `VACUUM ANALYZE heritage_objects, object_historical_owner_families`.
+  - Set `MAP_TILE_*` for a chosen provider and open `/map`.
+- **Handoff state:** committed on `claude/day19-map`, not pushed; awaiting review
 
 ### 2026-11-18 Europe/Riga — Claude Code (Day 18, second correction round)
 
