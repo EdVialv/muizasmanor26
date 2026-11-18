@@ -72,7 +72,8 @@ Copy this template to the top of **Session history** before ending a session.
 
 - **Issue:** [#9](https://github.com/EdVialv/muizasmanor26/issues/9). **Branch:** `claude/day17-directory-filters`.
 - **Completed:** `DirectoryListingProvider` no longer depends on navigations completing in order. If an older navigation's URL settles after the newest, it is treated as a stale landing: the newest search and filters are kept and the URL is corrected with `router.replace()`. Back/Forward and links are followed as before. A new integration test lands a search, filters and another search newest-first and oldest-last.
-- **Verification:** format, lint, typecheck, 394 tests, build and `npm audit --omit=dev` (0) — passed. No Supabase migration or write.
+- **Dependency:** `next` and `eslint-config-next` were bumped 16.4.3 → 16.4.6 in their own commit. Advisories GHSA-mfr8-8qww-v76h and GHSA-vc7v-qv4w-wrv8, published since `f3311e7`, made `npm audit --omit=dev` fail and `next build` refuse to run on 16.4.3, on `main` too. The commit can be taken or dropped on its own.
+- **Verification (with the bump):** format, lint, typecheck, 394 tests, build and `npm audit --omit=dev` (0) — passed. No Supabase migration or write.
 - **Next exact action:** Codex reviews Day 17 together with the rebased Day 18 branch.
 - **Handoff state:** committed, not pushed (bundle); awaiting review
 
