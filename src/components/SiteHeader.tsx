@@ -19,6 +19,7 @@ import { usePathname } from "next/navigation";
 const NAV_ITEMS: ReadonlyArray<{ href: string; label: string }> = [
   { href: "/", label: "Sākums" },
   { href: "/objects", label: "Objekti" },
+  { href: "/map", label: "Karte" },
 ];
 
 export default function SiteHeader() {

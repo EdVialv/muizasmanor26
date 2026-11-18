@@ -146,3 +146,38 @@ describe("filter context (Day 17)", () => {
     expect(parseDirectoryContext(undefined, undefined, "type=castle&service=spa")).toEqual({});
   });
 });
+
+describe("map context (Day 19)", () => {
+  it("round-trips search, filters and the map view through an object link, without a cursor", async () => {
+    const { buildObjectHref, parseDirectoryContext, buildDirectoryHref, directoryBackLabel } =
+      await import("./links");
+    const href = buildObjectHref("rundales-pils", {
+      q: "pils",
+      filters: { ...EMPTY_FILTERS, types: ["palace_or_castle"], familyUnknown: true },
+      view: "map",
+      cursor: "should-not-travel",
+    });
+    const url = new URL(href, "http://localhost");
+    expect(url.searchParams.get("fromView")).toBe("map");
+    expect(url.searchParams.has("from")).toBe(false);
+
+    const context = parseDirectoryContext(
+      url.searchParams.get("from") ?? undefined,
+      url.searchParams.get("fromQ") ?? undefined,
+      url.searchParams.get("fromFilters") ?? undefined,
+      url.searchParams.get("fromView") ?? undefined,
+    );
+    expect(context.view).toBe("map");
+    expect(buildDirectoryHref(context)).toBe("/map?q=pils&type=palace_or_castle&family_unknown=1");
+    expect(directoryBackLabel(context)).toBe("Atpakaļ uz karti");
+  });
+
+  it("ignores an unknown fromView and keeps the list behaviour", async () => {
+    const { parseDirectoryContext, buildDirectoryHref, directoryBackLabel } =
+      await import("./links");
+    const context = parseDirectoryContext(undefined, "pils", undefined, "satellite");
+    expect(context.view).toBeUndefined();
+    expect(buildDirectoryHref(context)).toBe("/objects?q=pils");
+    expect(directoryBackLabel(context)).toBe("Atpakaļ uz katalogu");
+  });
+});

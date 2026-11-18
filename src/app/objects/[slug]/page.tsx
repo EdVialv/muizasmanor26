@@ -11,7 +11,11 @@ import {
   objectTypeLabel,
   ownershipTypeLabel,
 } from "@/lib/directory/labels";
-import { buildDirectoryHref, parseDirectoryContext } from "@/lib/directory/links";
+import {
+  buildDirectoryHref,
+  directoryBackLabel,
+  parseDirectoryContext,
+} from "@/lib/directory/links";
 import { formatLatvianDate } from "@/lib/format/dates";
 import type { ObjectDetail } from "@/lib/objects/detail";
 import { loadObject } from "./loadObject";
@@ -24,6 +28,7 @@ interface ObjectPageProps {
     from?: string | string[];
     fromQ?: string | string[];
     fromFilters?: string | string[];
+    fromView?: string | string[];
   }>;
 }
 
@@ -62,8 +67,9 @@ function toParagraphs(text: string): string[] {
  */
 export default async function ObjectPage({ params, searchParams }: ObjectPageProps) {
   const [{ slug }, query] = await Promise.all([params, searchParams]);
-  const context = parseDirectoryContext(query.from, query.fromQ, query.fromFilters);
+  const context = parseDirectoryContext(query.from, query.fromQ, query.fromFilters, query.fromView);
   const directoryHref = buildDirectoryHref(context);
+  const backLabel = directoryBackLabel(context);
 
   const outcome = await loadObject(slug);
 
@@ -91,7 +97,7 @@ export default async function ObjectPage({ params, searchParams }: ObjectPagePro
             )}
             <p>
               <Link className="directoryPaginationLink" href={directoryHref}>
-                Atpakaļ uz katalogu
+                {backLabel}
               </Link>
             </p>
           </div>
@@ -113,7 +119,8 @@ export default async function ObjectPage({ params, searchParams }: ObjectPagePro
       <div className="container">
         <nav className="objectBackNav" aria-label="Atgriezties">
           <Link href={directoryHref}>
-            <span aria-hidden="true">← </span>Atpakaļ uz katalogu
+            <span aria-hidden="true">← </span>
+            {backLabel}
           </Link>
         </nav>
 

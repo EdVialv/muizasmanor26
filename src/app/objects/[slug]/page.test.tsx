@@ -73,7 +73,12 @@ function dataSourceReturning(row: RawObjectDetailRow | null): ObjectDetailDataSo
 
 async function renderObjectPage(
   slug: string,
-  searchParams: { from?: string | string[]; fromQ?: string | string[] } = {},
+  searchParams: {
+    from?: string | string[];
+    fromQ?: string | string[];
+    fromFilters?: string | string[];
+    fromView?: string | string[];
+  } = {},
 ) {
   const { default: ObjectPage } = await import("./page");
   const element = await ObjectPage({
@@ -207,6 +212,23 @@ describe("ObjectPage", () => {
     expect(relations).toHaveAttribute("data-cursor", token);
     expect(relations).toHaveAttribute("data-object-id", OBJECT_ID);
     expect(relations).toHaveAttribute("data-parent-id", PARENT_ID);
+  });
+
+  it("links back to the map, with the same search and filters, when opened from it (Day 19)", async () => {
+    createObjectDetailDataSourceFromEnv.mockReturnValue(dataSourceReturning(detailRow()));
+
+    await renderObjectPage("rundales-pils-parks", {
+      fromView: "map",
+      fromQ: "pils",
+      fromFilters: "condition=unknown&ownership=public",
+      from: "ignored-cursor",
+    });
+
+    expect(screen.getByRole("link", { name: /atpakaļ uz karti/i })).toHaveAttribute(
+      "href",
+      "/map?q=pils&condition=unknown&ownership=public",
+    );
+    expect(screen.queryByRole("link", { name: /atpakaļ uz katalogu/i })).not.toBeInTheDocument();
   });
 
   it("links back to the search the visitor came from (Day 16)", async () => {

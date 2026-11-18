@@ -15,6 +15,7 @@ import {
   createPublicSupabaseClient,
   PublicDataConfigurationError,
 } from "@/lib/supabase/publicClient";
+import type { DirectoryFilters } from "./filters";
 import { DirectoryConfigurationError, type RawDirectoryRow } from "./queries";
 import type { DirectorySearchDataSource } from "./search";
 
@@ -65,6 +66,31 @@ export function createDirectorySearchDataSourceFromEnv(): DirectorySearchDataSou
   }
 }
 
+/**
+ * The search and filter arguments shared by every directory RPC - the list
+ * (search_public_heritage_objects) and the Day 19 map (public_map_objects) -
+ * so the two views always send the same selection in the same form.
+ */
+export function listingRpcArgs(query: string | null, filters: DirectoryFilters) {
+  return {
+    search_query: query,
+    // Empty categories are sent as null: "no filter on this category".
+    object_types: filters.types.length > 0 ? filters.types : null,
+    municipalities: filters.regions.length > 0 ? filters.regions : null,
+    access_types: filters.access.length > 0 ? filters.access : null,
+    accommodation: filters.services.includes("accommodation"),
+    catering: filters.services.includes("catering"),
+    event_facilities: filters.services.includes("events"),
+    // Day 18: "unknown" travels as a value of its own (condition,
+    // ownership) or as a flag (family), so the function can tell
+    // "no filter" from "only objects where this is not recorded".
+    condition_categories: filters.conditions.length > 0 ? filters.conditions : null,
+    ownership_groups: filters.ownership.length > 0 ? filters.ownership : null,
+    historical_families: filters.families.length > 0 ? filters.families : null,
+    family_unknown: filters.familyUnknown,
+  };
+}
+
 /** Exported separately so tests can pass a client stub without real env vars. */
 export function createSupabaseDirectorySearchDataSource(
   client: SupabaseClient,
@@ -72,21 +98,7 @@ export function createSupabaseDirectorySearchDataSource(
   return {
     async searchPublishedObjects(query, filters, after, limit) {
       const { data, error } = await client.rpc(SEARCH_FUNCTION, {
-        search_query: query,
-        // Empty categories are sent as null: "no filter on this category".
-        object_types: filters.types.length > 0 ? filters.types : null,
-        municipalities: filters.regions.length > 0 ? filters.regions : null,
-        access_types: filters.access.length > 0 ? filters.access : null,
-        accommodation: filters.services.includes("accommodation"),
-        catering: filters.services.includes("catering"),
-        event_facilities: filters.services.includes("events"),
-        // Day 18: "unknown" travels as a value of its own (condition,
-        // ownership) or as a flag (family), so the function can tell
-        // "no filter" from "only objects where this is not recorded".
-        condition_categories: filters.conditions.length > 0 ? filters.conditions : null,
-        ownership_groups: filters.ownership.length > 0 ? filters.ownership : null,
-        historical_families: filters.families.length > 0 ? filters.families : null,
-        family_unknown: filters.familyUnknown,
+        ...listingRpcArgs(query, filters),
         after_name: after?.name ?? null,
         after_id: after?.id ?? null,
         page_size: limit,

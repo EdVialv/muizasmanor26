@@ -16,7 +16,11 @@
  * canonical filter query string (bounded by the filter limits in
  * filters.ts), so "back" returns to the same filtered listing too.
  *
- * `from`, `fromQ` and `fromFilters` are untrusted URL input like any other. Each is only
+ * Day 19: an object opened from the map carries `fromView=map`, and "back"
+ * returns to the map with the same search and filters (the map position
+ * itself is Day 20's URL work). A map link carries no cursor.
+ *
+ * `from`, `fromQ`, `fromFilters` and `fromView` are untrusted URL input like any other. Each is only
  * used after it validates (see parseDirectoryContext); anything else is
  * dropped and the back link points at the first page.
  */
@@ -41,9 +45,13 @@ export interface DirectoryContext {
   q?: string;
   /** Day 17: canonical active filters, when the visitor came from a filtered listing. */
   filters?: DirectoryFilters;
+  /** Day 19: the visitor came from the map rather than the list. */
+  view?: "map";
 }
 
 export const DIRECTORY_PATH = "/objects";
+export const MAP_PATH = "/map";
+export const FROM_VIEW_MAP = "map";
 
 function single(value: string | string[] | undefined): string | undefined {
   return typeof value === "string" ? value : undefined;
@@ -62,6 +70,7 @@ export function parseDirectoryContext(
   from: string | string[] | undefined,
   fromQ?: string | string[] | undefined,
   fromFilters?: string | string[] | undefined,
+  fromView?: string | string[] | undefined,
 ): DirectoryContext {
   const q = normalizeSearchQuery(fromQ) ?? undefined;
   const rawFilters = single(fromFilters);
@@ -76,6 +85,11 @@ export function parseDirectoryContext(
   if (hasActiveFilters(filters)) {
     context.filters = filters;
   }
+  if (single(fromView) === FROM_VIEW_MAP) {
+    // The map has no cursor; any `from` is ignored.
+    context.view = "map";
+    return context;
+  }
 
   const rawCursor = single(from);
   if (rawCursor) {
@@ -88,8 +102,14 @@ export function parseDirectoryContext(
   return context;
 }
 
-/** The directory listing the visitor came from: same search, same filters, same page. */
+/** The directory listing the visitor came from: same search, same filters, same page (or the map). */
 export function buildDirectoryHref(context: DirectoryContext = {}): string {
+  if (context.view === "map") {
+    return buildListingHref(MAP_PATH, {
+      q: context.q ?? null,
+      filters: context.filters ?? EMPTY_FILTERS,
+    });
+  }
   return buildListingHref(
     DIRECTORY_PATH,
     { q: context.q ?? null, filters: context.filters ?? EMPTY_FILTERS },
@@ -108,10 +128,17 @@ export function buildObjectHref(slug: string, context: DirectoryContext = {}): s
       new URLSearchParams(filtersToEntries(canonicalFilters(context.filters))).toString(),
     );
   }
-  if (context.cursor) {
+  if (context.view === "map") {
+    params.set("fromView", FROM_VIEW_MAP);
+  } else if (context.cursor) {
     params.set("from", context.cursor);
   }
   const path = `${DIRECTORY_PATH}/${encodeURIComponent(slug)}`;
   const query = params.toString();
   return query ? `${path}?${query}` : path;
+}
+
+/** The wording of the "back" link for a context. */
+export function directoryBackLabel(context: DirectoryContext = {}): string {
+  return context.view === "map" ? "Atpakaļ uz karti" : "Atpakaļ uz katalogu";
 }
