@@ -19,10 +19,10 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 17 ready to start
+- **Current roadmap day:** Day 17 implemented, awaiting Codex review
 - **Last completed-and-merged day:** Day 16 ([#42](https://github.com/EdVialv/muizasmanor26/pull/42), `5d15f23`)
 - **Current issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
-- **Next outcome:** Apply the Day 15 and Day 16 migrations to `muizasmanor26-dev` in order, then build Day 17 object-type, region, access and service filters.
+- **Next outcome:** Codex reviews Day 17 (`claude/day17-directory-filters`); then apply the Day 15, 16 and 17 migrations to `muizasmanor26-dev` in order, and start Day 18 condition, ownership and historical-family filters.
 - **MVP status:** Days 1–16 are merged and verified. Day 14 added object pages, Day 15 added the first visual alpha and its image/access migration, and Day 16 added indexed multilingual search and its search migration. The two new migrations remain unapplied to the real development database. The real dataset remains non-destructive: no Day 11 row was bulk-staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
 - **Detailed plan:** [TODO.md](TODO.md)
 
@@ -32,12 +32,12 @@ Update this section when a session starts. Only one write-enabled session should
 
 | Field            | Current value                                           |
 | ---------------- | ------------------------------------------------------- |
-| Status           | Ready for Day 17                                        |
-| Agent            | None                                                    |
+| Status           | Day 17 awaiting Codex review                            |
+| Agent            | Claude Code (session ended)                             |
 | Issue            | #9                                                      |
-| Branch           | None                                                    |
+| Branch           | `claude/day17-directory-filters`                        |
 | Session goal     | Build object-type, region, access and service filters   |
-| Started          | Not started                                             |
+| Started          | 2026-11-13                                              |
 | Expected handoff | Tested, URL-synchronised filters ready for Codex review |
 
 ## Required session entry
@@ -67,6 +67,60 @@ Copy this template to the top of **Session history** before ending a session.
 ```
 
 ## Session history
+
+### 2026-11-13 Europe/Riga — Claude Code (Day 17)
+
+- **Issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
+- **Branch:** `claude/day17-directory-filters`, based on the accepted Day 16 baseline `main` `f3311e7`
+- **Pull request:** not opened (this session cannot push; delivered as `muizasmanor26-day17.bundle`)
+- **Session goal:** Object-type, region, public-access, accommodation, catering and event filters on `/objects`.
+- **Completed:**
+  - Mapped each filter to the schema:
+    - type → `object_type`;
+    - region → `municipality`, the only stored geography, matched exactly;
+    - access → Day 15 `public_access`.
+  - Found the schema had no field for services. Added the smallest shape that keeps unknown ≠ no: nullable `offers_accommodation`, `offers_catering` and `offers_event_facilities`, plus `services_verified_at`. Nothing is backfilled or inferred.
+  - Wrote one unapplied migration:
+    - the columns;
+    - three partial `(name_lv, id)` indexes for flagged rows, justified by measurement;
+    - a `public_directory_municipalities()` options function;
+    - the Day 16 search function and its ids-only helper, recreated with filter arguments, so search and filters run in one query and one keyset order.
+  - Rules: AND across groups, OR within, services independent; positive filters match recorded `true` only; no parent inheritance; access kept distinct from ownership.
+  - URL model: validated, canonical and bounded params, with cursors scoped to search + filters. Any change resets to page 1, and "Nākamā lapa" keeps selections. Object pages return to the same filtered page.
+  - Filter panel:
+    - labelled fieldsets in a `<details>`, closed by default;
+    - chips with individual removal, "clear filters (keep search)" and "clear search and filters";
+    - pending announcement, newest-navigation-wins, and a no-JavaScript GET fallback;
+    - filter-specific no-results and error states.
+- **Files changed:**
+  - `supabase/migrations/20261114090000_directory_filters.sql` — new.
+  - New library modules with tests: `src/lib/directory/filters.ts`, `regionOptions.ts`.
+  - Modified library modules with tests: `search.ts`, `supabaseSearchDataSource.ts`, `links.ts`, `labels.ts`.
+  - `src/components/DirectoryFilterPanel.tsx` and its test — new.
+  - `src/components/DirectorySearchField.tsx` and its test — keeps filters.
+  - `src/app/objects/(directory)/layout.tsx`, `page.tsx`, `page.test.tsx` — filtered listing and states.
+  - `src/app/objects/[slug]/page.tsx` — `fromFilters`.
+  - `src/app/globals.css` — filter styles from existing tokens.
+  - `docs/DAY17_DIRECTORY_FILTERS_NOTES.md` and `docs/day17-screenshots/` — new.
+  - `docs/DATA_MODEL.md`, `TODO.md`, `PROGRESS.md`.
+- **Verification:**
+  - `npm run format:check`, `npm run lint` and `npm run typecheck` — passed.
+  - `npm test` — passed, 38 files, 379 tests (322 → 379).
+  - `npm run build` — passed.
+  - `npm audit --omit=dev` — 0 vulnerabilities.
+  - Local SQL ground-truth walks, and 27/27 Playwright checks against a real local PostgREST, including a delayed older response — passed (details in the notes).
+  - Timed locally on 10,632 published rows with the migration freshly applied: every filtered page had a median ≤ 1 ms.
+  - Run on Node 22.23.4.
+  - Not run: anything against the real Supabase project.
+- **Decisions:** see `docs/DAY17_DIRECTORY_FILTERS_NOTES.md` "Decisions requiring Codex review" (9). The most important are the services schema, region = exact municipality, the changed function signature, and invalid URL values being dropped with a notice.
+- **Blockers or risks:**
+  - The migration replaces the Day 16 search signature: apply it and deploy the Day 17 code together.
+  - Service and access filters return nothing on real data until those values are recorded editorially.
+  - Municipality variants appear as separate region options until the mapping is done.
+  - This session cannot push: the work is delivered as a git bundle.
+- **Next exact action:**
+  - Codex: review and merge Day 17. Apply the Day 15, Day 16 and Day 17 migrations to `muizasmanor26-dev` in that order, then run `VACUUM ANALYZE heritage_objects`. Check one filtered listing and one search+filter listing in a browser.
+- **Handoff state:** committed on `claude/day17-directory-filters`, not pushed; awaiting review
 
 ### 2026-11-13 Europe/Riga — Codex (Days 14–16 review and merge)
 
