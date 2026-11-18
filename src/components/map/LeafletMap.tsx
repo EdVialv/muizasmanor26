@@ -124,7 +124,10 @@ export default function LeafletMap({
     const map = L.map(container, {
       preferCanvas: true,
       scrollWheelZoom: false,
-      minZoom: MIN_MAP_ZOOM,
+      // A provider may intentionally stop below our preferred zoom. Keep
+      // Leaflet's min/max range valid and let fitBounds show the widest
+      // available view in that unusual configuration.
+      minZoom: Math.min(MIN_MAP_ZOOM, maxZoom),
       maxZoom,
       keyboard: true,
       worldCopyJump: false,

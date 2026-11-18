@@ -34,6 +34,8 @@ describe("readTileConfig", () => {
     for (const env of [
       { ...base, MAP_TILE_URL: "http://tiles.example.com/{z}/{x}/{y}.png" },
       { ...base, MAP_TILE_URL: "https://tiles.example.com/{z}/{x}.png" },
+      { ...base, MAP_TILE_URL: "https://tiles.example.com/{z}/{x}/{y}/{q}.png" },
+      { ...base, MAP_TILE_URL: "https://tiles.example.com/{z}/{x}/{y/{r}.png" },
       { ...base, MAP_TILE_URL: "not a url {z}{x}{y}" },
       { NODE_ENV: "production", MAP_TILE_URL: "https://tiles.example.com/{z}/{x}/{y}.png" },
       {

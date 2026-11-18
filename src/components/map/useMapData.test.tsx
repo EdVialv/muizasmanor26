@@ -120,6 +120,32 @@ describe("useMapData", () => {
     });
   });
 
+  it("invalidates an older request immediately when the intended URL changes", async () => {
+    const first = deferred();
+    const fetchMock = vi
+      .fn()
+      .mockReturnValueOnce(first.promise)
+      .mockResolvedValueOnce({ ok: true, json: async () => body(["newer"]) } as Response);
+    const { rerender, result } = renderHook(({ l }) => useMapData(l, VIEWPORT, fetchMock), {
+      initialProps: { l: LISTING },
+    });
+    await flush();
+
+    rerender({ l: { q: "pils", filters: EMPTY_FILTERS } });
+    expect((fetchMock.mock.calls[0][1] as RequestInit).signal?.aborted).toBe(true);
+    await act(async () => {
+      first.resolve(body(["older"]));
+    });
+    await flush(0);
+    expect(result.current.state.kind).toBe("loading");
+
+    await flush();
+    expect(result.current.state).toMatchObject({
+      kind: "ready",
+      result: { objects: [{ id: "newer" }] },
+    });
+  });
+
   it("keeps the previous result through an error, and retries", async () => {
     const fetchMock = vi
       .fn()

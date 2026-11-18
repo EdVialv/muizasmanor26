@@ -92,6 +92,11 @@ export function useMapData(
     if (!href) {
       return;
     }
+    // Invalidate an in-flight response as soon as the intended URL changes,
+    // not only after the debounce expires. Otherwise the old response can
+    // briefly replace the screen while the newer request is still waiting.
+    controllerRef.current?.abort();
+    requestRef.current += 1;
     const timer = setTimeout(() => load(href), MAP_FETCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [href, load, retryCount]);

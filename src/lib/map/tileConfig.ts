@@ -42,9 +42,18 @@ export type TileConfigOutcome =
 type Env = Record<string, string | undefined>;
 
 export function isValidTileTemplate(value: string): boolean {
+  const allowedPlaceholders = new Set(["z", "x", "y", "s", "r"]);
+  const placeholders = [...value.matchAll(/\{([^{}]+)\}/g)].map((match) => match[1]);
+  const withoutPlaceholders = value.replace(/\{[^{}]+\}/g, "");
+  if (
+    /[{}]/.test(withoutPlaceholders) ||
+    placeholders.some((placeholder) => !allowedPlaceholders.has(placeholder))
+  ) {
+    return false;
+  }
   let url: URL;
   try {
-    url = new URL(value.replace(/\{[a-z]\}/g, "0"));
+    url = new URL(value.replace(/\{[^{}]+\}/g, "0"));
   } catch {
     return false;
   }
