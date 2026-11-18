@@ -1,12 +1,13 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { push, navigation } = vi.hoisted(() => ({
+const { push, replace, navigation } = vi.hoisted(() => ({
   push: vi.fn(),
+  replace: vi.fn(),
   navigation: { search: "" },
 }));
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push }),
+  useRouter: () => ({ push, replace }),
   usePathname: () => "/objects",
   useSearchParams: () => new URLSearchParams(navigation.search),
 }));
@@ -27,6 +28,7 @@ function lastUrl(): URL {
 describe("DirectoryFilterPanel", () => {
   beforeEach(() => {
     push.mockClear();
+    replace.mockClear();
     navigation.search = "";
   });
 

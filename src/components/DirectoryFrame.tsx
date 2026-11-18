@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import DirectoryCopyLink from "@/components/DirectoryCopyLink";
 import DirectoryFilterPanel from "@/components/DirectoryFilterPanel";
 import { DirectoryListingProvider } from "@/components/DirectoryListingProvider";
 import DirectorySearchField from "@/components/DirectorySearchField";
@@ -7,7 +8,8 @@ import { loadRegionOptionsFromEnv } from "@/lib/directory/regionOptions";
 
 /**
  * The frame shared by the list (/objects) and the map (/map): heading,
- * list/map switch, search field (Day 16) and filter panel (Days 17-18),
+ * list/map switch, "copy link" (Day 20), search field (Day 16) and filter
+ * panel (Days 17-18),
  * all under one DirectoryListingProvider, with the view inside it - so the
  * map reads the same latest intended listing as the controls, and no view
  * can reintroduce the search/filter race (docs/DAY17_DIRECTORY_FILTERS_NOTES.md).
@@ -29,7 +31,10 @@ export default async function DirectoryFrame({ children }: { children: ReactNode
       <div className="container">
         <h1 className="objectsHeading">Muižu un kultūrvēsturisko objektu katalogs</h1>
         <DirectoryListingProvider>
-          <DirectoryViewSwitch />
+          <div className="directoryToolbar">
+            <DirectoryViewSwitch />
+            <DirectoryCopyLink />
+          </div>
           <DirectorySearchField />
           <DirectoryFilterPanel regionOptions={regionOptions} />
           {children}

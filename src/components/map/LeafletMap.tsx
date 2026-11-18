@@ -7,6 +7,7 @@ import { objectTypeLabel } from "@/lib/directory/labels";
 import { buildClusterIndex, type ClientFeature, type Stack } from "@/lib/map/clusterIndex";
 import type { MapCluster, MapObject, MapResult } from "@/lib/map/mapQuery";
 import type { TileConfig } from "@/lib/map/tileConfig";
+import { normalizePosition, positionsEqual, type MapPosition } from "@/lib/map/position";
 import { INITIAL_BOUNDS, normalizeViewport, type Viewport } from "@/lib/map/viewport";
 
 export interface LeafletMapProps {
@@ -14,6 +15,15 @@ export interface LeafletMapProps {
   tiles: TileConfig | null;
   result: MapResult | null;
   objectHref: (slug: string) => string;
+  /** The intended position (Day 20): null shows all of Latvia. */
+  position: MapPosition | null;
+  /**
+   * Changes when the position was restored from the URL (Back/Forward, a
+   * link); the map then moves to `position` programmatically.
+   */
+  positionEpoch: number;
+  /** A position the visitor moved to, with the epoch the move happened in. */
+  onPositionChange: (position: MapPosition, epoch: number) => void;
   onViewportChange: (viewport: Viewport) => void;
   /** Called with true once tiles keep failing and none has loaded, false when one loads. */
   onTileFailure: (failed: boolean) => void;
@@ -23,6 +33,13 @@ export interface LeafletMapProps {
 const CLIENT_CLUSTER_MAX_ZOOM = 17;
 const MIN_MAP_ZOOM = 6;
 const TILE_FAILURES_BEFORE_NOTICE = 4;
+/** A settled move is written to the URL this long after the last moveend. */
+export const MAP_URL_DEBOUNCE_MS = 400;
+
+function currentPosition(map: L.Map): MapPosition | null {
+  const center = map.getCenter();
+  return normalizePosition({ lat: center.lat, lng: center.lng, zoom: map.getZoom() });
+}
 
 function toLatLngBounds(bounds: { west: number; south: number; east: number; north: number }) {
   return L.latLngBounds([bounds.south, bounds.west], [bounds.north, bounds.east]);
@@ -72,11 +89,30 @@ function objectsLabel(count: number): string {
   return count % 10 === 1 && count % 100 !== 11 ? `${count} objekts` : `${count} objekti`;
 }
 
+/** Moves the map, without animation, to a position or to the default view of Latvia. */
+function showPosition(
+  map: L.Map,
+  position: MapPosition | null,
+  defaultViewRef: { current: MapPosition | null },
+) {
+  if (position) {
+    map.setView([position.lat, position.lng], position.zoom, { animate: false });
+  } else {
+    map.fitBounds(toLatLngBounds(INITIAL_BOUNDS), { animate: false });
+    defaultViewRef.current = currentPosition(map);
+  }
+}
+
 /**
  * The Leaflet map itself (docs/DAY19_MAP_NOTES.md). Browser-only: loaded
  * through next/dynamic with ssr: false by DirectoryMap.
  *
- * - Opens on Latvia; reports every settled move/zoom as a validated viewport.
+ * - Opens at the URL's position (Day 20), or on Latvia; reports every
+ *   settled move/zoom as a validated viewport (for data) and, debounced, as
+ *   a position (for the URL). Programmatic moves - the first view, a
+ *   restore after Back/Forward - are never reported as positions: a
+ *   reported position must differ from both the intended position and the
+ *   default view, so restoring cannot echo back into the URL.
  * - Canvas rendering for single objects (no DOM marker per object);
  *   clusters and stacks are a few DOM markers with a count. Markers are not
  *   Tab stops - a dense view would otherwise put hundreds of them between
@@ -94,18 +130,28 @@ export default function LeafletMap({
   tiles,
   result,
   objectHref,
+  position,
+  positionEpoch,
+  onPositionChange,
   onViewportChange,
   onTileFailure,
 }: LeafletMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.LayerGroup | null>(null);
-  const callbacksRef = useRef({ onViewportChange, onTileFailure, objectHref });
+  const callbacksRef = useRef({ onViewportChange, onTileFailure, objectHref, onPositionChange });
   const maxZoom = tiles?.maxZoom ?? 19;
+  // The intended position and its epoch, as of the last render.
+  const positionRef = useRef(position);
+  const epochRef = useRef(positionEpoch);
+  // The default (fitted Latvia) view, once it has been shown; never written to the URL.
+  const defaultViewRef = useRef<MapPosition | null>(null);
+  const writeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    callbacksRef.current = { onViewportChange, onTileFailure, objectHref };
-  }, [onViewportChange, onTileFailure, objectHref]);
+    callbacksRef.current = { onViewportChange, onTileFailure, objectHref, onPositionChange };
+    positionRef.current = position;
+  }, [onViewportChange, onTileFailure, objectHref, onPositionChange, position]);
 
   const clusterIndex = useMemo(
     () =>
@@ -176,16 +222,44 @@ export default function LeafletMap({
     };
     map.on("moveend", report);
 
+    // Debounced: a drag or a zoom animation ends in several moveends.
+    const scheduleWrite = () => {
+      if (writeTimerRef.current !== null) {
+        clearTimeout(writeTimerRef.current);
+      }
+      const epoch = epochRef.current;
+      writeTimerRef.current = setTimeout(() => {
+        writeTimerRef.current = null;
+        if (epoch !== epochRef.current) {
+          return;
+        }
+        const next = currentPosition(map);
+        const intended = positionRef.current;
+        if (
+          next === null ||
+          positionsEqual(next, intended) ||
+          (intended === null && positionsEqual(next, defaultViewRef.current))
+        ) {
+          return;
+        }
+        callbacksRef.current.onPositionChange(next, epoch);
+      }, MAP_URL_DEBOUNCE_MS);
+    };
+    map.on("moveend", scheduleWrite);
+
     // Wheel zoom only while the visitor is working with the map.
     const enableWheel = () => map.scrollWheelZoom.enable();
     const disableWheel = () => map.scrollWheelZoom.disable();
     map.on("click focus", enableWheel);
     map.on("blur mouseout", disableWheel);
 
-    map.fitBounds(toLatLngBounds(INITIAL_BOUNDS));
+    showPosition(map, positionRef.current, defaultViewRef);
     report();
 
     return () => {
+      if (writeTimerRef.current !== null) {
+        clearTimeout(writeTimerRef.current);
+      }
       map.off();
       map.remove();
       mapRef.current = null;
@@ -194,6 +268,25 @@ export default function LeafletMap({
     // The map is created once; tile settings come from the server and do not change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Back/Forward or a link restored a position: drop a pending write from
+  // before it and move the map there. The resulting moveend is not written
+  // back - the map is now at the intended position (or the default view).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || epochRef.current === positionEpoch) {
+      return;
+    }
+    epochRef.current = positionEpoch;
+    positionRef.current = position;
+    if (writeTimerRef.current !== null) {
+      clearTimeout(writeTimerRef.current);
+      writeTimerRef.current = null;
+    }
+    if (!positionsEqual(currentPosition(map), position)) {
+      showPosition(map, position, defaultViewRef);
+    }
+  }, [positionEpoch, position]);
 
   // Draw the current result, and redraw client clusters on every move.
   useEffect(() => {

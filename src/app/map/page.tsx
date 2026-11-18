@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import DirectoryMap from "@/components/map/DirectoryMap";
-import { buildListingHref, parseListing } from "@/lib/directory/filters";
+import { buildBrowseHref, parseBrowseState } from "@/lib/directory/browseState";
 import { DIRECTORY_PATH } from "@/lib/directory/links";
 import { readTileConfig } from "@/lib/map/tileConfig";
 
@@ -26,7 +26,7 @@ export default async function MapPage({
   searchParams: Promise<MapPageSearchParams>;
 }) {
   const params = await searchParams;
-  const { q, filters } = parseListing(params);
+  const { state } = parseBrowseState(params);
   const tiles = readTileConfig();
 
   return (
@@ -34,10 +34,7 @@ export default async function MapPage({
       <noscript>
         <p className="directoryStatusNotice">
           Kartei nepieciešams JavaScript.{" "}
-          <a href={buildListingHref(DIRECTORY_PATH, { q, filters })}>
-            Skatīt tos pašus objektus sarakstā
-          </a>
-          .
+          <a href={buildBrowseHref(DIRECTORY_PATH, state)}>Skatīt tos pašus objektus sarakstā</a>.
         </p>
       </noscript>
       <DirectoryMap tiles={tiles} />

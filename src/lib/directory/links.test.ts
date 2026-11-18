@@ -148,28 +148,73 @@ describe("filter context (Day 17)", () => {
 });
 
 describe("map context (Day 19)", () => {
-  it("round-trips search, filters and the map view through an object link, without a cursor", async () => {
-    const { buildObjectHref, parseDirectoryContext, buildDirectoryHref, directoryBackLabel } =
+  it("round-trips search, filters, list page, map view and position through an object link (Day 20)", async () => {
+    const { buildObjectHref, parseDirectoryContextParams, buildDirectoryHref, directoryBackLabel } =
       await import("./links");
+    const { listingScope } = await import("./filters");
+    const filters = { ...EMPTY_FILTERS, types: ["palace_or_castle" as const], familyUnknown: true };
+    const cursor = encodeCursor({
+      name: "Jaunmoku pils",
+      id: "11111111-2222-4333-8444-555555555555",
+      scope: listingScope({ q: "pils", filters }),
+    });
     const href = buildObjectHref("rundales-pils", {
       q: "pils",
-      filters: { ...EMPTY_FILTERS, types: ["palace_or_castle"], familyUnknown: true },
+      filters,
       view: "map",
-      cursor: "should-not-travel",
+      cursor,
+      position: { lat: 56.6142, lng: 24.1937, zoom: 12 },
     });
     const url = new URL(href, "http://localhost");
     expect(url.searchParams.get("fromView")).toBe("map");
-    expect(url.searchParams.has("from")).toBe(false);
+    expect(url.searchParams.get("from")).toBe(cursor);
+    expect(url.searchParams.get("fromLat")).toBe("56.6142");
+    expect(url.searchParams.get("fromLng")).toBe("24.1937");
+    expect(url.searchParams.get("fromZoom")).toBe("12");
 
-    const context = parseDirectoryContext(
-      url.searchParams.get("from") ?? undefined,
-      url.searchParams.get("fromQ") ?? undefined,
-      url.searchParams.get("fromFilters") ?? undefined,
-      url.searchParams.get("fromView") ?? undefined,
-    );
+    const context = parseDirectoryContextParams(Object.fromEntries(url.searchParams));
     expect(context.view).toBe("map");
-    expect(buildDirectoryHref(context)).toBe("/map?q=pils&type=palace_or_castle&family_unknown=1");
+    expect(context.cursor).toBe(cursor);
+    expect(buildDirectoryHref(context)).toBe(
+      `/map?q=pils&type=palace_or_castle&family_unknown=1&cursor=${cursor}&lat=56.6142&lng=24.1937&zoom=12`,
+    );
     expect(directoryBackLabel(context)).toBe("Atpakaļ uz karti");
+
+    // From the list, the position travels too, so "back" and then "Karte"
+    // restores the map.
+    const fromList = parseDirectoryContextParams(
+      Object.fromEntries(
+        new URL(
+          buildObjectHref("rundales-pils", {
+            q: "pils",
+            filters,
+            cursor,
+            position: { lat: 56.6142, lng: 24.1937, zoom: 12 },
+          }),
+          "http://localhost",
+        ).searchParams,
+      ),
+    );
+    expect(buildDirectoryHref(fromList)).toBe(
+      `/objects?q=pils&type=palace_or_castle&family_unknown=1&cursor=${cursor}&lat=56.6142&lng=24.1937&zoom=12`,
+    );
+  });
+
+  it("drops a map cursor from another listing and an invalid position, keeping the rest", async () => {
+    const { parseDirectoryContextParams, buildDirectoryHref } = await import("./links");
+    const context = parseDirectoryContextParams({
+      fromQ: "pils",
+      fromView: "map",
+      from: TOKEN, // scoped to the plain directory, not to "pils"
+      fromLat: "99",
+      fromLng: "24.1",
+      fromZoom: "12",
+    });
+    expect(context).toEqual({ q: "pils", view: "map" });
+    expect(buildDirectoryHref(context)).toBe("/map?q=pils");
+    expect(
+      parseDirectoryContextParams({ fromLat: ["56.9", "56.8"], fromLng: "24.1", fromZoom: "9" }),
+    ).toEqual({});
   });
 
   it("ignores an unknown fromView and keeps the list behaviour", async () => {

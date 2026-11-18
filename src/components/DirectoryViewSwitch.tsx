@@ -3,18 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useDirectoryListing } from "@/components/DirectoryListingProvider";
-import { buildListingHref } from "@/lib/directory/filters";
 import { DIRECTORY_PATH, MAP_PATH } from "@/lib/directory/links";
 
 /**
- * List / map switch (Day 19 - docs/DAY19_MAP_NOTES.md). Both links carry the
- * latest intended search and filters from the shared listing state - even a
- * change still in flight - and never a cursor, so switching views keeps the
- * selection and starts the other view from its beginning.
+ * List / map switch (Day 19 - docs/DAY19_MAP_NOTES.md). Both links carry
+ * the whole latest intended browse state (Day 20 -
+ * docs/DAY20_URL_STATE_NOTES.md): search, filters, the list cursor and the
+ * map position - even a change still in flight. The map ignores the cursor
+ * and the list ignores the position, but each keeps them, so going to the
+ * map and back returns to the same list page, and the other way round to
+ * the same map view. Switching views adds a history entry.
  */
 export default function DirectoryViewSwitch() {
   const pathname = usePathname();
-  const { listing } = useDirectoryListing();
+  const { hrefFor } = useDirectoryListing();
   const views = [
     { path: DIRECTORY_PATH, label: "Saraksts" },
     { path: MAP_PATH, label: "Karte" },
@@ -27,10 +29,7 @@ export default function DirectoryViewSwitch() {
           const current = pathname === view.path;
           return (
             <li key={view.path}>
-              <Link
-                href={buildListingHref(view.path, listing)}
-                aria-current={current ? "page" : undefined}
-              >
+              <Link href={hrefFor(view.path)} aria-current={current ? "page" : undefined}>
                 {view.label}
               </Link>
             </li>

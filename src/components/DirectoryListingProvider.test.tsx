@@ -76,8 +76,14 @@ async function land(index: number, rerender: (ui: ReactElement) => void) {
   });
 }
 
-/** Browser Back/Forward: the URL changes with no navigation of ours in flight. */
+/**
+ * Browser Back/Forward: a popstate event, then the App Router updates the
+ * URL - whether or not a navigation of ours is in flight.
+ */
 function popState(search: string, rerender: (ui: ReactElement) => void) {
+  act(() => {
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  });
   navigation.search = search;
   act(() => rerender(tree()));
 }

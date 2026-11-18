@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useId, useState, useSyncExternalStore } from "react";
 import DirectoryFamilyPicker from "@/components/DirectoryFamilyPicker";
 import { useDirectoryListing } from "@/components/DirectoryListingProvider";
+import { positionEntries } from "@/lib/map/position";
 import {
   CONDITION_VALUES,
   EMPTY_FILTERS,
@@ -70,7 +71,7 @@ export default function DirectoryFilterPanel({
   regionOptions: RegionOption[] | null;
 }) {
   const pathname = usePathname();
-  const { listing, updateFilters, setListing, pendingSource } = useDirectoryListing();
+  const { listing, position, updateFilters, setListing, pendingSource } = useDirectoryListing();
   const draft = listing.filters;
   const hydrated = useSyncExternalStore(
     subscribeToNothing,
@@ -191,6 +192,10 @@ export default function DirectoryFilterPanel({
         onSubmit={(event) => event.preventDefault()}
       >
         {listing.q ? <input type="hidden" name="q" value={listing.q} /> : null}
+        {/* Day 20: a no-JavaScript submit keeps the map position too. */}
+        {positionEntries(position).map(([name, value]) => (
+          <input key={name} type="hidden" name={name} value={value} />
+        ))}
         <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
           <summary className="directoryFiltersSummary">
             Filtri{activeCount > 0 ? ` (${activeCount})` : ""}

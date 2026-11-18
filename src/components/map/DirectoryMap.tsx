@@ -4,7 +4,8 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { useDirectoryListing } from "@/components/DirectoryListingProvider";
-import { buildListingHref, hasActiveFilters } from "@/lib/directory/filters";
+import { buildBrowseHref } from "@/lib/directory/browseState";
+import { hasActiveFilters } from "@/lib/directory/filters";
 import { objectTypeLabel } from "@/lib/directory/labels";
 import { DIRECTORY_PATH, buildObjectHref } from "@/lib/directory/links";
 import type { MapResult } from "@/lib/map/mapQuery";
@@ -51,11 +52,17 @@ function objectsCount(count: number): string {
  * It reads the latest intended search and filters from the shared listing
  * state (the same one the search field and filter panel change), and never
  * navigates itself - so map interactions cannot reintroduce the Day 17
- * search/filter races. Map position is local state; making it part of the
- * URL is Day 20.
+ * search/filter races.
+ *
+ * Day 20 (docs/DAY20_URL_STATE_NOTES.md): the map position lives in the
+ * same shared state and in the URL (`lat`, `lng`, `zoom`). The map opens at
+ * the URL's position - before its first data request - and the visitor's
+ * moves are written back (debounced, replacing the history entry).
+ * Back/Forward moves the map to the restored position without writing it
+ * back.
  */
 export default function DirectoryMap({ tiles }: { tiles: TileConfigOutcome }) {
-  const { listing } = useDirectoryListing();
+  const { listing, cursor, position, epoch, setMapPosition } = useDirectoryListing();
   const [viewport, setViewport] = useState<Viewport | null>(null);
   const [tilesFailed, setTilesFailed] = useState(false);
   const { state, retry } = useMapData(listing, viewport);
@@ -68,12 +75,16 @@ export default function DirectoryMap({ tiles }: { tiles: TileConfigOutcome }) {
       buildObjectHref(slug, {
         ...(listing.q ? { q: listing.q } : {}),
         ...(hasActiveFilters(listing.filters) ? { filters: listing.filters } : {}),
+        ...(cursor ? { cursor } : {}),
+        ...(position ? { position } : {}),
         view: "map",
       }),
-    [listing],
+    [listing, cursor, position],
   );
 
-  const listHref = buildListingHref(DIRECTORY_PATH, listing);
+  // The whole selection as a list, from its first page; the map position is
+  // kept for the way back.
+  const listHref = buildBrowseHref(DIRECTORY_PATH, { listing, cursor: null, position });
   const filtered = listing.q !== null || hasActiveFilters(listing.filters);
   const tileConfig =
     tiles.kind === "configured" || tiles.kind === "development_default" ? tiles.config : null;
@@ -121,6 +132,9 @@ export default function DirectoryMap({ tiles }: { tiles: TileConfigOutcome }) {
         tiles={tileConfig}
         result={result}
         objectHref={objectHref}
+        position={position}
+        positionEpoch={epoch}
+        onPositionChange={setMapPosition}
         onViewportChange={setViewport}
         onTileFailure={setTilesFailed}
       />

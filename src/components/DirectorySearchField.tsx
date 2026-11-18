@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { useDirectoryListing } from "@/components/DirectoryListingProvider";
+import { buildBrowseHref } from "@/lib/directory/browseState";
 import {
   EMPTY_FILTERS,
   buildListingHref,
@@ -10,6 +11,7 @@ import {
   type DirectoryFilters,
 } from "@/lib/directory/filters";
 import { MAX_SEARCH_QUERY_LENGTH, normalizeSearchQuery } from "@/lib/directory/searchQuery";
+import { positionEntries } from "@/lib/map/position";
 
 /** For useSyncExternalStore: "hydrated" never changes once true. */
 function subscribeToNothing() {
@@ -46,17 +48,23 @@ export function buildSearchHref(
  * - a change that does not alter the normalised query (extra spaces) does
  *   nothing, so it cannot reset the visitor's page;
  * - while a search is in flight the field says so in a polite live region;
- * - if the listing changes from elsewhere (Back/Forward, "clear search and
- *   filters"), the field follows it - but never overwrites what the visitor
- *   is still typing.
+ * - if the listing changes from elsewhere ("clear search and filters"),
+ *   the field follows it - but never overwrites what the visitor is still
+ *   typing;
+ * - Day 20: Back/Forward (a new epoch) cancels a pending debounced commit
+ *   and shows the restored query; a commit scheduled before it is ignored
+ *   by the provider even if its timer already fired. One typing burst
+ *   adds one history entry; leaving the field ends the burst.
  *
  * Without JavaScript it is still a plain GET form to the same URL, carrying
- * the active filters as hidden inputs - in their canonical, validated form
- * (filtersToEntries) and never with a cursor - so a search keeps them.
+ * the active filters and the map position as hidden inputs - in their
+ * canonical, validated form and never with a cursor - so a search keeps
+ * them.
  */
 export default function DirectorySearchField() {
   const pathname = usePathname();
-  const { listing, setQuery, pendingSource } = useDirectoryListing();
+  const { listing, position, epoch, setQuery, endSearchBurst, pendingSource } =
+    useDirectoryListing();
   const intendedQuery = listing.q;
   const hydrated = useSyncExternalStore(
     subscribeToNothing,
@@ -79,13 +87,14 @@ export default function DirectorySearchField() {
     }
   }
 
-  function commit(raw: string) {
+  function commit(raw: string, startedInEpoch: number) {
     clearTimer();
     const next = normalizeSearchQuery(raw);
     committedRef.current = next;
     // Built on the latest intended filters, not on a URL snapshot; a no-op
-    // when the normalised query is unchanged.
-    setQuery(next);
+    // when the normalised query is unchanged, ignored when Back/Forward
+    // happened since the change was made.
+    setQuery(next, { epoch: startedInEpoch });
   }
 
   // Follow listing changes this field did not make (Back/Forward, links,
@@ -98,22 +107,35 @@ export default function DirectorySearchField() {
     }
   }, [intendedQuery]);
 
+  // Back/Forward or a link restored a state: drop anything still pending
+  // and show the restored query, even if it equals the last committed one.
+  const seenEpochRef = useRef(epoch);
+  useEffect(() => {
+    if (seenEpochRef.current !== epoch) {
+      seenEpochRef.current = epoch;
+      clearTimer();
+      committedRef.current = intendedQuery;
+      setValue(intendedQuery ?? "");
+    }
+  }, [epoch, intendedQuery]);
+
   useEffect(() => clearTimer, []);
 
   function handleChange(nextValue: string) {
     setValue(nextValue);
     clearTimer();
-    timerRef.current = setTimeout(() => commit(nextValue), SEARCH_DEBOUNCE_MS);
+    const startedInEpoch = epoch;
+    timerRef.current = setTimeout(() => commit(nextValue, startedInEpoch), SEARCH_DEBOUNCE_MS);
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    commit(value);
+    commit(value, epoch);
   }
 
   function handleClear() {
     setValue("");
-    commit("");
+    commit("", epoch);
     inputRef.current?.focus();
   }
 
@@ -137,6 +159,7 @@ export default function DirectorySearchField() {
           name="q"
           value={value}
           onChange={(event) => handleChange(event.target.value)}
+          onBlur={endSearchBurst}
           maxLength={MAX_SEARCH_QUERY_LENGTH}
           autoComplete="off"
           spellCheck={false}
@@ -151,17 +174,23 @@ export default function DirectorySearchField() {
           // Without JavaScript: a link to the same filters with no search.
           <a
             className="directorySearchClear"
-            href={buildListingHref(pathname, { q: null, filters: listing.filters })}
+            href={buildBrowseHref(pathname, {
+              listing: { q: null, filters: listing.filters },
+              cursor: null,
+              position,
+            })}
           >
             Notīrīt
           </a>
         ) : null}
       </div>
-      {/* Active filters for a no-JavaScript submit: canonical and validated,
-          never a cursor. */}
-      {filtersToEntries(listing.filters).map(([name, filterValue]) => (
-        <input key={`${name}=${filterValue}`} type="hidden" name={name} value={filterValue} />
-      ))}
+      {/* Active filters and map position for a no-JavaScript submit:
+          canonical and validated, never a cursor. */}
+      {[...filtersToEntries(listing.filters), ...positionEntries(position)].map(
+        ([name, hiddenValue]) => (
+          <input key={`${name}=${hiddenValue}`} type="hidden" name={name} value={hiddenValue} />
+        ),
+      )}
       <p id={hintId} className="directorySearchHint">
         Piemēram, „Rundāle” vai „Krāslavas novads”. Garumzīmes un lielie burti nav jāievēro.
       </p>

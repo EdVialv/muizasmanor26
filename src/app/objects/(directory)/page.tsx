@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import HeritageObjectCard from "@/components/HeritageObjectCard";
-import {
-  cursorMatchesScope,
-  decodeCursor,
-  encodeCursor,
-  type DirectoryCursor,
-} from "@/lib/directory/cursor";
+import { decodeCursor, encodeCursor, type DirectoryCursor } from "@/lib/directory/cursor";
+import { buildBrowseHref, parseBrowseState } from "@/lib/directory/browseState";
 import {
   EMPTY_FILTERS,
-  buildListingHref,
   hasActiveFilters,
   isPlainDirectory,
-  listingScope,
-  parseListing,
   type DirectoryListing,
 } from "@/lib/directory/filters";
 import { DIRECTORY_PATH, type DirectoryContext } from "@/lib/directory/links";
@@ -87,21 +80,23 @@ export default async function ObjectsPage({
 }) {
   const params = await searchParams;
 
-  // Search and filters, validated and in canonical form. Unknown values are
-  // dropped (and noted), never passed on.
-  const { hadInvalidValues, ...listing } = parseListing(params);
+  // The whole browse state (Day 20 - lib/directory/browseState.ts), validated
+  // and in canonical form. Unknown filter values are dropped (and noted),
+  // never passed on. A cursor is used only when it decodes AND belongs to
+  // this exact listing - same search, same filters. Anything else -
+  // malformed, repeated, tampered, or carried over from a different search
+  // or filter set - fails safely to the first page of the current listing,
+  // with a notice. The map position is not used by the list (map bounds
+  // never restrict it); it is only carried on in links, so the map can be
+  // restored.
+  const {
+    state: browse,
+    hadInvalidValues,
+    hadInvalidCursor: cursorWasInvalid,
+  } = parseBrowseState(params);
+  const { listing, cursor: rawCursor, position } = browse;
   const filtered = hasActiveFilters(listing.filters);
-  const scope = listingScope(listing);
-
-  // A cursor is used only when it decodes AND belongs to this exact listing
-  // - same search, same filters. Anything else - malformed, tampered, or
-  // carried over from a different search or filter set - fails safely to
-  // the first page of the current listing, with a notice.
-  const rawCursor = typeof params.cursor === "string" ? params.cursor : undefined;
-  const decoded = decodeCursor(rawCursor);
-  const cursor = decoded && cursorMatchesScope(decoded, scope) ? decoded : null;
-  const cursorWasGiven = Array.isArray(params.cursor) || Boolean(params.cursor);
-  const cursorWasInvalid = cursorWasGiven && cursor === null;
+  const cursor = decodeCursor(rawCursor);
 
   const outcome = await loadPage(listing, cursor);
   // Cards carry the whole listing and (validated) cursor, so an object page
@@ -110,8 +105,13 @@ export default async function ObjectsPage({
     ...(listing.q ? { q: listing.q } : {}),
     ...(filtered ? { filters: listing.filters } : {}),
     ...(cursor && rawCursor ? { cursor: rawCursor } : {}),
+    ...(position ? { position } : {}),
   };
-  const searchOnlyHref = buildListingHref(DIRECTORY_PATH, { q: listing.q, filters: EMPTY_FILTERS });
+  const searchOnlyHref = buildBrowseHref(DIRECTORY_PATH, {
+    listing: { q: listing.q, filters: EMPTY_FILTERS },
+    cursor: null,
+    position,
+  });
 
   return (
     <>
@@ -216,11 +216,10 @@ export default async function ObjectsPage({
             {outcome.result.hasNextPage && outcome.result.nextCursor ? (
               <Link
                 className="directoryPaginationLink"
-                href={buildListingHref(
-                  DIRECTORY_PATH,
-                  listing,
-                  encodeCursor(outcome.result.nextCursor),
-                )}
+                href={buildBrowseHref(DIRECTORY_PATH, {
+                  ...browse,
+                  cursor: encodeCursor(outcome.result.nextCursor),
+                })}
               >
                 Nākamā lapa
               </Link>

@@ -1,12 +1,13 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { push, navigation } = vi.hoisted(() => ({
+const { push, replace, navigation } = vi.hoisted(() => ({
   push: vi.fn(),
+  replace: vi.fn(),
   navigation: { search: "" },
 }));
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push }),
+  useRouter: () => ({ push, replace }),
   usePathname: () => "/objects",
   useSearchParams: () => new URLSearchParams(navigation.search),
 }));
@@ -29,6 +30,7 @@ describe("DirectorySearchField", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     push.mockClear();
+    replace.mockClear();
     navigation.search = "";
   });
 
@@ -181,7 +183,10 @@ describe("DirectorySearchField", () => {
 
     expect(input().value).toBe("rundāle");
     act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS));
-    expect(push).toHaveBeenLastCalledWith("/objects?q=rund%C4%81le", { scroll: false });
+    // Day 20: the same typing burst replaces its own history entry instead
+    // of adding one per pause.
+    expect(replace).toHaveBeenLastCalledWith("/objects?q=rund%C4%81le", { scroll: false });
+    expect(push).toHaveBeenCalledTimes(1);
   });
 
   it("caps input length at the server's bound", () => {
