@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Icon from "./Icon";
 import { usePathname } from "next/navigation";
 import { useDirectoryListing } from "@/components/DirectoryListingProvider";
 import { buildListingHref } from "@/lib/directory/filters";
@@ -31,6 +32,7 @@ export default function DirectoryViewSwitch() {
                 href={buildListingHref(view.path, listing)}
                 aria-current={current ? "page" : undefined}
               >
+                <Icon name={view.path === MAP_PATH ? "map" : "list"} width="18" height="18" />
                 {view.label}
               </Link>
             </li>

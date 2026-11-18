@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "./Icon";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { useDirectoryListing } from "@/components/DirectoryListingProvider";
@@ -129,10 +130,12 @@ export default function DirectorySearchField() {
         Meklēt pēc nosaukuma vai vietas
       </label>
       <div className="directorySearchControls">
+        <Icon name="search" />
         <input
           ref={inputRef}
           id={inputId}
           className="directorySearchInput"
+          placeholder="Meklēt muižu vai vietu"
           type="search"
           name="q"
           value={value}
@@ -156,6 +159,9 @@ export default function DirectorySearchField() {
             Notīrīt
           </a>
         ) : null}
+        <button type="submit" className="primaryAction">
+          Meklēt
+        </button>
       </div>
       {/* Active filters for a no-JavaScript submit: canonical and validated,
           never a cursor. */}

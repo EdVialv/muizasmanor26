@@ -17,6 +17,8 @@ export interface LeafletMapProps {
   onViewportChange: (viewport: Viewport) => void;
   /** Called with true once tiles keep failing and none has loaded, false when one loads. */
   onTileFailure: (failed: boolean) => void;
+  selectedObjectId?: string | null;
+  onObjectSelect?: (id: string) => void;
 }
 
 /** Above this zoom nothing is clustered on the client; identical positions stay stacked. */
@@ -96,16 +98,18 @@ export default function LeafletMap({
   objectHref,
   onViewportChange,
   onTileFailure,
+  selectedObjectId,
+  onObjectSelect,
 }: LeafletMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.LayerGroup | null>(null);
-  const callbacksRef = useRef({ onViewportChange, onTileFailure, objectHref });
+  const callbacksRef = useRef({ onViewportChange, onTileFailure, objectHref, onObjectSelect });
   const maxZoom = tiles?.maxZoom ?? 19;
 
   useEffect(() => {
-    callbacksRef.current = { onViewportChange, onTileFailure, objectHref };
-  }, [onViewportChange, onTileFailure, objectHref]);
+    callbacksRef.current = { onViewportChange, onTileFailure, objectHref, onObjectSelect };
+  }, [onViewportChange, onTileFailure, objectHref, onObjectSelect]);
 
   const clusterIndex = useMemo(
     () =>
@@ -220,15 +224,16 @@ export default function LeafletMap({
 
       const drawObject = (object: MapObject) => {
         L.circleMarker([object.latitude, object.longitude], {
-          radius: 7,
+          radius: object.id === selectedObjectId ? 10 : 7,
           weight: 2,
-          color: "#fffdf8",
-          fillColor: "#a6602b",
+          color: "#ffffff",
+          fillColor: object.id === selectedObjectId ? "#c99a38" : "#59633c",
           fillOpacity: 1,
         })
-          .on("click", () =>
-            openPopup(object.latitude, object.longitude, () => objectListPopup([object], href)),
-          )
+          .on("click", () => {
+            callbacksRef.current.onObjectSelect?.(object.id);
+            openPopup(object.latitude, object.longitude, () => objectListPopup([object], href));
+          })
           .bindTooltip(object.name)
           .addTo(layer);
       };
@@ -335,7 +340,35 @@ export default function LeafletMap({
     return () => {
       map.off("moveend", draw);
     };
-  }, [result, clusterIndex, maxZoom]);
+  }, [result, clusterIndex, maxZoom, selectedObjectId]);
+
+  const selectedObject = result?.objects.find((object) => object.id === selectedObjectId);
+  const selectedRef = useRef(selectedObject);
+  useEffect(() => {
+    selectedRef.current = selectedObject;
+  }, [selectedObject]);
+  useEffect(() => {
+    const map = mapRef.current;
+    const object = selectedRef.current;
+    if (!map || !object) return;
+    map.setView(
+      [object.latitude, object.longitude],
+      Math.min(Math.max(map.getZoom(), 12), maxZoom),
+    );
+    L.popup({ maxWidth: 280 })
+      .setLatLng([object.latitude, object.longitude])
+      .setContent(objectListPopup([object], callbacksRef.current.objectHref))
+      .openOn(map);
+  }, [selectedObjectId, maxZoom]);
+
+  // Sidebar expansion and responsive columns change the canvas after mount.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => mapRef.current?.invalidateSize({ pan: false }));
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div

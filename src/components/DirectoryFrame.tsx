@@ -25,14 +25,23 @@ export default async function DirectoryFrame({ children }: { children: ReactNode
   const regionOptions = await loadRegionOptionsFromEnv();
 
   return (
-    <section className="objectsSection">
+    <section className="objectsSection directoryExplorer">
       <div className="container">
-        <h1 className="objectsHeading">Muižu un kultūrvēsturisko objektu katalogs</h1>
+        <header className="explorerHeading">
+          <p className="eyebrow">Atrodi savu nākamo pieturu</p>
+          <h1 className="objectsHeading">Muižu un kultūrvēsturisko objektu katalogs</h1>
+        </header>
         <DirectoryListingProvider>
-          <DirectoryViewSwitch />
-          <DirectorySearchField />
-          <DirectoryFilterPanel regionOptions={regionOptions} />
-          {children}
+          <div className="explorerToolbar">
+            <DirectorySearchField />
+            <DirectoryViewSwitch />
+          </div>
+          <div className="explorerWorkspace">
+            <aside className="explorerSidebar" aria-label="Kataloga filtri">
+              <DirectoryFilterPanel regionOptions={regionOptions} />
+            </aside>
+            <div className="explorerResults">{children}</div>
+          </div>
         </DirectoryListingProvider>
       </div>
     </section>

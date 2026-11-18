@@ -1,53 +1,27 @@
-/*
- * Design tokens (Day 12 — docs/DAY12_DESIGN_SYSTEM_NOTES.md).
- *
- * Breakpoints cannot live in a custom property because media queries need a
- * literal value at parse time, so the scale is documented here as a comment
- * and the same literal rem values are used in every @media rule below:
- *   --bp-sm: 40rem (640px)  — phone -> tablet
- *   --bp-md: 48rem (768px) — tablet -> small desktop
- *   --bp-lg: 64rem (1024px) — small desktop -> wide desktop
- */
-
+/* MuizasDB: contemporary travel guide + focused map explorer.
+   Shared breakpoints: phone 40rem, desktop sidebar 64rem, split map 80rem. */
 :root {
   color-scheme: light;
-
-  /* Color — unchanged from the Day 1 landing page; promoted to a documented
-     token set rather than redesigned. */
-  --ink: #17332d;
+  --ink: #262b22;
   --ink-contrast: #fff;
-  --muted: #536b64;
-  --paper: #f7f4ec;
-  --surface: #fffdf8;
-  --accent: #a6602b;
-  /* Day 15: --accent on --paper is 4.41:1, just under WCAG AA for small
-     text. This darker step (5.13:1 on --paper, 5.54:1 on --surface) is used
-     wherever the accent colours text; --accent itself stays for borders,
-     focus rings and large shapes. */
-  --accent-text: #985726;
-  --line: #d8d2c4;
-
-  /* Typography — same two font stacks the landing page already used
-     (serif for headings, system sans for UI/body text), now named. */
-  --font-serif: Georgia, "Times New Roman", serif;
-  --font-sans: system-ui, sans-serif;
-
-  /* Type scale. display/h2 keep the exact clamp() values the landing page
-     already shipped with; h3-h6 and body/small are new steps for later
-     Days (cards, detail pages) that didn't exist as tokens yet. */
-  --text-display: clamp(2.75rem, 9vw, 6.75rem); /* hero h1 */
-  --text-h2: clamp(2rem, 5vw, 3.75rem);
+  --muted: #62675c;
+  --paper: #fff;
+  --surface: #f6f6f0;
+  --olive: #59633c;
+  --olive-dark: #424c2c;
+  --accent: #c99a38;
+  --accent-text: #805c14;
+  --line: #e2e4da;
+  --font-heading: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --font-sans: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --text-display: clamp(2.75rem, 5.6vw, 5.5rem);
+  --text-h2: clamp(1.8rem, 3.5vw, 2.75rem);
   --text-h3: clamp(1.5rem, 3vw, 2.25rem);
   --text-h4: 1.25rem;
-  --text-body-lg: clamp(1.05rem, 2vw, 1.3rem); /* hero intro */
+  --text-body-lg: clamp(1.05rem, 2vw, 1.3rem);
   --text-body: 1rem;
   --text-small: 0.875rem;
-  --text-eyebrow: 0.78rem;
-
-  /* Spacing scale — Tailwind-style naming (space-N = N * 0.25rem), chosen
-     so the exact values the landing page already used (0.75/1.25/1.75/
-     2.5/3.5/5/7rem) land on named steps instead of staying as magic
-     numbers scattered across the stylesheet. */
+  --text-eyebrow: 0.75rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
@@ -59,13 +33,9 @@
   --space-16: 4rem;
   --space-20: 5rem;
   --space-28: 7rem;
-
-  /* Radius */
-  --radius-md: 1rem;
+  --radius-md: 0.75rem;
   --radius-full: 999px;
-
-  /* Shared max content width for the container utility below. */
-  --container-max: 72rem;
+  --container-max: 80rem;
 }
 
 * {
@@ -74,24 +44,25 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 2rem;
 }
 
 body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--font-serif);
+  font-family: var(--font-heading);
 }
 
 main {
-  min-height: 100vh;
+  min-height: 65vh;
 }
 
 /* Reusable horizontal container: a fixed max width, centered, with a
    minimum side gutter on narrow viewports. Used by the header, footer and
    every full-bleed section so they all line up. */
 .container {
-  width: min(var(--container-max), calc(100% - 2rem));
+  width: min(var(--container-max), calc(100% - clamp(2rem, 6vw, 6rem)));
   margin-inline: auto;
 }
 
@@ -121,7 +92,7 @@ main {
 /* Site header */
 .siteHeader {
   border-bottom: 1px solid var(--line);
-  background: var(--paper);
+  background: #fff;
 }
 
 .siteHeaderInner {
@@ -135,7 +106,7 @@ main {
 .wordmark {
   margin: 0;
   color: var(--ink);
-  font: 700 var(--text-h4)/1 var(--font-serif);
+  font: 800 1.65rem/1 var(--font-heading);
   text-decoration: none;
 }
 
@@ -159,7 +130,8 @@ main {
 }
 
 .siteNav a[aria-current="page"] {
-  color: var(--accent-text);
+  color: var(--olive);
+  border-bottom-color: var(--accent);
 }
 
 .siteNav a:hover,
@@ -237,13 +209,23 @@ h2 {
 }
 
 .primaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
   justify-self: start;
-  border-radius: var(--radius-full);
-  background: var(--ink);
-  color: var(--ink-contrast);
-  padding: 0.9rem var(--space-5);
-  font: 700 var(--text-body)/1 var(--font-sans);
+  min-height: 2.875rem;
+  border: 1px solid transparent;
+  border-radius: 0.55rem;
+  background: var(--accent);
+  color: #282414;
+  padding: 0.85rem 1.2rem;
+  font: 750 var(--text-body)/1.2 var(--font-sans);
   text-decoration: none;
+  cursor: pointer;
+}
+.primaryAction:hover {
+  background: #dbad4c;
 }
 
 .primaryAction:focus-visible {
@@ -333,7 +315,7 @@ h2 {
 
 .objectCardTitle {
   margin: 0;
-  font: 700 var(--text-h4)/1.25 var(--font-serif);
+  font: 700 var(--text-h4)/1.25 var(--font-heading);
 }
 
 .objectCardTitle a {
@@ -447,7 +429,7 @@ a.directorySearchClear {
 .directoryResultsHeading {
   max-width: none;
   margin: 0 0 var(--space-6);
-  font: 700 var(--text-h4)/1.3 var(--font-serif);
+  font: 700 var(--text-h4)/1.3 var(--font-heading);
   overflow-wrap: anywhere;
 }
 
@@ -673,7 +655,7 @@ a.directorySearchClear {
   max-width: none;
   margin: 0 0 var(--space-3);
   color: var(--ink);
-  font: 700 var(--text-h4)/1.3 var(--font-serif);
+  font: 700 var(--text-h4)/1.3 var(--font-heading);
 }
 
 .directoryStatusNotice {
@@ -782,7 +764,7 @@ a.directorySearchClear {
 .objectSection h2 {
   max-width: none;
   margin: 0 0 var(--space-4);
-  font: 700 var(--text-h4)/1.3 var(--font-serif);
+  font: 700 var(--text-h4)/1.3 var(--font-heading);
 }
 
 .objectSection h3 {
@@ -964,7 +946,7 @@ a.directorySearchClear {
   max-width: none;
   margin: 0 0 var(--space-3);
   color: var(--ink);
-  font: 700 var(--text-h4)/1.3 var(--font-serif);
+  font: 700 var(--text-h4)/1.3 var(--font-heading);
 }
 
 .directoryStatusActions {
@@ -1189,4 +1171,968 @@ a.directorySearchClear {
 .directoryMapCanvas .leaflet-bar a:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 1px;
+}
+
+/* Shared travel identity */
+body {
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+button,
+input,
+select {
+  font: inherit;
+}
+button,
+a,
+input,
+select,
+summary {
+  -webkit-tap-highlight-color: transparent;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+summary:focus-visible {
+  outline: 3px solid var(--olive);
+  outline-offset: 4px;
+}
+img {
+  max-width: 100%;
+}
+svg {
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  letter-spacing: -0.045em;
+  color: var(--olive-dark);
+}
+.brandIcon {
+  display: flex;
+  align-items: center;
+  padding-right: 0.8rem;
+  border-right: 1px solid var(--line);
+}
+.brandSubtitle {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.055em;
+}
+.siteNav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  border-bottom: 3px solid transparent;
+  padding: 0.75rem 0.2rem;
+}
+.siteNav a:hover {
+  color: var(--olive);
+  text-decoration: none;
+}
+.siteFooter {
+  margin-top: 4rem;
+  background: var(--surface);
+}
+.siteFooterInner {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+.footerBrand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  color: var(--olive);
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+.siteFooter nav {
+  display: flex;
+  gap: 1.5rem;
+}
+.siteFooter a {
+  color: var(--ink);
+  text-underline-offset: 0.3em;
+}
+h1,
+h2,
+h3 {
+  letter-spacing: -0.035em;
+}
+h2 {
+  max-width: none;
+  line-height: 1.15;
+}
+.eyebrow {
+  color: var(--olive);
+  font-weight: 750;
+  letter-spacing: 0.11em;
+}
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--olive-dark);
+  font-weight: 650;
+  text-decoration: none;
+}
+.textLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+
+/* Discovery homepage */
+.travelHero {
+  position: relative;
+  isolation: isolate;
+  min-height: 35rem;
+  background: var(--olive-dark);
+  color: white;
+}
+.travelHeroImage {
+  object-fit: cover;
+  object-position: center 52%;
+  z-index: -2;
+}
+.travelHeroShade {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    90deg,
+    rgb(20 30 20 / 90%) 0%,
+    rgb(20 30 20 / 68%) 38%,
+    rgb(20 30 20 / 12%) 100%
+  );
+}
+.travelHeroContent {
+  padding-block: 4.5rem 5rem;
+}
+.travelHeroContent .eyebrow {
+  color: #f2d38f;
+}
+.travelHero h1 {
+  max-width: 13ch;
+  line-height: 1.03;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+}
+.travelHeroIntro {
+  margin: 1.35rem 0 1.75rem;
+  font-size: var(--text-body-lg);
+  line-height: 1.5;
+}
+.homeSearch {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: min(100%, 36rem);
+  padding: 0.4rem 0.4rem 0.4rem 1rem;
+  border-radius: 0.75rem;
+  background: #fff;
+  color: var(--olive);
+}
+.homeSearch input {
+  width: 100%;
+  min-width: 0;
+  min-height: 3rem;
+  border: 0;
+  padding: 0.4rem 0.2rem;
+  background: transparent;
+  color: var(--ink);
+}
+.homeSearch input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+.homeSearch .primaryAction {
+  flex-shrink: 0;
+}
+.heroMapLink {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 1rem;
+  min-height: 2.75rem;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 650;
+  text-underline-offset: 0.3em;
+}
+.travelHero a:focus-visible,
+.travelHero button:focus-visible {
+  outline-color: #fff;
+}
+.heroCredit {
+  position: absolute;
+  right: 1rem;
+  bottom: 0.65rem;
+  max-width: calc(100% - 2rem);
+  margin: 0;
+  padding: 0.3rem 0.55rem;
+  border-radius: 0.3rem;
+  background: rgb(20 30 20 / 80%);
+  color: #fff;
+  font-size: 0.65rem;
+}
+.heroCredit a {
+  color: inherit;
+  text-underline-offset: 0.15em;
+}
+.collectionNav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding-block: 1.7rem;
+  border-bottom: 1px solid var(--line);
+}
+.collectionNavLabel {
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+.collectionNav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.collectionNav a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.6rem 1.15rem;
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  color: var(--olive-dark);
+  font-size: 0.9rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+.collectionNav li:first-child a,
+.collectionNav a:hover {
+  background: var(--olive);
+  color: #fff;
+}
+.homeDiscovery {
+  padding-block: 3.5rem 2rem;
+}
+.sectionHeading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.75rem;
+}
+.sectionHeading .eyebrow {
+  margin-bottom: 0.6rem;
+}
+.homeObjectsGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.homeFeaturedLoading {
+  min-height: 12rem;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  background: var(--surface);
+  border-radius: var(--radius-md);
+}
+.homeCatalogueCallout {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding: 2rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.homeCatalogueCallout > svg {
+  color: var(--olive);
+}
+.homeCatalogueCallout h3 {
+  margin: 0 0 0.5rem;
+}
+.homeCatalogueCallout p {
+  margin: 0;
+  color: var(--muted);
+}
+.homeCatalogueCallout .primaryAction {
+  margin-left: auto;
+}
+.homeMapInvite {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 2.5rem;
+  margin-block: 2rem 4rem;
+  background: var(--surface);
+  border-radius: 1rem;
+}
+.mapInviteIcon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 7.5rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #e8ebdf;
+  color: var(--olive);
+}
+.homeMapInvite h2 {
+  font-size: clamp(1.6rem, 2.6vw, 2.3rem);
+}
+.homeMapInvite p:not(.eyebrow) {
+  max-width: 35rem;
+  margin-bottom: 0;
+  color: var(--muted);
+}
+.homeMapInvite .eyebrow {
+  margin-bottom: 0.6rem;
+}
+.homeMapInvite .primaryAction {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* Photo-led catalogue cards */
+.objectCard {
+  position: relative;
+  border-color: var(--line);
+  background: #fff;
+  box-shadow: 0 3px 10px rgb(35 45 25 / 5%);
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+.objectCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgb(35 45 25 / 10%);
+}
+.objectCardMedia {
+  aspect-ratio: 16 / 10;
+  border-bottom: 0;
+}
+.objectCardBody {
+  padding: 1.25rem;
+  gap: 0.65rem;
+}
+.objectCardTitle {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  line-height: 1.35;
+}
+.objectCardTitle a {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.objectCardArrow {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.45rem;
+  background: var(--accent);
+  color: #282414;
+}
+.objectCardType {
+  color: var(--olive);
+  font-size: 0.68rem;
+}
+.objectCardMeta {
+  display: flex;
+  align-items: start;
+  gap: 0.35rem;
+}
+.objectCardMeta svg {
+  margin-top: 0.12rem;
+  color: var(--olive);
+}
+.objectCardTags {
+  gap: 0.4rem;
+  margin-top: auto;
+  padding-top: 0.7rem;
+}
+.objectCardTag {
+  padding: 0.35rem 0.55rem;
+  border: 0;
+  border-radius: 0.3rem;
+  background: var(--surface);
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.objectCardPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: #eef0e5;
+  color: #798267;
+}
+.objectCardPlaceholder span {
+  max-width: 20ch;
+  text-align: center;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+
+/* Catalogue workspace: search and view switch above persistent filters. */
+.directoryExplorer {
+  padding-block: 2.5rem 4rem;
+}
+.explorerHeading .eyebrow {
+  margin-bottom: 0.65rem;
+}
+.explorerHeading .objectsHeading {
+  max-width: 28ch;
+  margin-bottom: 1.75rem;
+  font-size: clamp(1.8rem, 3vw, 2.75rem);
+  line-height: 1.12;
+}
+.explorerToolbar {
+  display: flex;
+  align-items: start;
+  gap: 1.5rem;
+  justify-content: space-between;
+  padding-block: 1.25rem;
+  border-block: 1px solid var(--line);
+}
+.explorerToolbar .directorySearch {
+  flex: 1;
+  max-width: 46rem;
+  margin: 0;
+}
+.directorySearchControls {
+  align-items: center;
+  padding: 0.3rem 0.3rem 0.3rem 0.85rem;
+  gap: 0.5rem;
+  border: 1px solid #a0a693;
+  border-radius: 0.65rem;
+  background: #fff;
+  color: var(--olive);
+}
+.directorySearchInput {
+  min-height: 2.75rem;
+  border: 0;
+  border-radius: 0.25rem;
+  padding: 0.4rem;
+  background: #fff;
+}
+.directorySearchClear {
+  min-height: 2.75rem;
+  border: 0;
+  border-radius: 0.3rem;
+  padding: 0 0.5rem;
+  font-size: 0.75rem;
+}
+.directorySearchControls .primaryAction {
+  min-height: 2.75rem;
+  font-size: 0.9rem;
+}
+.directorySearchHint {
+  font-size: 0.75rem;
+}
+.directorySearchStatus {
+  font-size: 0.75rem;
+}
+.directoryViewSwitch {
+  flex-shrink: 0;
+  margin-top: 1.7rem;
+}
+.directoryViewSwitch ul {
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0.25rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+}
+.directoryViewSwitch a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+  border: 0;
+  border-radius: 0.4rem;
+}
+.directoryViewSwitch a[aria-current="page"] {
+  background: var(--olive);
+}
+.explorerWorkspace {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  gap: 2rem;
+  padding-top: 1.75rem;
+  align-items: start;
+}
+.explorerSidebar {
+  min-width: 0;
+  position: sticky;
+  top: 1.5rem;
+  max-height: calc(100dvh - 3rem);
+  overflow-y: auto;
+  padding: 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  scrollbar-width: thin;
+}
+.explorerResults {
+  min-width: 0;
+}
+.directoryFilterArea {
+  margin: 0;
+}
+.directoryFilters {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.directoryFiltersSummary {
+  padding: 0.25rem 0 1rem;
+  font-size: 1.05rem;
+  color: var(--olive-dark);
+}
+.directoryFiltersBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem 0 0;
+  border-top: 1px solid var(--line);
+}
+.directoryFilterGroup {
+  min-width: 0;
+}
+.directoryFilterGroup legend {
+  margin-bottom: 0.65rem;
+  font-size: 0.8rem;
+}
+.directoryFilterOption {
+  align-items: start;
+  gap: 0.5rem;
+  padding-block: 0.25rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+.directoryFilterOption input {
+  margin-top: 0.2rem;
+  accent-color: var(--olive);
+  flex-shrink: 0;
+}
+.directoryFilterSelect {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: 0.5rem;
+  border-color: #a0a693;
+  border-radius: 0.4rem;
+  background: #fff;
+  font-size: 0.8rem;
+}
+.directoryFilterSelectLabel {
+  font-size: 0.75rem;
+}
+.directoryFiltersHint {
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+.directoryActiveFilters {
+  padding-top: 1rem;
+}
+.directoryChip {
+  background: #e6eadb;
+  border-color: transparent;
+  border-radius: 0.35rem;
+  color: var(--olive-dark);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+.directoryChips {
+  gap: 0.4rem;
+}
+.directoryClearActions {
+  align-items: start;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.directoryTextButton {
+  color: var(--olive-dark);
+  font-size: 0.78rem;
+  text-underline-offset: 0.2em;
+}
+.directoryFamilyResults {
+  background: #fff;
+}
+.directoryPaginationLink {
+  border-color: var(--olive);
+  border-radius: 0.45rem;
+  color: var(--olive-dark);
+  min-height: 2.75rem;
+}
+.directoryPaginationLink:hover {
+  background: var(--olive);
+}
+.directoryStatus {
+  padding: 3rem 1rem;
+}
+
+/* Map results and canvas form the two inner columns of the explorer. */
+.directoryMap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  margin: 0;
+}
+.directoryMap > .directoryStatusNotice {
+  grid-column: 1 / -1;
+}
+.directoryMapList {
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+.directoryMapList .directoryResultsHeading {
+  margin-bottom: 0.8rem;
+  font-size: 0.95rem;
+}
+.directoryMapListItems {
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+}
+.directoryMapListItems li {
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  background: #fff;
+}
+.directoryMapListItems li[data-selected="true"] {
+  border-color: var(--olive);
+  box-shadow: inset 0 0 0 1px var(--olive);
+  background: #f4f6ee;
+}
+.directoryMapListItems a {
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.directoryMapListItems a:hover {
+  text-decoration: underline;
+}
+.directoryMapListType {
+  margin-block: 0.3rem;
+  font-size: 0.75rem;
+}
+.mapLocateButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  align-self: start;
+  min-height: 2.75rem;
+  border: 0;
+  padding: 0.25rem 0;
+  background: transparent;
+  color: var(--olive-dark);
+  font-size: 0.75rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.directoryMapCanvas {
+  height: min(68dvh, 44rem);
+  background: #ecf0e6;
+  border-radius: var(--radius-md);
+}
+.directoryMapStatus {
+  margin-top: 0;
+  font-size: 0.75rem;
+}
+.directoryMap .directoryMapList {
+  max-height: 28rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.leaflet-marker-icon.mapCountMarker {
+  background: var(--olive);
+}
+.leaflet-marker-icon.mapStackMarker {
+  background: var(--accent-text);
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 0.7rem;
+}
+.directoryMapCanvas .leaflet-control-attribution {
+  max-width: 100%;
+  background: rgb(255 255 255 / 94%);
+}
+
+/* Detail pages share the same photo and type treatment. */
+.objectDetail .container {
+  max-width: 68rem;
+}
+.objectDetailTitle {
+  max-width: 28ch;
+  font-weight: 800;
+}
+.objectDetailHeader {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+.objectHero {
+  max-width: none;
+}
+.objectHeroFrame {
+  aspect-ratio: 16 / 8;
+}
+.objectSection {
+  max-width: 54rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-top: 2rem;
+  margin-bottom: 2rem;
+}
+.objectSection h2 {
+  color: var(--olive-dark);
+  font-size: 1.4rem;
+}
+.objectFacts > div {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.9rem;
+}
+.objectBackNav {
+  margin-bottom: 1.75rem;
+}
+
+@media (min-width: 80rem) {
+  .directoryExplorer:has(.directoryMap) > .container {
+    width: calc(100% - 4rem);
+    max-width: 100rem;
+  }
+  .directoryExplorer:has(.directoryMap) .explorerWorkspace {
+    gap: 1.25rem;
+    grid-template-columns: 15rem minmax(0, 1fr);
+  }
+  .directoryMap {
+    grid-template-columns: 17rem minmax(0, 1fr);
+  }
+  .directoryMap .directoryMapList {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    max-height: min(68dvh, 44rem);
+  }
+  .directoryMap:has(> .directoryStatusNotice) .directoryMapList {
+    grid-row: 2 / span 2;
+  }
+  .directoryMapCanvas,
+  .directoryMapStatus {
+    grid-column: 2;
+  }
+}
+@media (max-width: 63.999rem) {
+  .explorerWorkspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+  .explorerSidebar {
+    position: static;
+    max-height: none;
+    padding: 0.75rem 1rem;
+  }
+  .directoryFiltersSummary {
+    padding-bottom: 0.25rem;
+  }
+  .directoryFiltersBody {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+  }
+  .directoryFiltersBody > .directoryFiltersHint {
+    grid-column: 1 / -1;
+  }
+  .homeMapInvite {
+    flex-wrap: wrap;
+  }
+  .homeMapInvite .primaryAction {
+    margin-left: 0;
+  }
+  .siteFooterInner {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 40rem) {
+  .siteHeaderInner {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding-block: 0.9rem 0.4rem;
+  }
+  .wordmark {
+    font-size: 1.4rem;
+  }
+  .brandIcon svg {
+    width: 30px;
+    height: 30px;
+  }
+  .siteNav {
+    width: 100%;
+  }
+  .siteNav ul {
+    gap: 1.5rem;
+  }
+  .siteNav a {
+    font-size: 0.9rem;
+  }
+  .brandSubtitle {
+    font-size: 0.6rem;
+  }
+  .travelHero {
+    min-height: auto;
+  }
+  .travelHeroContent {
+    padding-block: 3rem 4.5rem;
+  }
+  .travelHeroShade {
+    background: linear-gradient(90deg, rgb(20 30 20 / 88%), rgb(20 30 20 / 52%));
+  }
+  .travelHero .eyebrow {
+    font-size: 0.65rem;
+    max-width: 30ch;
+  }
+  .homeSearch {
+    gap: 0.4rem;
+    padding-left: 0.65rem;
+  }
+  .homeSearch > svg {
+    width: 18px;
+  }
+  .homeSearch input {
+    font-size: 0.85rem;
+  }
+  .homeSearch .primaryAction {
+    padding-inline: 0.8rem;
+    font-size: 0.85rem;
+  }
+  .homeSearch .primaryAction svg {
+    display: none;
+  }
+  .heroCredit {
+    left: 1rem;
+    right: auto;
+    font-size: 0.6rem;
+  }
+  .collectionNav {
+    gap: 0.7rem;
+    padding-block: 1.25rem;
+  }
+  .collectionNav ul {
+    gap: 0.45rem;
+  }
+  .collectionNav a {
+    padding-inline: 0.9rem;
+    font-size: 0.8rem;
+  }
+  .homeDiscovery {
+    padding-top: 2.5rem;
+  }
+  .sectionHeading {
+    align-items: start;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .homeObjectsGrid,
+  .objectsGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .homeMapInvite {
+    gap: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .mapInviteIcon {
+    width: 4rem;
+  }
+  .mapInviteIcon svg {
+    width: 40px;
+  }
+  .homeCatalogueCallout {
+    padding: 1.5rem;
+  }
+  .homeCatalogueCallout .primaryAction {
+    margin-left: 0;
+  }
+  .explorerToolbar {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .explorerToolbar .directorySearch {
+    width: 100%;
+  }
+  .directoryViewSwitch {
+    margin-top: 0;
+  }
+  .directoryFiltersBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .directorySearchControls > svg {
+    display: none;
+  }
+  .directorySearchClear {
+    padding-inline: 0.25rem;
+  }
+  .directorySearchControls .primaryAction {
+    padding-inline: 0.65rem;
+    font-size: 0.8rem;
+  }
+  .directoryMapCanvas {
+    height: 55dvh;
+  }
+  .siteFooter {
+    margin-top: 2rem;
+  }
+  .siteFooterInner {
+    flex-direction: column;
+    align-items: start;
+    gap: 1.5rem;
+  }
+  .objectHeroFrame {
+    aspect-ratio: 4 / 3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
 }

@@ -1,19 +1,23 @@
-/**
- * The site-wide footer, shared by every page via the root layout. Kept
- * deliberately minimal for Day 12 (name, tagline, year) - contact details,
- * source/legal links and a sitemap belong to later Days once there are
- * real pages for them to point to.
- */
-export default function SiteFooter() {
-  const year = new Date().getFullYear();
+import Link from "next/link";
+import Icon from "./Icon";
 
+export default function SiteFooter() {
   return (
     <footer className="siteFooter">
       <div className="siteFooterInner container">
-        <p className="siteFooterTagline">
-          Latvijas muižas — Latvijas kultūrvēsturiskais mantojums vienuviet.
-        </p>
-        <p className="siteFooterMeta">&copy; {year} Latvijas muižas</p>
+        <div>
+          <p className="footerBrand">
+            <Icon name="manor" /> MuizasDB
+          </p>
+          <p className="siteFooterTagline">
+            Latvijas muižas — Latvijas kultūrvēsturiskais mantojums vienuviet.
+          </p>
+        </div>
+        <nav aria-label="Kājenes navigācija">
+          <Link href="/objects">Muižu katalogs</Link>
+          <Link href="/map">Izpētīt kartē</Link>
+        </nav>
+        <p className="siteFooterMeta">&copy; {new Date().getFullYear()} MuizasDB</p>
       </div>
     </footer>
   );

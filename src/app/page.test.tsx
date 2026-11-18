@@ -1,39 +1,41 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import Home from "./page";
 
-describe("Home page", () => {
-  it("renders the main heading", () => {
-    render(<Home />);
+// The server-only featured query is exercised in HomeFeatured.test.tsx.
+vi.mock("@/components/HomeFeatured", () => ({ default: () => <p>Publicētie objekti</p> }));
 
+describe("Discovery homepage", () => {
+  it("offers a GET search into the real directory", () => {
+    render(<Home />);
     expect(
-      screen.getByRole("heading", { level: 1, name: /atklāj latvijas muižas vienuviet/i }),
+      screen.getByRole("heading", { level: 1, name: /atklāj latvijas muižas/i }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("search")).toHaveAttribute("action", "/objects");
+    expect(screen.getByRole("search")).toHaveAttribute("method", "get");
+    expect(screen.getByRole("searchbox", { name: "Meklēt muižu vai vietu" })).toHaveAttribute(
+      "name",
+      "q",
+    );
+    expect(screen.getByRole("button", { name: "Meklēt" })).toHaveAttribute("type", "submit");
   });
-
-  it("links the hero action to the MVP section", () => {
+  it("links discovery shortcuts to supported filters and the map", () => {
     render(<Home />);
-
-    const link = screen.getByRole("link", { name: /apskatīt mvp plānu/i });
-    expect(link).toHaveAttribute("href", "#mvp");
-  });
-
-  it("lists every planned feature exactly once", () => {
-    render(<Home />);
-
-    const features = [
-      "Muižu katalogs",
-      "Meklēšana un filtri",
-      "Interaktīva karte",
-      "Muižu profili",
-      "Pasākumu pieprasījumi",
-    ];
-
-    const items = screen.getAllByRole("listitem");
-    expect(items).toHaveLength(features.length);
-
-    for (const feature of features) {
-      expect(screen.getByText(feature)).toBeInTheDocument();
-    }
+    expect(screen.getByRole("link", { name: "Pilis" })).toHaveAttribute(
+      "href",
+      "/objects?type=palace_or_castle",
+    );
+    expect(screen.getByRole("link", { name: "Brīvi apmeklējamas" })).toHaveAttribute(
+      "href",
+      "/objects?access=open",
+    );
+    expect(screen.getByRole("button", { name: "Izpētīt kartē" })).toHaveAttribute(
+      "formaction",
+      "/map",
+    );
+    expect(screen.getByRole("button", { name: "Izpētīt kartē" })).toHaveAttribute(
+      "form",
+      "home-search-form",
+    );
   });
 });

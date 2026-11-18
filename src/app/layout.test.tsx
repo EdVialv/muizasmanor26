@@ -4,8 +4,8 @@ import { metadata } from "./layout";
 describe("root layout metadata", () => {
   it("defines a default title and a template for nested routes", () => {
     expect(metadata.title).toMatchObject({
-      default: "Latvijas muižas",
-      template: "%s | Latvijas muižas",
+      default: "MuizasDB — Latvijas muižas un pilis",
+      template: "%s | MuizasDB",
     });
   });
 
