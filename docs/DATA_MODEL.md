@@ -149,6 +149,7 @@ Raw API keys, tokens, passwords and webhook secrets must never be stored in obje
 - Opening/access information.
 - Event availability and indicative capacity.
 - Accommodation and catering availability.
+  - Day 17 stores availability as three nullable booleans on `heritage_objects` (`offers_accommodation`, `offers_catering`, `offers_event_facilities`) plus `services_verified_at`: `true` = recorded as offered, `false` = recorded as not offered, `NULL` = not recorded. Directory filters match `true` only. Indicative event capacity is not modelled yet. See `docs/DAY17_DIRECTORY_FILTERS_NOTES.md`.
 - Accessibility notes.
 - Property-sale status and agent contact only after commercial validation.
 - Image records with credit, rights, alt text and derivative sizes.
