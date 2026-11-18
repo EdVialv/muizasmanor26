@@ -2,19 +2,36 @@
 
 import { usePathname } from "next/navigation";
 import { useId, useState, useSyncExternalStore } from "react";
+import DirectoryFamilyPicker from "@/components/DirectoryFamilyPicker";
 import { useDirectoryListing } from "@/components/DirectoryListingProvider";
 import {
+  CONDITION_VALUES,
   EMPTY_FILTERS,
+  FAMILY_UNKNOWN_FLAG,
+  FILTER_PARAM_KEYS,
+  MAX_FAMILIES,
   MAX_REGIONS,
   OBJECT_TYPE_VALUES,
+  OWNERSHIP_VALUES,
   PUBLIC_ACCESS_VALUES,
   SERVICE_VALUES,
   countActiveFilters,
 } from "@/lib/directory/filters";
-import { objectTypeLabel, publicAccessLabel, serviceLabel } from "@/lib/directory/labels";
+import {
+  FAMILY_UNKNOWN_CHIP_LABEL,
+  FAMILY_UNKNOWN_OPTION_LABEL,
+  conditionChipLabel,
+  conditionFilterLabel,
+  familyChipLabel,
+  objectTypeLabel,
+  ownershipGroupChipLabel,
+  ownershipGroupLabel,
+  publicAccessLabel,
+  serviceLabel,
+} from "@/lib/directory/labels";
 import type { RegionOption } from "@/lib/directory/regionOptions";
 
-type ListKey = "types" | "access" | "services";
+type ListKey = "types" | "access" | "services" | "conditions" | "ownership";
 
 /** For useSyncExternalStore: "hydrated" never changes once true. */
 function subscribeToNothing() {
@@ -42,6 +59,8 @@ function toggle<T extends string>(values: T[], value: T): T[] {
  * - Within one group, choices are combined with OR; groups are combined
  *   with AND. Services are independent: each ticked service must be
  *   recorded as offered.
+ * - Condition, ownership and family (Day 18) each offer "not recorded" as
+ *   one more choice of the group; a known value never matches a missing one.
  * - Without JavaScript it is a plain GET form with a submit button.
  */
 export default function DirectoryFilterPanel({
@@ -93,11 +112,33 @@ export default function DirectoryFilterPanel({
     }));
   }
 
+  function addFamily(value: string) {
+    if (value) {
+      updateFilters((current) =>
+        current.families.includes(value)
+          ? current
+          : { ...current, families: [...current.families, value] },
+      );
+    }
+  }
+
+  function removeFamily(value: string) {
+    updateFilters((current) => ({
+      ...current,
+      families: current.families.filter((family) => family !== value),
+    }));
+  }
+
+  function toggleFamilyUnknown() {
+    updateFilters((current) => ({ ...current, familyUnknown: !current.familyUnknown }));
+  }
+
   const activeCount = countActiveFilters(draft);
   const regionChoices = (regionOptions ?? []).filter(
     (option) => !draft.regions.includes(option.value),
   );
   const regionLimitReached = draft.regions.length >= MAX_REGIONS;
+  const familyLimitReached = draft.families.length >= MAX_FAMILIES;
 
   const chips: Array<{ key: string; label: string; remove: () => void }> = [
     ...draft.types.map((value) => ({
@@ -120,6 +161,24 @@ export default function DirectoryFilterPanel({
       label: serviceLabel(value),
       remove: () => toggleValue("services", value),
     })),
+    ...draft.conditions.map((value) => ({
+      key: `condition-${value}`,
+      label: conditionChipLabel(value),
+      remove: () => toggleValue("conditions", value),
+    })),
+    ...draft.ownership.map((value) => ({
+      key: `ownership-${value}`,
+      label: ownershipGroupChipLabel(value),
+      remove: () => toggleValue("ownership", value),
+    })),
+    ...draft.families.map((value) => ({
+      key: `family-${value}`,
+      label: familyChipLabel(value),
+      remove: () => removeFamily(value),
+    })),
+    ...(draft.familyUnknown
+      ? [{ key: "family-unknown", label: FAMILY_UNKNOWN_CHIP_LABEL, remove: toggleFamilyUnknown }]
+      : []),
   ];
 
   return (
@@ -233,6 +292,80 @@ export default function DirectoryFilterPanel({
                   {serviceLabel(value)}
                 </label>
               ))}
+            </fieldset>
+
+            <fieldset className="directoryFilterGroup">
+              <legend>Stāvoklis</legend>
+              <p className="directoryFiltersHint">
+                A un B klase ir platformas iekšēja klasifikācija, nevis oficiāls Latvijas
+                apzīmējums.
+              </p>
+              {CONDITION_VALUES.map((value) => (
+                <label key={value} className="directoryFilterOption">
+                  <input
+                    type="checkbox"
+                    name={FILTER_PARAM_KEYS.conditions}
+                    value={value}
+                    checked={draft.conditions.includes(value)}
+                    onChange={() => toggleValue("conditions", value)}
+                  />
+                  {conditionFilterLabel(value)}
+                </label>
+              ))}
+            </fieldset>
+
+            <fieldset className="directoryFilterGroup">
+              <legend>Pašreizējais īpašnieks</legend>
+              <p className="directoryFiltersHint">
+                Īpašnieka veids — nevis tas, vai objektu var apmeklēt.
+              </p>
+              {OWNERSHIP_VALUES.map((value) => (
+                <label key={value} className="directoryFilterOption">
+                  <input
+                    type="checkbox"
+                    name={FILTER_PARAM_KEYS.ownership}
+                    value={value}
+                    checked={draft.ownership.includes(value)}
+                    onChange={() => toggleValue("ownership", value)}
+                  />
+                  {ownershipGroupLabel(value)}
+                </label>
+              ))}
+            </fieldset>
+
+            <fieldset className="directoryFilterGroup">
+              <legend>Vēsturiskā īpašnieku dzimta</legend>
+              {hydrated ? (
+                <DirectoryFamilyPicker
+                  selected={draft.families}
+                  onSelect={addFamily}
+                  disabled={familyLimitReached}
+                  disabledReason={`Var izvēlēties līdz ${MAX_FAMILIES} dzimtām`}
+                />
+              ) : (
+                <p className="directoryFiltersHint">Dzimtu meklēšanai nepieciešams JavaScript.</p>
+              )}
+              {/* Keeps already chosen families in a no-JavaScript submit. */}
+              {!hydrated
+                ? draft.families.map((value) => (
+                    <input
+                      key={value}
+                      type="hidden"
+                      name={FILTER_PARAM_KEYS.families}
+                      value={value}
+                    />
+                  ))
+                : null}
+              <label className="directoryFilterOption">
+                <input
+                  type="checkbox"
+                  name={FILTER_PARAM_KEYS.familyUnknown}
+                  value={FAMILY_UNKNOWN_FLAG}
+                  checked={draft.familyUnknown}
+                  onChange={toggleFamilyUnknown}
+                />
+                {FAMILY_UNKNOWN_OPTION_LABEL}
+              </label>
             </fieldset>
 
             {!hydrated ? (

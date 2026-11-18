@@ -239,4 +239,195 @@ describe("DirectoryFilterPanel", () => {
     expect(screen.getByRole("checkbox", { name: "Ēdināšana" })).not.toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Pasākumu rīkošana" })).toBeChecked();
   });
+
+  describe("condition, ownership and family (Day 18)", () => {
+    it("offers labelled groups with an explicit not-recorded choice in each", () => {
+      render(
+        <DirectoryListingProvider>
+          <DirectoryFilterPanel regionOptions={REGIONS} />
+        </DirectoryListingProvider>,
+      );
+
+      const condition = screen.getByRole("group", { name: "Stāvoklis" });
+      for (const label of ["Vēsturiska vieta", "Bojāta ēka", "B klase", "A klase"]) {
+        expect(within(condition).getByRole("checkbox", { name: label })).toBeInTheDocument();
+      }
+      expect(
+        within(condition).getByRole("checkbox", { name: "Nezināms / nav reģistrēts" }),
+      ).toBeInTheDocument();
+      expect(within(condition).getByText(/iekšēja klasifikācija/i)).toBeInTheDocument();
+
+      const ownership = screen.getByRole("group", { name: "Pašreizējais īpašnieks" });
+      expect(
+        within(ownership)
+          .getAllByRole("checkbox")
+          .map((c) => c.getAttribute("value")),
+      ).toEqual(["private", "public", "unknown"]);
+      expect(
+        within(ownership).getByText(/nevis tas, vai objektu var apmeklēt/i),
+      ).toBeInTheDocument();
+
+      const family = screen.getByRole("group", { name: "Vēsturiskā īpašnieku dzimta" });
+      expect(
+        within(family).getByRole("combobox", { name: "Meklēt un pievienot dzimtu" }),
+      ).toBeInTheDocument();
+      expect(
+        within(family).getByRole("checkbox", { name: "Nezināma / nav reģistrēta" }),
+      ).toBeInTheDocument();
+    });
+
+    it("never labels a missing value as private, ruined or no family", () => {
+      navigation.search = "condition=unknown&ownership=unknown&family_unknown=1";
+      render(
+        <DirectoryListingProvider>
+          <DirectoryFilterPanel regionOptions={REGIONS} />
+        </DirectoryListingProvider>,
+      );
+
+      const chips = screen.getAllByRole("button", { name: /^Noņemt filtru:/ });
+      expect(chips.map((chip) => chip.getAttribute("aria-label"))).toEqual([
+        "Noņemt filtru: Stāvoklis nav reģistrēts",
+        "Noņemt filtru: Īpašnieks nav reģistrēts",
+        "Noņemt filtru: Dzimta nav reģistrēta",
+      ]);
+      for (const chip of chips) {
+        expect(chip.textContent).not.toMatch(/privāt|drupas|bez dzimtas/i);
+      }
+    });
+
+    it("reflects the new parameters in the controls, chips and count", () => {
+      navigation.search =
+        "condition=class_a&condition=unknown&ownership=public&family=von Biron&family_unknown=1";
+      render(
+        <DirectoryListingProvider>
+          <DirectoryFilterPanel regionOptions={REGIONS} />
+        </DirectoryListingProvider>,
+      );
+
+      expect(screen.getByRole("checkbox", { name: "A klase" })).toBeChecked();
+      expect(
+        within(screen.getByRole("group", { name: "Stāvoklis" })).getByRole("checkbox", {
+          name: "Nezināms / nav reģistrēts",
+        }),
+      ).toBeChecked();
+      expect(
+        screen.getByRole("checkbox", { name: "Publisks (pašvaldība vai valsts)" }),
+      ).toBeChecked();
+      expect(screen.getByRole("checkbox", { name: "Nezināma / nav reģistrēta" })).toBeChecked();
+      expect(
+        screen.getByRole("button", { name: "Noņemt filtru: Dzimta: von Biron" }),
+      ).toBeInTheDocument();
+      expect(screen.getByText(/^Filtri \(5\)$/)).toBeInTheDocument();
+    });
+
+    it('applies a known value and "unknown" in the same group, keeping the search and dropping the cursor', () => {
+      navigation.search = "q=muiža&condition=damaged&cursor=abc";
+      render(
+        <DirectoryListingProvider>
+          <DirectoryFilterPanel regionOptions={REGIONS} />
+        </DirectoryListingProvider>,
+      );
+
+      fireEvent.click(
+        within(screen.getByRole("group", { name: "Stāvoklis" })).getByRole("checkbox", {
+          name: "Nezināms / nav reģistrēts",
+        }),
+      );
+
+      const url = lastUrl();
+      expect(url.searchParams.get("q")).toBe("muiža");
+      expect(url.searchParams.getAll("condition")).toEqual(["damaged", "unknown"]);
+      expect(url.searchParams.has("cursor")).toBe(false);
+    });
+
+    it("toggles family_unknown and ownership groups", () => {
+      navigation.search = "type=manor_estate";
+      render(
+        <DirectoryListingProvider>
+          <DirectoryFilterPanel regionOptions={REGIONS} />
+        </DirectoryListingProvider>,
+      );
+
+      fireEvent.click(screen.getByRole("checkbox", { name: "Nezināma / nav reģistrēta" }));
+      expect(lastUrl().searchParams.get("family_unknown")).toBe("1");
+      expect(lastUrl().searchParams.getAll("type")).toEqual(["manor_estate"]);
+
+      fireEvent.click(
+        screen.getByRole("checkbox", {
+          name: "Privāts (privātpersona vai privāts juridiskais subjekts)",
+        }),
+      );
+      expect(lastUrl().searchParams.getAll("ownership")).toEqual(["private"]);
+      expect(lastUrl().searchParams.get("family_unknown")).toBe("1");
+    });
+
+    it("removes one family from its chip, keeping the other family and the search", () => {
+      navigation.search = "q=pils&family=von Biron&family=Ābele";
+      render(
+        <DirectoryListingProvider>
+          <DirectoryFilterPanel regionOptions={REGIONS} />
+        </DirectoryListingProvider>,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "Noņemt filtru: Dzimta: Ābele" }));
+
+      const url = lastUrl();
+      expect(url.searchParams.get("q")).toBe("pils");
+      expect(url.searchParams.getAll("family")).toEqual(["von Biron"]);
+    });
+
+    it("adds a family chosen in the picker", async () => {
+      vi.useFakeTimers();
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(() =>
+          Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({ options: [{ value: "von der Pahlen", count: 2 }], hasMore: false }),
+          } as Response),
+        ),
+      );
+      try {
+        navigation.search = "q=pils&family=von Biron";
+        render(
+          <DirectoryListingProvider>
+            <DirectoryFilterPanel regionOptions={REGIONS} />
+          </DirectoryListingProvider>,
+        );
+        const input = screen.getByRole("combobox", { name: "Meklēt un pievienot dzimtu" });
+
+        fireEvent.change(input, { target: { value: "pahlen" } });
+        await act(async () => {
+          vi.advanceTimersByTime(300);
+        });
+        await act(async () => {
+          await Promise.resolve();
+          await Promise.resolve();
+        });
+        fireEvent.mouseDown(screen.getByRole("option", { name: "von der Pahlen (2)" }));
+
+        const url = lastUrl();
+        expect(url.searchParams.get("q")).toBe("pils");
+        expect(url.searchParams.getAll("family")).toEqual(["von Biron", "von der Pahlen"]);
+      } finally {
+        vi.useRealTimers();
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it("clears the new filters too while keeping the search", () => {
+      navigation.search =
+        "q=pils&condition=unknown&ownership=private&family=von Biron&family_unknown=1&cursor=abc";
+      render(
+        <DirectoryListingProvider>
+          <DirectoryFilterPanel regionOptions={REGIONS} />
+        </DirectoryListingProvider>,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "Notīrīt filtrus (paturēt meklēšanu)" }));
+
+      expect(push).toHaveBeenLastCalledWith("/objects?q=pils", { scroll: false });
+    });
+  });
 });

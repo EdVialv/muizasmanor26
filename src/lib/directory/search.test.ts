@@ -100,6 +100,7 @@ describe("fetchSearchPage", () => {
 
 describe("fetchListingPage (Day 17)", () => {
   const filters = canonicalFilters({
+    ...EMPTY_FILTERS,
     types: ["palace_or_castle"],
     regions: ["Cēsu novads"],
     access: [],

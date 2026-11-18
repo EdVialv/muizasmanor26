@@ -32,6 +32,10 @@ describe("createSupabaseDirectorySearchDataSource", () => {
         accommodation: false,
         catering: false,
         event_facilities: false,
+        condition_categories: null,
+        ownership_groups: null,
+        historical_families: null,
+        family_unknown: false,
         after_name: null,
         after_id: null,
         page_size: 25,
@@ -65,6 +69,7 @@ describe("createSupabaseDirectorySearchDataSource", () => {
     await createSupabaseDirectorySearchDataSource(client).searchPublishedObjects(
       null,
       {
+        ...EMPTY_FILTERS,
         types: ["manor_estate", "palace_or_castle"],
         regions: ["Bauskas novads (Rundāles pagasts)", "Cēsu novads"],
         access: ["open"],
@@ -85,10 +90,58 @@ describe("createSupabaseDirectorySearchDataSource", () => {
         accommodation: true,
         catering: false,
         event_facilities: true,
+        condition_categories: null,
+        ownership_groups: null,
+        historical_families: null,
+        family_unknown: false,
         after_name: null,
         after_id: null,
         page_size: 25,
       },
+    });
+  });
+
+  it("passes condition, ownership and family filters, keeping unknown distinct from no filter (Day 18)", async () => {
+    const { client, queries } = createRecordingSupabaseClient();
+
+    await createSupabaseDirectorySearchDataSource(client).searchPublishedObjects(
+      "muiza",
+      {
+        ...EMPTY_FILTERS,
+        conditions: ["class_a", "unknown"],
+        ownership: ["public"],
+        families: ["von der Pahlen", "Testa dzimta Ābele"],
+        familyUnknown: true,
+      },
+      null,
+      25,
+    );
+
+    expect(queries).toHaveLength(1);
+    expect(queries[0].rpc?.args).toMatchObject({
+      search_query: "muiza",
+      condition_categories: ["class_a", "unknown"],
+      ownership_groups: ["public"],
+      historical_families: ["von der Pahlen", "Testa dzimta Ābele"],
+      family_unknown: true,
+    });
+  });
+
+  it("sends family_unknown alone without a family list", async () => {
+    const { client, queries } = createRecordingSupabaseClient();
+
+    await createSupabaseDirectorySearchDataSource(client).searchPublishedObjects(
+      null,
+      { ...EMPTY_FILTERS, familyUnknown: true },
+      null,
+      25,
+    );
+
+    expect(queries[0].rpc?.args).toMatchObject({
+      historical_families: null,
+      family_unknown: true,
+      condition_categories: null,
+      ownership_groups: null,
     });
   });
 

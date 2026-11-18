@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   EMPTY_FILTERS,
+  MAX_FAMILIES,
+  MAX_FAMILY_LENGTH,
   MAX_REGION_LENGTH,
   MAX_REGIONS,
   buildListingHref,
@@ -25,6 +27,7 @@ describe("parseFilters", () => {
     );
 
     expect(filters).toEqual({
+      ...EMPTY_FILTERS,
       types: ["manor_estate", "palace_or_castle"],
       regions: ["Cēsu novads"],
       access: ["open"],
@@ -37,6 +40,7 @@ describe("parseFilters", () => {
     expect(
       parseFilters({ type: ["park_or_garden", "outbuilding"], service: "events" }).filters,
     ).toEqual({
+      ...EMPTY_FILTERS,
       types: ["park_or_garden", "outbuilding"],
       regions: [],
       access: [],
@@ -52,6 +56,7 @@ describe("parseFilters", () => {
     );
 
     expect(filters).toEqual({
+      ...EMPTY_FILTERS,
       types: ["palace_or_castle"],
       regions: [],
       access: [],
@@ -107,6 +112,7 @@ describe("parseFilters", () => {
 describe("filter set helpers", () => {
   it("counts and detects active filters", () => {
     const filters = canonicalFilters({
+      ...EMPTY_FILTERS,
       types: ["manor_estate"],
       regions: ["Cēsu novads"],
       access: [],
@@ -120,8 +126,20 @@ describe("filter set helpers", () => {
   it("compares filter sets regardless of the order values were chosen in", () => {
     expect(
       filtersEqual(
-        { types: ["palace_or_castle", "manor_estate"], regions: [], access: [], services: [] },
-        { types: ["manor_estate", "palace_or_castle"], regions: [], access: [], services: [] },
+        {
+          ...EMPTY_FILTERS,
+          types: ["palace_or_castle", "manor_estate"],
+          regions: [],
+          access: [],
+          services: [],
+        },
+        {
+          ...EMPTY_FILTERS,
+          types: ["manor_estate", "palace_or_castle"],
+          regions: [],
+          access: [],
+          services: [],
+        },
       ),
     ).toBe(true);
   });
@@ -129,6 +147,7 @@ describe("filter set helpers", () => {
 
 describe("listings, URLs and cursor scope", () => {
   const filters = canonicalFilters({
+    ...EMPTY_FILTERS,
     types: ["palace_or_castle"],
     regions: [],
     access: ["open"],
@@ -180,13 +199,143 @@ describe("listings, URLs and cursor scope", () => {
     expect(
       listingScope({
         q: null,
-        filters: { types: ["outbuilding", "manor_estate"], regions: [], access: [], services: [] },
+        filters: {
+          ...EMPTY_FILTERS,
+          types: ["outbuilding", "manor_estate"],
+          regions: [],
+          access: [],
+          services: [],
+        },
       }),
     ).toBe(
       listingScope({
         q: null,
-        filters: { types: ["manor_estate", "outbuilding"], regions: [], access: [], services: [] },
+        filters: {
+          ...EMPTY_FILTERS,
+          types: ["manor_estate", "outbuilding"],
+          regions: [],
+          access: [],
+          services: [],
+        },
       }),
     );
+  });
+});
+
+describe("condition, ownership and family parameters (Day 18)", () => {
+  it("reads the new parameters into stable identifiers, in canonical order", () => {
+    const { filters, hadInvalidValues } = parseFilters(
+      new URLSearchParams(
+        "condition=unknown&condition=class_a&ownership=unknown&ownership=public&family=von Biron&family=Ābele&family_unknown=1",
+      ),
+    );
+
+    expect(filters).toEqual({
+      ...EMPTY_FILTERS,
+      conditions: ["class_a", "unknown"],
+      ownership: ["public", "unknown"],
+      families: ["von Biron", "Ābele"],
+      familyUnknown: true,
+    });
+    expect(hadInvalidValues).toBe(false);
+  });
+
+  it("accepts only the documented ownership groups, not the stored ownership values", () => {
+    const { filters, hadInvalidValues } = parseFilters({
+      ownership: ["private_person", "state", "private"],
+    });
+    expect(filters.ownership).toEqual(["private"]);
+    expect(hadInvalidValues).toBe(true);
+  });
+
+  it("drops invented or obsolete condition values (e.g. ruined) and says so", () => {
+    const { filters, hadInvalidValues } = parseFilters({ condition: ["ruined", "damaged"] });
+    expect(filters.conditions).toEqual(["damaged"]);
+    expect(hadInvalidValues).toBe(true);
+  });
+
+  it("accepts only family_unknown=1", () => {
+    expect(parseFilters({ family_unknown: "1" }).filters.familyUnknown).toBe(true);
+    const odd = parseFilters({ family_unknown: "true" });
+    expect(odd.filters.familyUnknown).toBe(false);
+    expect(odd.hadInvalidValues).toBe(true);
+    expect(parseFilters({ family_unknown: "" }).hadInvalidValues).toBe(false);
+  });
+
+  it("trims, NFC-normalises and de-duplicates family names", () => {
+    const decomposed = "A\u0304bele"; // "Ābele" with a combining macron
+    const { filters } = parseFilters(
+      new URLSearchParams([
+        ["family", "  Ābele "],
+        ["family", decomposed],
+        ["family", "von Biron"],
+      ]),
+    );
+    expect(filters.families).toEqual(["von Biron", "Ābele"]);
+  });
+
+  it(`bounds families: at most ${MAX_FAMILIES}, each at most ${MAX_FAMILY_LENGTH} characters`, () => {
+    const tooMany = parseFilters(
+      new URLSearchParams(Array.from({ length: 14 }, (_, i) => ["family", `Dzimta ${i + 10}`])),
+    );
+    expect(tooMany.filters.families).toHaveLength(MAX_FAMILIES);
+    expect(tooMany.hadInvalidValues).toBe(true);
+
+    const tooLong = parseFilters({ family: "x".repeat(MAX_FAMILY_LENGTH + 1) });
+    expect(tooLong.filters.families).toEqual([]);
+    expect(tooLong.hadInvalidValues).toBe(true);
+  });
+
+  it('counts every new selection, "unknown" choices included', () => {
+    const filters = {
+      ...EMPTY_FILTERS,
+      conditions: ["unknown" as const],
+      ownership: ["private" as const],
+      families: ["von Biron"],
+      familyUnknown: true,
+    };
+    expect(countActiveFilters(filters)).toBe(4);
+    expect(hasActiveFilters({ ...EMPTY_FILTERS, familyUnknown: true })).toBe(true);
+  });
+
+  it("round-trips a full listing through its URL", () => {
+    const listing = {
+      q: "muiža",
+      filters: {
+        ...EMPTY_FILTERS,
+        types: ["manor_estate" as const],
+        services: ["catering" as const],
+        conditions: ["damaged" as const, "unknown" as const],
+        ownership: ["private" as const],
+        families: ["von Biron", "Ābele"],
+        familyUnknown: true,
+      },
+    };
+    const href = buildListingHref("/objects", listing);
+    expect(href).toBe(
+      "/objects?q=mui%C5%BEa&type=manor_estate&service=catering&condition=damaged&condition=unknown&ownership=private&family=von+Biron&family=%C4%80bele&family_unknown=1",
+    );
+    const parsed = parseListing(new URL(href, "http://localhost").searchParams);
+    expect({ q: parsed.q, filters: parsed.filters }).toEqual(listing);
+  });
+
+  it("changes the cursor scope when any new filter changes, unknown choices included", () => {
+    const base = { q: null, filters: { ...EMPTY_FILTERS, conditions: ["class_a" as const] } };
+    const scopes = new Set([
+      listingScope(base),
+      listingScope({
+        q: null,
+        filters: { ...base.filters, conditions: ["class_a" as const, "unknown" as const] },
+      }),
+      listingScope({ q: null, filters: { ...base.filters, ownership: ["unknown" as const] } }),
+      listingScope({ q: null, filters: { ...base.filters, families: ["von Biron"] } }),
+      listingScope({ q: null, filters: { ...base.filters, familyUnknown: true } }),
+    ]);
+    expect(scopes.size).toBe(5);
+  });
+
+  it("leaves a Day 17-only listing's URL and cursor scope unchanged", () => {
+    const listing = { q: null, filters: { ...EMPTY_FILTERS, types: ["manor_estate" as const] } };
+    expect(buildListingHref("/objects", listing)).toBe("/objects?type=manor_estate");
   });
 });

@@ -197,12 +197,30 @@ function fold(text: string): string {
   return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 }
 
-/** A directory row plus the recorded service flags the database filters on. */
+/** A directory row plus the recorded service flags and families the database filters on. */
 type FakeRow = RawDirectoryRow & {
   offers_accommodation?: boolean | null;
   offers_catering?: boolean | null;
   offers_event_facilities?: boolean | null;
+  /** Historical-family associations; only verified ones count (Day 18). */
+  families?: Array<{ name: string; verified: boolean }>;
 };
+
+const OWNERSHIP_GROUPS: Record<string, string[]> = {
+  private: ["private_person", "private_legal_entity"],
+  public: ["municipality", "state"],
+};
+
+/** Day 18: a known value never matches a missing one; "unknown" matches only missing ones. */
+function matchesWithUnknown(selected: string[], value: string | null, expand = (v: string) => [v]) {
+  if (selected.length === 0) {
+    return true;
+  }
+  if (value === null) {
+    return selected.includes("unknown");
+  }
+  return selected.filter((v) => v !== "unknown").some((v) => expand(v).includes(value));
+}
 
 /**
  * Mirrors search_public_heritage_objects closely enough to test the page:
@@ -249,6 +267,24 @@ function fakeSearchSource(fixture: FakeRow[]) {
           )
           .filter((r) => !filters.services.includes("catering") || r.offers_catering === true)
           .filter((r) => !filters.services.includes("events") || r.offers_event_facilities === true)
+          .filter((r) => matchesWithUnknown(filters.conditions, r.condition_category))
+          .filter((r) =>
+            matchesWithUnknown(
+              filters.ownership,
+              r.ownership_type,
+              (g) => OWNERSHIP_GROUPS[g] ?? [],
+            ),
+          )
+          .filter((r) => {
+            if (filters.families.length === 0 && !filters.familyUnknown) {
+              return true;
+            }
+            const verified = (r.families ?? []).filter((f) => f.verified).map((f) => f.name);
+            return (
+              verified.some((name) => filters.families.includes(name)) ||
+              (filters.familyUnknown && verified.length === 0)
+            );
+          })
           .filter(
             (r) =>
               !after || r.name_lv > after.name || (r.name_lv === after.name && r.id > after.id),
@@ -257,7 +293,9 @@ function fakeSearchSource(fixture: FakeRow[]) {
           .map(
             (r) =>
               Object.fromEntries(
-                Object.entries(r).filter(([key]) => !key.startsWith("offers_")),
+                Object.entries(r).filter(
+                  ([key]) => !key.startsWith("offers_") && key !== "families",
+                ),
               ) as RawDirectoryRow,
           );
       },
@@ -553,7 +591,13 @@ describe("ObjectsPage filters (Day 17)", () => {
     expect(search.calls).toHaveLength(1);
     expect(search.calls[0]).toMatchObject({
       query: "muiža",
-      filters: { types: [], regions: ["Cēsu novads"], access: [], services: ["accommodation"] },
+      filters: {
+        ...EMPTY_FILTERS,
+        types: [],
+        regions: ["Cēsu novads"],
+        access: [],
+        services: ["accommodation"],
+      },
     });
     expect(screen.getAllByRole("link", { name: /muiža/ }).map((l) => l.textContent)).toEqual([
       "Beta muiža",
@@ -614,7 +658,13 @@ describe("ObjectsPage filters (Day 17)", () => {
     expect(decodeCursor(url.searchParams.get("cursor"))?.scope).toBe(
       listingScope({
         q: "muiža",
-        filters: { types: ["manor_estate"], regions: [], access: [], services: ["catering"] },
+        filters: {
+          ...EMPTY_FILTERS,
+          types: ["manor_estate"],
+          regions: [],
+          access: [],
+          services: ["catering"],
+        },
       }),
     );
   });
@@ -653,7 +703,13 @@ describe("ObjectsPage filters (Day 17)", () => {
     const search = fakeSearchSource(fixture());
     createDirectorySearchDataSourceFromEnv.mockReturnValue(search);
     document.body.innerHTML = "";
-    const otherFilters = { types: [], regions: [], access: [], services: ["catering" as const] };
+    const otherFilters = {
+      ...EMPTY_FILTERS,
+      types: [],
+      regions: [],
+      access: [],
+      services: ["catering" as const],
+    };
     const staleCursor = encodeCursor({
       name: "Alfa pils",
       id: ID(1),
@@ -691,5 +747,268 @@ describe("ObjectsPage filters (Day 17)", () => {
     const url = new URL(href, "http://localhost");
     expect(url.searchParams.get("fromQ")).toBe("muiža");
     expect(url.searchParams.get("fromFilters")).toBe("type=manor_estate&service=catering");
+  });
+});
+
+describe("ObjectsPage condition, ownership and family filters (Day 18)", () => {
+  // Fully known fixture. NULL condition/ownership and "no verified family"
+  // are the schema's representation of "not recorded".
+  function fixture(): FakeRow[] {
+    const base = (n: number, name: string, extra: Partial<FakeRow>): FakeRow => ({
+      ...row(name, ID(n)),
+      slug: `obj-${n}`,
+      ...extra,
+    });
+    return [
+      base(1, "Alfa pils", {
+        object_type: "palace_or_castle",
+        condition_category: "class_a",
+        ownership_type: "state",
+        public_access: "open",
+        families: [
+          { name: "von der Pahlen", verified: true },
+          { name: "von Biron", verified: true },
+        ],
+      }),
+      base(2, "Beta muiža", {
+        object_type: "manor_estate",
+        condition_category: "damaged",
+        ownership_type: "private_person",
+        families: [{ name: "von Biron", verified: true }],
+      }),
+      base(3, "Gamma muiža", {
+        object_type: "manor_estate",
+        condition_category: null,
+        ownership_type: null,
+        families: [{ name: "von der Pahlen", verified: false }],
+      }),
+      base(4, "Delta drupas", {
+        object_type: "ruin_or_historical_site",
+        condition_category: "historical_site",
+        ownership_type: "municipality",
+        public_access: "exterior_only",
+      }),
+      base(5, "Epsilon muiža", {
+        object_type: "manor_estate",
+        condition_category: null,
+        ownership_type: "private_legal_entity",
+        families: [{ name: "von Wolff", verified: true }],
+      }),
+    ];
+  }
+
+  async function namesFor(params: Record<string, string | string[]>) {
+    document.body.innerHTML = "";
+    createDirectorySearchDataSourceFromEnv.mockReturnValue(fakeSearchSource(fixture()));
+    await renderObjectsPage(params);
+    return screen.queryAllByRole("link", { name: /pils|muiža|drupas/ }).map((l) => l.textContent);
+  }
+
+  it("filters by condition, using the stored categories", async () => {
+    expect(await namesFor({ condition: "class_a" })).toEqual(["Alfa pils"]);
+    expect(await namesFor({ condition: "historical_site" })).toEqual(["Delta drupas"]);
+  });
+
+  it("filters by ownership group: private and public each cover their stored values", async () => {
+    expect(await namesFor({ ownership: "private" })).toEqual(["Beta muiža", "Epsilon muiža"]);
+    expect(await namesFor({ ownership: "public" })).toEqual(["Alfa pils", "Delta drupas"]);
+  });
+
+  it("filters by a verified historical family, ignoring unverified associations", async () => {
+    expect(await namesFor({ family: "von der Pahlen" })).toEqual(["Alfa pils"]);
+    expect(await namesFor({ family: "von Wolff" })).toEqual(["Epsilon muiža"]);
+  });
+
+  it("ORs values within one new filter, and returns an object with several selected families once", async () => {
+    expect(await namesFor({ condition: ["class_a", "damaged"] })).toEqual([
+      "Alfa pils",
+      "Beta muiža",
+    ]);
+    expect(await namesFor({ family: ["von der Pahlen", "von Biron"] })).toEqual([
+      "Alfa pils",
+      "Beta muiža",
+    ]);
+  });
+
+  it('matches only missing values with "unknown", and never missing values with a known one', async () => {
+    expect(await namesFor({ condition: "unknown" })).toEqual(["Epsilon muiža", "Gamma muiža"]);
+    expect(await namesFor({ ownership: "unknown" })).toEqual(["Gamma muiža"]);
+    // Gamma's only family link is unverified, so its family is not recorded.
+    expect(await namesFor({ family_unknown: "1" })).toEqual(["Delta drupas", "Gamma muiža"]);
+    expect(await namesFor({ ownership: "private" })).not.toContain("Gamma muiža");
+  });
+
+  it('returns either group when known values and "unknown" are selected together', async () => {
+    expect(await namesFor({ condition: ["damaged", "unknown"] })).toEqual([
+      "Beta muiža",
+      "Epsilon muiža",
+      "Gamma muiža",
+    ]);
+    expect(await namesFor({ ownership: ["public", "unknown"] })).toEqual([
+      "Alfa pils",
+      "Delta drupas",
+      "Gamma muiža",
+    ]);
+    expect(await namesFor({ family: "von Wolff", family_unknown: "1" })).toEqual([
+      "Delta drupas",
+      "Epsilon muiža",
+      "Gamma muiža",
+    ]);
+  });
+
+  it("ANDs the new filters with each other, with search and with Day 17 filters", async () => {
+    expect(await namesFor({ ownership: "private", family: "von Biron" })).toEqual(["Beta muiža"]);
+    expect(await namesFor({ q: "muiža", condition: "unknown", ownership: "private" })).toEqual([
+      "Epsilon muiža",
+    ]);
+    expect(await namesFor({ type: "manor_estate", family_unknown: "1" })).toEqual(["Gamma muiža"]);
+    expect(await namesFor({ access: "open", ownership: "public", condition: "class_a" })).toEqual([
+      "Alfa pils",
+    ]);
+  });
+
+  it("sends the new filters to the data source in the same single request as the search", async () => {
+    const search = fakeSearchSource(fixture());
+    createDirectorySearchDataSourceFromEnv.mockReturnValue(search);
+    document.body.innerHTML = "";
+
+    await renderObjectsPage({
+      q: "muiža",
+      condition: ["unknown", "class_b"],
+      ownership: "public",
+      family: "von Biron",
+      family_unknown: "1",
+    });
+
+    expect(search.calls).toHaveLength(1);
+    expect(search.calls[0].query).toBe("muiža");
+    expect(search.calls[0].filters).toMatchObject({
+      conditions: ["class_b", "unknown"],
+      ownership: ["public"],
+      families: ["von Biron"],
+      familyUnknown: true,
+    });
+  });
+
+  it("ignores invalid and obsolete values with a notice, without inventing categories", async () => {
+    const names = await namesFor({
+      condition: ["ruined", "class_a"],
+      ownership: "private_person",
+      family_unknown: "yes",
+    });
+    expect(names).toEqual(["Alfa pils"]);
+    expect(screen.getByText(/filtri nebija derīgi/i)).toBeInTheDocument();
+  });
+
+  it("keeps the new selections on the next-page link, with a cursor scoped to them", async () => {
+    const { decodeCursor } = await import("@/lib/directory/cursor");
+    const { listingScope } = await import("@/lib/directory/filters");
+    const many: FakeRow[] = Array.from({ length: 30 }, (_, i) => ({
+      ...row(`Muiža ${String(i).padStart(2, "0")}`, ID(i)),
+      slug: `m-${i}`,
+      condition_category: null,
+      families: i % 2 === 0 ? [{ name: "von Biron", verified: true }] : [],
+    }));
+    createDirectorySearchDataSourceFromEnv.mockReturnValue(fakeSearchSource(many));
+    document.body.innerHTML = "";
+
+    await renderObjectsPage({ condition: "unknown", family: "von Biron", family_unknown: "1" });
+
+    const href = screen.getByRole("link", { name: "Nākamā lapa" }).getAttribute("href") ?? "";
+    const url = new URL(href, "http://localhost");
+    expect(url.searchParams.getAll("condition")).toEqual(["unknown"]);
+    expect(url.searchParams.getAll("family")).toEqual(["von Biron"]);
+    expect(url.searchParams.get("family_unknown")).toBe("1");
+    expect(decodeCursor(url.searchParams.get("cursor"))?.scope).toBe(
+      listingScope({
+        q: null,
+        filters: {
+          ...EMPTY_FILTERS,
+          conditions: ["unknown"],
+          families: ["von Biron"],
+          familyUnknown: true,
+        },
+      }),
+    );
+  });
+
+  it("walks every page of a multi-family selection with no duplicate and no skipped result", async () => {
+    const many: FakeRow[] = Array.from({ length: 60 }, (_, i) => ({
+      ...row(`Muiža ${String(Math.floor(i / 2)).padStart(2, "0")}`, ID(i)),
+      slug: `m-${i}`,
+      // Every third object is linked to both selected families.
+      families:
+        i % 3 === 0
+          ? [
+              { name: "von Biron", verified: true },
+              { name: "von der Pahlen", verified: true },
+            ]
+          : i % 3 === 1
+            ? [{ name: "von Biron", verified: true }]
+            : [],
+    }));
+    createDirectorySearchDataSourceFromEnv.mockReturnValue(fakeSearchSource(many));
+
+    const seen: string[] = [];
+    let params: Record<string, string | string[]> = { family: ["von Biron", "von der Pahlen"] };
+    for (let page = 0; page < 10; page += 1) {
+      document.body.innerHTML = "";
+      await renderObjectsPage(params);
+      for (const link of screen.getAllByRole("link", { name: /^Muiža/ })) {
+        seen.push(new URL(link.getAttribute("href") ?? "", "http://localhost").pathname);
+      }
+      const next = screen.queryByRole("link", { name: "Nākamā lapa" });
+      if (!next) {
+        break;
+      }
+      const url = new URL(next.getAttribute("href") ?? "", "http://localhost");
+      params = {};
+      for (const key of new Set(url.searchParams.keys())) {
+        const values = url.searchParams.getAll(key);
+        params[key] = values.length === 1 ? values[0] : values;
+      }
+    }
+
+    expect(seen).toHaveLength(40);
+    expect(new Set(seen).size).toBe(40);
+  });
+
+  it("refuses a cursor once a new filter changes: first page, with a notice", async () => {
+    const { encodeCursor } = await import("@/lib/directory/cursor");
+    const { listingScope } = await import("@/lib/directory/filters");
+    const search = fakeSearchSource(fixture());
+    createDirectorySearchDataSourceFromEnv.mockReturnValue(search);
+    document.body.innerHTML = "";
+    const staleCursor = encodeCursor({
+      name: "Alfa pils",
+      id: ID(1),
+      scope: listingScope({ q: null, filters: { ...EMPTY_FILTERS, conditions: ["class_a"] } }),
+    });
+
+    await renderObjectsPage({ condition: ["class_a", "unknown"], cursor: staleCursor });
+
+    expect(search.calls[0].after).toBeNull();
+    expect(screen.getByText(/saite uz šo lapu bija nederīga/i)).toBeInTheDocument();
+  });
+
+  it("offers clearing the filters while keeping the search when nothing matches", async () => {
+    await namesFor({ q: "drupas", ownership: "private" });
+
+    expect(
+      screen.getByRole("heading", { name: /neviens objekts neatbilst izvēlētajiem filtriem/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/nezināms \/ nav reģistrēts/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Notīrīt filtrus, paturēt meklēšanu" }),
+    ).toHaveAttribute("href", "/objects?q=drupas");
+  });
+
+  it("gives result cards the new filters so the object page can link back", async () => {
+    await namesFor({ condition: "unknown", family_unknown: "1" });
+
+    const href = screen.getByRole("link", { name: "Gamma muiža" }).getAttribute("href") ?? "";
+    expect(new URL(href, "http://localhost").searchParams.get("fromFilters")).toBe(
+      "condition=unknown&family_unknown=1",
+    );
   });
 });

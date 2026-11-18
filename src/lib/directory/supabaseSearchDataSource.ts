@@ -2,7 +2,7 @@
  * Supabase-backed DirectorySearchDataSource (docs/DAY16_SEARCH_NOTES.md).
  *
  * Calls one database function, search_public_heritage_objects, through the
- * anon/publishable-key client - for a search, for filters (Day 17), or both
+ * anon/publishable-key client - for a search, for filters (Days 17-18), or both
  * at once, in one query. The query, the filters and the keyset position
  * travel as named RPC arguments - JSON values bound as function parameters - so no
  * user input is ever spliced into SQL or into a PostgREST filter string.
@@ -20,7 +20,7 @@ import type { DirectorySearchDataSource } from "./search";
 
 export const SEARCH_FUNCTION = "search_public_heritage_objects";
 
-/** The function's result row (supabase/migrations/20261114090000_directory_filters.sql). */
+/** The function's result row (supabase/migrations/20261115090000_directory_classification_filters.sql). */
 interface RawSearchRow {
   id: string;
   slug: string;
@@ -80,6 +80,13 @@ export function createSupabaseDirectorySearchDataSource(
         accommodation: filters.services.includes("accommodation"),
         catering: filters.services.includes("catering"),
         event_facilities: filters.services.includes("events"),
+        // Day 18: "unknown" travels as a value of its own (condition,
+        // ownership) or as a flag (family), so the function can tell
+        // "no filter" from "only objects where this is not recorded".
+        condition_categories: filters.conditions.length > 0 ? filters.conditions : null,
+        ownership_groups: filters.ownership.length > 0 ? filters.ownership : null,
+        historical_families: filters.families.length > 0 ? filters.families : null,
+        family_unknown: filters.familyUnknown,
         after_name: after?.name ?? null,
         after_id: after?.id ?? null,
         page_size: limit,

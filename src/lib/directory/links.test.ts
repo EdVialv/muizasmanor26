@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { encodeCursor } from "./cursor";
 import { buildDirectoryHref, buildObjectHref, parseDirectoryContext } from "./links";
+import { EMPTY_FILTERS } from "./filters";
 import { searchScope } from "./searchQuery";
 
 const TOKEN = encodeCursor({
@@ -99,6 +100,7 @@ describe("search context (Day 16)", () => {
 
 describe("filter context (Day 17)", () => {
   const filters = {
+    ...EMPTY_FILTERS,
     types: ["palace_or_castle" as const],
     regions: ["Cēsu novads"],
     access: [],
@@ -130,7 +132,13 @@ describe("filter context (Day 17)", () => {
   it("drops a cursor that belongs to different filters, keeping the listing itself", () => {
     const context = parseDirectoryContext(TOKEN, undefined, "type=palace_or_castle");
     expect(context).toEqual({
-      filters: { types: ["palace_or_castle"], regions: [], access: [], services: [] },
+      filters: {
+        ...EMPTY_FILTERS,
+        types: ["palace_or_castle"],
+        regions: [],
+        access: [],
+        services: [],
+      },
     });
   });
 

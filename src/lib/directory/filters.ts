@@ -13,10 +13,22 @@
  *   access   heritage_objects.public_access        (controlled enum)
  *   service  accommodation | catering | events     (each must be recorded true)
  *
- * Every value is validated: unknown enum values are dropped, region values
- * are trimmed, NFC-normalised and bounded in length and number, duplicates
- * are removed, and the result is put in a canonical order - so one listing
- * has exactly one URL and one cursor scope.
+ * Day 18 (docs/DAY18_CLASSIFICATION_FILTERS_NOTES.md):
+ *
+ *   condition       heritage_objects.condition_category, or `unknown` (NULL)
+ *   ownership       private | public (DATA_MODEL.md ownership groups), or
+ *                   `unknown` (ownership_type NULL)
+ *   family          a verified historical-family name, exact (free text)
+ *   family_unknown  `1`: objects with no verified family association
+ *
+ * Within the Day 18 filters "unknown" is one more OR-ed choice: selecting a
+ * known value never matches a missing one, selecting `unknown` matches only
+ * missing ones, and both together match either.
+ *
+ * Every value is validated: unknown enum values are dropped, region and
+ * family values are trimmed, NFC-normalised and bounded in length and
+ * number, duplicates are removed, and the result is put in a canonical
+ * order - so one listing has exactly one URL and one cursor scope.
  */
 
 import { normalizeSearchQuery, searchScope } from "./searchQuery";
@@ -41,28 +53,68 @@ export const PUBLIC_ACCESS_VALUES = [
 /** URL values for the three service filters, in display order. */
 export const SERVICE_VALUES = ["accommodation", "catering", "events"] as const;
 
+/** The "unknown / not recorded" choice of the condition and ownership filters. */
+export const UNKNOWN_VALUE = "unknown" as const;
+
+/** condition_category values in docs/DATA_MODEL.md order, then "unknown". */
+export const CONDITION_VALUES = [
+  "historical_site",
+  "damaged",
+  "class_b",
+  "class_a",
+  UNKNOWN_VALUE,
+] as const;
+
+/** docs/DATA_MODEL.md "Ownership filter groups", then "unknown". */
+export const OWNERSHIP_VALUES = ["private", "public", UNKNOWN_VALUE] as const;
+
 export type ObjectTypeValue = (typeof OBJECT_TYPE_VALUES)[number];
 export type PublicAccessValue = (typeof PUBLIC_ACCESS_VALUES)[number];
 export type ServiceValue = (typeof SERVICE_VALUES)[number];
+export type ConditionValue = (typeof CONDITION_VALUES)[number];
+export type OwnershipValue = (typeof OWNERSHIP_VALUES)[number];
 
 export interface DirectoryFilters {
   types: ObjectTypeValue[];
   regions: string[];
   access: PublicAccessValue[];
   services: ServiceValue[];
+  conditions: ConditionValue[];
+  ownership: OwnershipValue[];
+  families: string[];
+  /** Objects with no verified historical-family association. */
+  familyUnknown: boolean;
 }
 
 export const MAX_REGIONS = 10;
 export const MAX_REGION_LENGTH = 120;
+export const MAX_FAMILIES = 10;
+export const MAX_FAMILY_LENGTH = 120;
 
 export const FILTER_PARAM_KEYS = {
   types: "type",
   regions: "region",
   access: "access",
   services: "service",
+  conditions: "condition",
+  ownership: "ownership",
+  families: "family",
+  familyUnknown: "family_unknown",
 } as const;
 
-export const EMPTY_FILTERS: DirectoryFilters = { types: [], regions: [], access: [], services: [] };
+/** The only accepted value of family_unknown. */
+export const FAMILY_UNKNOWN_FLAG = "1";
+
+export const EMPTY_FILTERS: DirectoryFilters = {
+  types: [],
+  regions: [],
+  access: [],
+  services: [],
+  conditions: [],
+  ownership: [],
+  families: [],
+  familyUnknown: false,
+};
 
 /** A plain object of search params (Next.js page props) or a URLSearchParams. */
 export type ParamsInput =
@@ -102,6 +154,15 @@ export function normalizeRegion(raw: string): string | null {
   return value;
 }
 
+/** Family names follow the same rules as regions: stored free text, matched exactly. */
+export function normalizeFamily(raw: string): string | null {
+  const value = raw.normalize("NFC").trim();
+  if (value.length === 0 || Array.from(value).length > MAX_FAMILY_LENGTH) {
+    return null;
+  }
+  return value;
+}
+
 /** Code-point order: identical on server and browser, unlike locale collation. */
 function compareCodePoints(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
@@ -113,48 +174,93 @@ export interface ParsedFilters {
   hadInvalidValues: boolean;
 }
 
+/** Free-text values: normalised, deduplicated, code-point sorted and capped. */
+function pickTexts(values: string[], normalize: (raw: string) => string | null, max: number) {
+  const normalized = values.map(normalize);
+  const valid = [...new Set(normalized.filter((value): value is string => value !== null))].sort(
+    compareCodePoints,
+  );
+  return {
+    kept: valid.slice(0, max),
+    dropped: normalized.some((value) => value === null) || valid.length > max,
+  };
+}
+
 export function parseFilters(params: ParamsInput): ParsedFilters {
   const types = pickKnown(readAll(params, FILTER_PARAM_KEYS.types), OBJECT_TYPE_VALUES);
   const access = pickKnown(readAll(params, FILTER_PARAM_KEYS.access), PUBLIC_ACCESS_VALUES);
   const services = pickKnown(readAll(params, FILTER_PARAM_KEYS.services), SERVICE_VALUES);
-
-  const rawRegions = readAll(params, FILTER_PARAM_KEYS.regions);
-  const normalizedRegions = rawRegions.map(normalizeRegion);
-  const validRegions = [
-    ...new Set(normalizedRegions.filter((region): region is string => region !== null)),
-  ].sort(compareCodePoints);
-  const regions = validRegions.slice(0, MAX_REGIONS);
-  const regionsDropped =
-    normalizedRegions.some((region) => region === null) || validRegions.length > MAX_REGIONS;
+  const conditions = pickKnown(readAll(params, FILTER_PARAM_KEYS.conditions), CONDITION_VALUES);
+  const ownership = pickKnown(readAll(params, FILTER_PARAM_KEYS.ownership), OWNERSHIP_VALUES);
+  const regions = pickTexts(
+    readAll(params, FILTER_PARAM_KEYS.regions),
+    normalizeRegion,
+    MAX_REGIONS,
+  );
+  const families = pickTexts(
+    readAll(params, FILTER_PARAM_KEYS.families),
+    normalizeFamily,
+    MAX_FAMILIES,
+  );
+  const rawFamilyUnknown = readAll(params, FILTER_PARAM_KEYS.familyUnknown);
+  const familyUnknown = rawFamilyUnknown.includes(FAMILY_UNKNOWN_FLAG);
+  const familyUnknownDropped = rawFamilyUnknown.some((value) => value !== FAMILY_UNKNOWN_FLAG);
 
   return {
-    filters: { types: types.kept, regions, access: access.kept, services: services.kept },
-    hadInvalidValues: types.dropped || access.dropped || services.dropped || regionsDropped,
+    filters: {
+      types: types.kept,
+      regions: regions.kept,
+      access: access.kept,
+      services: services.kept,
+      conditions: conditions.kept,
+      ownership: ownership.kept,
+      families: families.kept,
+      familyUnknown,
+    },
+    hadInvalidValues:
+      types.dropped ||
+      access.dropped ||
+      services.dropped ||
+      regions.dropped ||
+      conditions.dropped ||
+      ownership.dropped ||
+      families.dropped ||
+      familyUnknownDropped,
   };
 }
 
 export function hasActiveFilters(filters: DirectoryFilters): boolean {
-  return (
-    filters.types.length > 0 ||
-    filters.regions.length > 0 ||
-    filters.access.length > 0 ||
-    filters.services.length > 0
-  );
+  return countActiveFilters(filters) > 0;
 }
 
 export function countActiveFilters(filters: DirectoryFilters): number {
   return (
-    filters.types.length + filters.regions.length + filters.access.length + filters.services.length
+    filters.types.length +
+    filters.regions.length +
+    filters.access.length +
+    filters.services.length +
+    filters.conditions.length +
+    filters.ownership.length +
+    filters.families.length +
+    (filters.familyUnknown ? 1 : 0)
   );
 }
 
 /** Canonical [key, value] pairs, in a fixed order. */
 export function filtersToEntries(filters: DirectoryFilters): Array<[string, string]> {
+  const entries = (key: string, values: readonly string[]) =>
+    values.map((value): [string, string] => [key, value]);
   return [
-    ...filters.types.map((value): [string, string] => [FILTER_PARAM_KEYS.types, value]),
-    ...filters.regions.map((value): [string, string] => [FILTER_PARAM_KEYS.regions, value]),
-    ...filters.access.map((value): [string, string] => [FILTER_PARAM_KEYS.access, value]),
-    ...filters.services.map((value): [string, string] => [FILTER_PARAM_KEYS.services, value]),
+    ...entries(FILTER_PARAM_KEYS.types, filters.types),
+    ...entries(FILTER_PARAM_KEYS.regions, filters.regions),
+    ...entries(FILTER_PARAM_KEYS.access, filters.access),
+    ...entries(FILTER_PARAM_KEYS.services, filters.services),
+    ...entries(FILTER_PARAM_KEYS.conditions, filters.conditions),
+    ...entries(FILTER_PARAM_KEYS.ownership, filters.ownership),
+    ...entries(FILTER_PARAM_KEYS.families, filters.families),
+    ...(filters.familyUnknown
+      ? [[FILTER_PARAM_KEYS.familyUnknown, FAMILY_UNKNOWN_FLAG] as [string, string]]
+      : []),
   ];
 }
 

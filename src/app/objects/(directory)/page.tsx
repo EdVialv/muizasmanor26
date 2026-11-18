@@ -169,7 +169,8 @@ export default async function ObjectsPage({
             <p>
               {listing.q ? <>Meklējot „{listing.q}”, ar </> : "Ar "}
               šiem filtriem nekas netika atrasts. Objekti, kuriem attiecīgā informācija vēl nav
-              reģistrēta, filtrētajos rezultātos netiek rādīti.
+              reģistrēta, zināmas vērtības atlasē netiek rādīti. Stāvoklim, īpašniekam un dzimtai
+              varat izvēlēties arī „Nezināms / nav reģistrēts”.
             </p>
             <p className="directoryStatusActions">
               <Link className="directoryPaginationLink" href={searchOnlyHref}>
