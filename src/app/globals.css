@@ -1359,6 +1359,12 @@ h2 {
   flex-shrink: 0;
 }
 .heroMapLink {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
   display: inline-flex;
   align-items: center;
   gap: 0.65rem;

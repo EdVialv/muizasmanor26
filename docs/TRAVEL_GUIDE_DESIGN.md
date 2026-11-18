@@ -10,7 +10,7 @@ No database migration, package change or new environment variable is introduced 
 
 ## Implemented experience
 
-- **Homepage:** a locally hosted Rundāle Palace photograph with visible attribution, prominent GET search into `/objects`, working catalogue shortcuts and clear map entry points. The old development roadmap is replaced with visitor-facing content.
+- **Homepage:** a locally hosted Rundāle Palace photograph with visible attribution, prominent GET search into `/objects`, working catalogue shortcuts and clear map entry points. “Izpētīt kartē” submits the same homepage search to `/map`, preserving the typed query even without JavaScript. The old development roadmap is replaced with visitor-facing content.
 - **Real objects:** the homepage reads the first three published directory records at request time. They are labelled as discovery suggestions, not recommendations or popularity rankings. Missing configuration, a query failure or an empty catalogue produces a link to the catalogue, never invented manor records.
 - **Shortcuts:** object type and public-access shortcuts use existing validated URL filters. The current database has municipality filters, not a historical-region taxonomy; no Vidzeme/Kurzeme classification is guessed from municipality strings.
 - **Catalogue:** shared search and list/map switch above a persistent desktop filter sidebar. Below 1024px the sidebar becomes a disclosure panel. Existing shared listing state, debounce, URL validation, pagination, no-JavaScript forms and filter semantics are retained.

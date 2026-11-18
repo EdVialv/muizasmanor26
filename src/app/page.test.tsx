@@ -29,6 +29,13 @@ describe("Discovery homepage", () => {
       "href",
       "/objects?access=open",
     );
-    expect(screen.getByRole("link", { name: "Izpētīt kartē" })).toHaveAttribute("href", "/map");
+    expect(screen.getByRole("button", { name: "Izpētīt kartē" })).toHaveAttribute(
+      "formaction",
+      "/map",
+    );
+    expect(screen.getByRole("button", { name: "Izpētīt kartē" })).toHaveAttribute(
+      "form",
+      "home-search-form",
+    );
   });
 });

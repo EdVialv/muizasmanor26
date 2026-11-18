@@ -40,7 +40,13 @@ export default function Home() {
             <br />
             Vieta vēstures izzināšanai.
           </p>
-          <form className="homeSearch" role="search" action="/objects" method="get">
+          <form
+            id="home-search-form"
+            className="homeSearch"
+            role="search"
+            action="/objects"
+            method="get"
+          >
             <label className="visuallyHidden" htmlFor="home-search">
               Meklēt muižu vai vietu
             </label>
@@ -57,9 +63,9 @@ export default function Home() {
               Meklēt <Icon name="arrow" />
             </button>
           </form>
-          <Link className="heroMapLink" href="/map">
+          <button className="heroMapLink" type="submit" form="home-search-form" formAction="/map">
             <Icon name="map" /> Izpētīt kartē <Icon name="arrow" width="18" height="18" />
-          </Link>
+          </button>
         </div>
         <p className="heroCredit">
           Rundāles pils · Foto:{" "}
