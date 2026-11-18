@@ -60,6 +60,11 @@ describe("map position in the URL (Day 20)", () => {
     });
   });
 
+  it("accepts the complete zoom range supported by configured tile providers", () => {
+    expect(parsePosition(new URLSearchParams("lat=56.9&lng=24.1&zoom=1")).position?.zoom).toBe(1);
+    expect(parsePosition(new URLSearchParams("lat=56.9&lng=24.1&zoom=22")).position?.zoom).toBe(22);
+  });
+
   it("serialises a position canonically, and the default as nothing", () => {
     expect(positionEntries({ lat: 56.614234567, lng: 24.1, zoom: 12 })).toEqual([
       ["lat", "56.61423"],

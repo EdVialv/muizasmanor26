@@ -34,7 +34,7 @@ Parameters always appear in the order listed.
 | `family_unknown` | "not recorded" family     | off               | Only `1`.                                                                                                         | list, map                                        |
 | `cursor`         | list page (keyset)        | page 1            | One base64url token of at most 2,048 characters that decodes and whose scope is this exact search and filter set. | list; the map carries it but does not use it     |
 | `lat`, `lng`     | map centre                | all of Latvia     | Decimals rounded to 5 places. The centre must be inside the Latvia box widened by 1°.                             | map; the list carries them but does not use them |
-| `zoom`           | map zoom                  | fitted to Latvia  | An integer from 6 to 19.                                                                                          | map; the list carries it                         |
+| `zoom`           | map zoom                  | fitted to Latvia  | An integer from 1 to 22, matching the supported tile-provider range.                                              | map; the list carries it                         |
 
 The listing parameters (`q` to `family_unknown`) are unchanged from Days 16–18. Every existing link keeps working.
 
@@ -156,7 +156,7 @@ A cursor is valid only for the listing it was issued for. Its scope is an FNV-1a
 
 ## Verification
 
-- **Gate:** format, lint, typecheck, tests (52 files, 549 tests), build, typecheck after build and `npm audit --omit=dev` (0 vulnerabilities) all pass.
+- **Gate:** format, lint, typecheck, tests (52 files, 555 tests), build, typecheck after build and `npm audit --omit=dev` (0 vulnerabilities) all pass.
 - **Unit and integration tests** cover:
   - parsing and serialising every parameter, including unknown filter values;
   - canonical order, defaults, duplicates and invalid, repeated or oversized input;
@@ -192,6 +192,7 @@ A cursor is valid only for the listing it was issued for. Its scope is an FNV-1a
 1. **Day 19 fixes restored.** The branch now includes `443dd77` itself: `useMapData` aborts and invalidates an older request as soon as the intended request URL changes (before the debounce expires); `tileConfig` rejects unsupported placeholders (only `{z}`, `{x}`, `{y}`, `{s}`, `{r}`) and malformed braces; `LeafletMap` keeps `minZoom <= maxZoom` for providers with a low maximum zoom. Its regression tests are included. The Day 20 commits were rebased onto it rather than cherry-picking it onto the old base: the owner's Day 19 commits have the same tree as the old base, so the code is identical either way, and the branch no longer carries a duplicate copy of Day 19.
 2. **Search history after blur.** Leaving the field used to end the typing burst while a debounced search was still pending; that search then fired, started a new burst, and the next separate search replaced its history entry. Blur now commits the pending search in the current epoch (through `commit()`, which cancels the timer) and then ends the burst. Back/Forward safeguards are unchanged: after Back/Forward the timer is already cancelled, so blur commits nothing.
 3. **Back/Forward while a landing is unsynced** (found by the new regression test). After popstate, the provider adopted any URL that differed from the last _synced_ URL. If one of our navigations had landed but was not yet synced (another transition still pending), that landing was adopted instead of the restored URL. The provider now compares with the URL shown when popstate fired.
+4. **Provider zoom range.** Day 19 accepts tile providers with maximum zoom 1–22, but the first Day 20 URL model accepted only 6–19. At zoom 20–22 (or after clamping to a provider below zoom 6), `currentPosition()` therefore returned null and the shared URL could retain or lose the wrong position. URL positions now accept the full supported 1–22 range; Leaflet still clamps each link to the configured map range and the URL is corrected to the zoom actually shown.
 
 ## Limitations and decisions for review
 

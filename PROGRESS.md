@@ -77,8 +77,9 @@ Copy this template to the top of **Session history** before ending a session.
   - Restored the Day 19 fixes by rebasing the Day 20 commits onto `443dd77` (no conflicts; the old base had the same tree as `9b43948`): immediate abort/invalidation in `useMapData`, strict tile templates, `minZoom <= maxZoom`, and their regression tests.
   - Search history: blur now commits a pending debounced search in the current epoch before ending the typing burst, so a later separate search adds its own entry.
   - Back/Forward: after popstate the provider follows the restored URL, or any URL change since the event, instead of any URL differing from the last synced one (which could adopt one of our unsynced landings). Found by the new regression test.
+  - URL map positions now accept zoom 1–22, matching Day 19's supported tile-provider range; this keeps copied/restored positions valid for providers below 6 or above 19.
   - Regression tests for both; docs updated ("Corrections after review").
-- **Verification:** `npm ci`, format, lint, typecheck, tests (52 files, 554 tests), build, `npm audit --omit=dev` (0) and `git diff --check` — passed. Browser (Chromium): blur-before-debounce reproduction 12/12 (desktop and mobile), Day 20 66/66, Day 19 22/22, Day 17 27/27 and 19/19, Day 18 27/27 and 6/6.
+- **Verification:** `npm ci`, format, lint, typecheck, tests (52 files, 555 tests), build, `npm audit --omit=dev` (0) and `git diff --check` — passed. Browser (Chromium): blur-before-debounce reproduction 12/12 (desktop and mobile), Day 20 66/66, Day 19 22/22, Day 17 27/27 and 19/19, Day 18 27/27 and 6/6.
 - **Next exact action:** Codex reviews the corrected Day 20; design integration with PR #44 follows separately.
 - **Handoff state:** committed on `claude/day20-url-state`, not pushed; awaiting review
 

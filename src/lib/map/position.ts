@@ -22,8 +22,11 @@ export interface MapPosition {
 }
 
 export const POSITION_PARAM_KEYS = { lat: "lat", lng: "lng", zoom: "zoom" } as const;
-export const MIN_POSITION_ZOOM = 6;
-export const MAX_POSITION_ZOOM = 19;
+// Match the complete range accepted for MAP_TILE_MAX_ZOOM. A particular
+// map may support less; Leaflet clamps a restored link to that map's range
+// and the provider then replaces the URL with the zoom actually shown.
+export const MIN_POSITION_ZOOM = 1;
+export const MAX_POSITION_ZOOM = 22;
 /** How far (degrees) outside the Latvia box a centre may be: room to pan around the border. */
 export const POSITION_MARGIN = 1;
 
