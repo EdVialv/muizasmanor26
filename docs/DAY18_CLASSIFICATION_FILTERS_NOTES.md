@@ -169,10 +169,41 @@ These figures are from the second review's final migration, freshly applied. Ear
    - "Privāts (privātpersona vai privāts juridiskais subjekts)" and "Publisks (pašvaldība vai valsts)";
    - "Stāvoklis", "Pašreizējais īpašnieks", "Vēsturiskā īpašnieku dzimta" and the chip wording.
 
-## Verification
+## Corrections after Codex review (second round)
+
+Codex reviewed the Day 18 branch, which had been built on the _uncorrected_ Day 17, and asked for four fixes.
+
+1. **Cross-control URL race.**
+   - Day 18 is now rebased onto the corrected Day 17, so the three new filter groups and the family picker change the listing only through the shared `DirectoryListingProvider`.
+   - The provider no longer depends on navigations completing in order. An older target settling last is corrected back to the newest listing with `router.replace()`; see the Day 17 notes.
+2. **No-JavaScript search form.** It carries `condition`, `ownership`, `family` and `family_unknown` as well as the Day 17 parameters. They come from `filtersToEntries()`, so they are canonical, repeated where needed, and have no invalid values and no cursor.
+3. **One canonical family name**, end to end; see "Canonical family names".
+4. **Trust boundary documented accurately.** `public_directory_historical_families` is `SECURITY DEFINER`. The code comments (`familyOptions.ts`, the route handler) and this file now say that RLS does not filter it, and that its own SQL is the boundary.
+
+Also: `next` and `eslint-config-next` went from 16.4.3 to 16.4.6, in a separate commit on the Day 17 branch. Advisories published since `f3311e7` made `next build` and `npm audit --omit=dev` fail on 16.4.3, on `main` too.
+
+### Regression tests added in this round
+
+- **`src/components/DirectoryListingProvider.test.tsx`** (integration: search field, filter panel and family picker under one provider; navigations complete when and in the order the test chooses):
+  - a search, then a condition at once, with the newer navigation landing first and the older last; the stale landing is corrected;
+  - an ownership change, then a committed search;
+  - a family picked in the picker while a search is in flight, then "family not recorded" and a new search, landing out of order;
+  - a debounced search firing after a Day 18 filter;
+  - the server-rendered, unhydrated search form carrying all eight filter parameters (repeated, canonical, invalid values and cursor absent), and the URL a native GET submission produces.
+- **`src/lib/directory/filters.test.ts`:**
+  - `normalizeFamily()` against the same table of cases as the SQL test (padding, tab/newline, decomposed, NBSP, ideographic space, BOM, em space, paragraph separator, inner spaces kept, blanks);
+  - several spellings of one name giving one URL value.
+- **`supabase/tests/directory_family_names.test.sql`** (new; transaction rolled back; run only on a disposable local database):
+  - the `canonical_family_name()` table;
+  - padded, decomposed+tab, clean and duplicate-on-one-object names giving **one option with a merged distinct-object count**, also when found by an alternate spelling;
+  - no option ever non-canonical;
+  - matching from any spelling of the name, an object with two equivalent links returned once, and a blank selection matching nothing;
+  - unverified-only, draft and blank-named links handled correctly for "not recorded".
+
+  On the previous migration the same assertions fail ("3 rows, count 1").
 
 - **Quality gate.** `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` and typecheck after the build passed. `npm audit --omit=dev` found 0 vulnerabilities.
-  - Test counts are in `PROGRESS.md`.
+  - 42 test files, 462 tests (432 at first delivery; the rest come from the Day 17 corrections and this round). `git diff --check` is clean from `f3311e7`.
   - The gate ran on Node 22.23.4 (the repo asks for ≥ 24; npm only warns).
 - **Unit and component tests:**
   - each new filter on its own;
@@ -186,10 +217,20 @@ These figures are from the second review's final migration, freshly applied. Ear
   - URL round-trips, invalid and obsolete values, bounds and `NFC` duplicates;
   - chips, clearing (keeping the search) and the picker's keyboard, mouse, stale-answer, empty, capped and failure states;
   - the route handler's bounds and generic errors.
-- **SQL against a local database** (886 published realistic objects, Day 17 + Day 18 fixtures and one draft):
+- **SQL regression test** `supabase/tests/directory_family_names.test.sql` — passed on a fresh local database with all seven migrations.
+- **SQL against a local database** (886 published realistic objects, Day 17 + Day 18 fixtures and one draft; re-run after the second round):
   - 23 cases were walked page by page as `anon` and equalled the ground truth, in order and without duplicates. Examples: condition `class_a` 88; unknown 528; ownership private 169; public + unknown 717; family Ābele 27; Ābele OR Šteins 51; family unknown 652; three-way AND 12.
   - Unverified-only and draft-only family names return 0, and a draft matching every filter is never returned.
   - Options exclude draft and unverified names, alternate spellings and diacritics match (`kenin`, `König`), and `%` is literal.
+- **Browser, second round** (production build with Next 16.4.6):
+  - **6 of 6** new checks passed:
+    - a delayed search, then "family not recorded";
+    - a delayed condition, then a search;
+    - a family picked during a delayed search — each kept both, and results equalled the database;
+    - padded and decomposed stored names gave one option (`Testa dzimta Ābele (29)`) and their objects were found;
+    - a no-JavaScript search kept all eight filter parameters and dropped the cursor;
+    - Back/Forward restored search + ownership.
+  - The 19 Day 17 race and no-JavaScript checks and the 27 checks below were re-run: **19/19 and 27/27** passed.
 - **Browser** (Playwright, production build → local PostgREST → local database): **27 of 27 checks passed.**
   - Every filter in the UI equalled the database across all pages, including search + type + condition + ownership + family + unknown together.
   - The picker found a family by its alternate spelling and worked from the keyboard, with a visible 3 px focus outline.
@@ -210,7 +251,8 @@ These figures are from the second review's final migration, freshly applied. Ear
 ## Known limitations
 
 - On real data the three filters' known values return nothing until editors record condition, ownership and verified families. Only "Nezināms / nav reģistrēts" returns objects.
-- Family spelling variants are separate options until a family registry or normalisation exists.
+- Genuinely different family spellings (not just whitespace or Unicode composition) remain separate options until a family registry exists.
+- `supabase/tests/` is plain SQL run with `psql`; there is no automated database test runner or CI job for it yet.
 - Family options group every verified link per call: ~7 ms at 3,888 links locally, with a 60 s cache.
 - Family options are ordered by the database collation before the first 20 are taken, then re-sorted in Latvian order for display. With more than 20 matches, which names make the cut depends on that collation.
 - The family picker needs JavaScript; without it, chosen families are kept but new ones cannot be added.

@@ -68,6 +68,34 @@ Copy this template to the top of **Session history** before ending a session.
 
 ## Session history
 
+### 2026-11-18 Europe/Riga — Claude Code (Day 18, second correction round)
+
+- **Issue:** [#9](https://github.com/EdVialv/muizasmanor26/issues/9)
+- **Branch:** `claude/day18-condition-ownership-family`, rebased onto the corrected Day 17 branch. Both are delivered in one full bundle from `main` `f3311e7`.
+- **Completed:**
+  - Day 18 now uses the shared listing state: all filter groups and the family picker go through `DirectoryListingProvider`, which also survives out-of-order completion.
+  - The no-JavaScript search form keeps all eight filter parameters.
+  - Family names are canonical end to end: a new `canonical_family_name()` (NFC + the JavaScript trim set) is used by the options RPC (one option, merged count), the matching RPC (through an expression index) and its input. It is identical to `normalizeFamily()`. No data is rewritten.
+  - The `SECURITY DEFINER` trust boundary of `public_directory_historical_families` is documented accurately.
+- **Files changed:**
+  - `supabase/migrations/20261115090000_directory_classification_filters.sql` (still unapplied; same order);
+  - `supabase/tests/directory_family_names.test.sql` (new);
+  - `src/lib/directory/filters.ts`, `familyOptions.ts`, `src/app/api/directory/families/route.ts`;
+  - `src/components/DirectoryFilterPanel.tsx`;
+  - tests;
+  - `docs/DAY18_CLASSIFICATION_FILTERS_NOTES.md`, `docs/DATA_MODEL.md`.
+- **Verification:**
+  - `npm run format:check`, `lint`, `typecheck`, `npm test -- --run` (42 files, 462 tests), `build` and `npm audit --omit=dev` (0) — passed. `git diff --check` is clean.
+  - The SQL regression test passed. The 23 SQL ground-truth walks passed.
+  - Browser: 6/6 new checks, 19/19 Day 17 checks and 27/27 Day 18 checks passed.
+  - Timings were re-measured; see the notes.
+  - No migration was applied to any shared environment, and nothing was written to Supabase.
+- **Next exact action:**
+  - Codex: review `claude/day17-directory-filters`, which includes the separate Next 16.4.6 bump commit, then `claude/day18-condition-ownership-family`. Merge them in that order.
+  - Apply the Day 15–18 migrations to `muizasmanor26-dev` in order.
+  - Run `supabase/tests/directory_family_names.test.sql` there only if it is disposable.
+- **Handoff state:** committed, not pushed (bundle); awaiting review
+
 ### 2026-11-18 Europe/Riga — Claude Code (Day 17, second correction round)
 
 - **Issue:** [#9](https://github.com/EdVialv/muizasmanor26/issues/9). **Branch:** `claude/day17-directory-filters`.
