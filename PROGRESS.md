@@ -19,11 +19,11 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 17 implemented, awaiting Codex review
+- **Current roadmap day:** Days 17 and 18 implemented, awaiting Codex review
 - **Last completed-and-merged day:** Day 16 ([#42](https://github.com/EdVialv/muizasmanor26/pull/42), `5d15f23`)
 - **Current issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
-- **Next outcome:** Codex reviews Day 17 (`claude/day17-directory-filters`); then apply the Day 15, 16 and 17 migrations to `muizasmanor26-dev` in order, and start Day 18 condition, ownership and historical-family filters.
-- **MVP status:** Days 1–16 are merged and verified. Day 14 added object pages, Day 15 added the first visual alpha and its image/access migration, and Day 16 added indexed multilingual search and its search migration. The two new migrations remain unapplied to the real development database. The real dataset remains non-destructive: no Day 11 row was bulk-staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
+- **Next outcome:** Codex reviews Day 17 (`claude/day17-directory-filters`), then Day 18 (`claude/day18-condition-ownership-family`, stacked on Day 17). After that, apply the Day 15–18 migrations to `muizasmanor26-dev` in order and start Day 19 (map).
+- **MVP status:** Days 1–16 are merged and verified; Days 17–18 (filters) await review. Day 14 added object pages, Day 15 added the first visual alpha and its image/access migration, and Day 16 added indexed multilingual search and its search migration. The two new migrations remain unapplied to the real development database. The real dataset remains non-destructive: no Day 11 row was bulk-staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
@@ -32,11 +32,11 @@ Update this section when a session starts. Only one write-enabled session should
 
 | Field            | Current value                                           |
 | ---------------- | ------------------------------------------------------- |
-| Status           | Day 17 corrections awaiting Codex review                |
+| Status           | Days 17 and 18 awaiting Codex review                    |
 | Agent            | Claude Code (session ended)                             |
 | Issue            | #9                                                      |
-| Branch           | `claude/day17-directory-filters`                        |
-| Session goal     | Build object-type, region, access and service filters   |
+| Branch           | `claude/day18-condition-ownership-family` (on Day 17)   |
+| Session goal     | Condition, ownership and historical-family filters      |
 | Started          | 2026-11-13                                              |
 | Expected handoff | Tested, URL-synchronised filters ready for Codex review |
 
@@ -76,6 +76,50 @@ Copy this template to the top of **Session history** before ending a session.
 - **Verification (with the bump):** format, lint, typecheck, 394 tests, build and `npm audit --omit=dev` (0) — passed. No Supabase migration or write.
 - **Next exact action:** Codex reviews Day 17 together with the rebased Day 18 branch.
 - **Handoff state:** committed, not pushed (bundle); awaiting review
+
+### 2026-11-13 Europe/Riga — Claude Code (Day 18)
+
+- **Issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
+- **Branch:** `claude/day18-condition-ownership-family`. It is based on the Day 17 commit `1c09a36`, because Day 17 was not yet reviewed or merged: `main` is still `f3311e7`.
+- **Pull request:** not opened (this session cannot push; delivered as `muizasmanor26-day18.bundle`, which needs `1c09a36`).
+- **Session goal:** Condition, ownership and historical-family filters with explicit handling of missing data.
+- **Completed:**
+  - Mapped the filters to the schema:
+    - condition → `condition_category`;
+    - ownership → `ownership_type` through the documented private/public groups;
+    - family → `object_historical_owner_families`, verified links only, identified by `family_name`.
+  - Each filter has a "Nezināms / nav reģistrēts" choice matching `NULL` or "no verified link". Known values never match missing ones, and known + unknown returns either group.
+  - Wrote one unapplied migration:
+    - the search function and its ids-only helper, recreated with the new filters; family matches are a set computed once, so there are no duplicates and no per-result queries;
+    - a bounded `SECURITY DEFINER` family-options function;
+    - one partial index on verified family links.
+  - URL model: `condition`, `ownership`, `family` and `family_unknown=1`, validated, deduplicated, bounded and canonical. They are part of the cursor scope; Day 17-only URLs are unchanged.
+  - UI: three fieldsets in the existing panel, an accessible searchable family picker backed by `GET /api/directory/families` (at most 20 per request), chips, and clearing that covers the new filters while keeping the search.
+- **Files changed:**
+  - `supabase/migrations/20261115090000_directory_classification_filters.sql` — new.
+  - New, with tests: `src/lib/directory/familyOptions.ts`, `src/app/api/directory/families/route.ts`, `src/components/DirectoryFamilyPicker.tsx`.
+  - Modified, with tests: `src/lib/directory/filters.ts`, `labels.ts`, `supabaseSearchDataSource.ts`, `src/components/DirectoryFilterPanel.tsx`, `src/app/objects/(directory)/page.tsx`.
+  - `src/app/globals.css` — combobox styles.
+  - `docs/DAY18_CLASSIFICATION_FILTERS_NOTES.md` and `docs/day18-screenshots/` — new.
+  - `docs/DATA_MODEL.md`, `TODO.md`, `PROGRESS.md`.
+- **Verification:**
+  - `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run build` and typecheck after the build — passed.
+  - `npm test` — passed, 41 files, 432 tests (379 → 432).
+  - `npm audit --omit=dev` — 0 vulnerabilities.
+  - 23 local SQL ground-truth walks — passed.
+  - 27/27 Playwright checks against a local PostgREST — passed.
+  - Timed locally at 10,643 published objects (sparse and dense fixtures), with the final migration freshly applied. Details are in the notes.
+  - Run on Node 22.23.4.
+  - Not run: anything against the real Supabase project.
+- **Decisions:** see `docs/DAY18_CLASSIFICATION_FILTERS_NOTES.md` "Decisions requiring Codex review" (9). The most important are the ownership groups, verified-only family links, the `SECURITY DEFINER` options function, and `family_unknown` as its own parameter.
+- **Blockers or risks:**
+  - The branch is stacked on unreviewed Day 17.
+  - The migration replaces the search signature again: apply it and deploy the code together.
+  - On real data, known values return nothing until editors record condition, ownership and verified families.
+  - Family options take ~7 ms at 3,888 links (cached for 60 s).
+- **Next exact action:**
+  - Codex: review Day 17, then Day 18 (rebase if Day 17 changes). Apply the Day 15–18 migrations to `muizasmanor26-dev` in order, then run `VACUUM ANALYZE heritage_objects, object_historical_owner_families`. Check one filtered listing and the family picker in a browser.
+- **Handoff state:** committed on `claude/day18-condition-ownership-family`, not pushed; awaiting review
 
 ### 2026-11-14 Europe/Riga — Claude Code (Day 17 corrections after Codex review)
 

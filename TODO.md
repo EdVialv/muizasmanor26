@@ -54,7 +54,7 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 |  15 | Add lazy responsive images, credits, sources, verification dates, contacts and accessibility text.            | [#7](https://github.com/EdVialv/muizasmanor26/issues/7)   | Claude Code + manual content review |  [x]   |
 |  16 | Implement indexed multilingual name/location search with debouncing and no-result guidance.                   | [#9](https://github.com/EdVialv/muizasmanor26/issues/9)   | Claude Code                         |  [x]   |
 |  17 | Add object-type, region, public-access, accommodation, catering and event filters.                            | [#9](https://github.com/EdVialv/muizasmanor26/issues/9)   | Claude Code                         |  [x]   |
-|  18 | Add condition, ownership and historical-family filters with verified labels and null handling.                | [#9](https://github.com/EdVialv/muizasmanor26/issues/9)   | Claude Code, Codex review           |  [ ]   |
+|  18 | Add condition, ownership and historical-family filters with verified labels and null handling.                | [#9](https://github.com/EdVialv/muizasmanor26/issues/9)   | Claude Code, Codex review           |  [x]   |
 |  19 | Integrate Leaflet with production tiles, viewport queries, clustering and list-to-map navigation.             | [#9](https://github.com/EdVialv/muizasmanor26/issues/9)   | Claude Code                         |  [ ]   |
 |  20 | Synchronise indexed filters, cursor pagination and map viewport through shareable URL parameters.             | [#9](https://github.com/EdVialv/muizasmanor26/issues/9)   | Claude Code                         |  [ ]   |
 |  21 | Configure Supabase authentication and define administrator and editor permissions.                            | [#10](https://github.com/EdVialv/muizasmanor26/issues/10) | Claude Code, Codex security review  |  [ ]   |
@@ -82,9 +82,21 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 
 **Day 16 is merged** ([#42](https://github.com/EdVialv/muizasmanor26/pull/42)): `/objects?q=…` searches published objects by name, municipality and recorded alternate/historical names, case- and diacritic-insensitively. Search is indexed, bounded, URL-driven and uses query-scoped keyset cursors. Its migration, `supabase/migrations/20261113120000_directory_search.sql`, **must be applied after the Day 15 migration and before search is deployed**. See `docs/DAY16_SEARCH_NOTES.md`.
 
-**Day 17 is implemented, awaiting Codex review** (branch `claude/day17-directory-filters`, delivered as a bundle): `/objects` filters by object type, region (stored municipality), public access and recorded accommodation, catering and event-facility services. Filters and search run in one server-side query with URL-synchronised, cursor-scoped pagination. Its migration, `supabase/migrations/20261114090000_directory_filters.sql`, adds three nullable service columns and replaces the Day 16 search function signature. It **must be applied after the Day 15 and Day 16 migrations and deployed together with the Day 17 code**. See `docs/DAY17_DIRECTORY_FILTERS_NOTES.md`.
+**Day 17 is implemented, awaiting Codex review** (branch `claude/day17-directory-filters`, `1c09a36`, delivered as a bundle): `/objects` filters by object type, region (stored municipality), public access and recorded accommodation, catering and event-facility services. Filters and search run in one server-side query with URL-synchronised, cursor-scoped pagination. Its migration, `supabase/migrations/20261114090000_directory_filters.sql`, adds three nullable service columns and replaces the Day 16 search function signature. See `docs/DAY17_DIRECTORY_FILTERS_NOTES.md`.
 
-Next: Codex reviews and merges Day 17. Then apply the Day 15, Day 16 and Day 17 migrations to `muizasmanor26-dev` in that order and verify the public pages. After that, start **Day 18** on issue [#9](https://github.com/EdVialv/muizasmanor26/issues/9): condition, ownership and historical-family filters with verified labels and null handling.
+**Day 18 is implemented, awaiting Codex review** (branch `claude/day18-condition-ownership-family`, based on the unreviewed Day 17 commit `1c09a36`, delivered as a bundle). It adds three filters, each with an explicit "Nezināms / nav reģistrēts" choice:
+
+- condition, using the stored categories;
+- ownership, using the documented private/public groups;
+- historical family, using verified links only, chosen through a bounded, searchable picker.
+
+Its migration, `supabase/migrations/20261115090000_directory_classification_filters.sql`, again replaces the search function signature. Apply it after the Day 15, 16 and 17 migrations, and deploy it together with the Day 18 code. See `docs/DAY18_CLASSIFICATION_FILTERS_NOTES.md`.
+
+Next steps:
+
+1. Codex reviews and merges Day 17, then Day 18, rebasing Day 18 if Day 17 changes.
+2. Apply the Day 15–18 migrations to `muizasmanor26-dev` in order and verify the public pages.
+3. Start **Day 19**: Leaflet with production tiles, viewport queries, clustering and list-to-map navigation.
 
 In parallel, continue the editorial data stream before any bulk staging: assign `object_type`, define municipality mapping, and review the 165 duplicate and 92 relationship candidates documented by Day 11. This does not block the visual directory implementation, but it does block promotion of the real bulk dataset.
 
