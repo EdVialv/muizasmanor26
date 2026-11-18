@@ -73,13 +73,13 @@ function isValidCursorShape(value: unknown): value is DirectoryCursor {
 }
 
 /**
- * base64url -> UTF-8 text, in Node (Buffer) and in the browser (atob +
- * TextDecoder): the Day 20 URL state validates cursors on both sides.
+ * base64url -> UTF-8 text with the web-standard atob + TextDecoder, which
+ * Node and every browser provide. Not Buffer: client bundles may get a
+ * Buffer polyfill whose base64url support differs, and a token containing
+ * "-" or "_" would then be rejected in the browser but accepted on the
+ * server (Day 20 - the URL state validates cursors on both sides).
  */
 function decodeBase64Url(raw: string): string {
-  if (typeof Buffer !== "undefined") {
-    return Buffer.from(raw, "base64url").toString("utf8");
-  }
   const base64 = raw.replace(/-/g, "+").replace(/_/g, "/");
   const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
   const binary = atob(padded);

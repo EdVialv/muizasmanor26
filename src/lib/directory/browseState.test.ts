@@ -195,6 +195,17 @@ describe("decodeCursor in the browser (no Buffer)", () => {
       scope: listingScope(listing),
     });
     expect(decodeCursor("%%%")).toBeNull();
+    // A token containing "-" and "_" (base64url-only characters) decodes even
+    // when a client bundle's Buffer polyfill lacks "base64url" - regression:
+    // the list cursor was dropped in the browser after "Nākamā lapa".
+    vi.stubGlobal("Buffer", {
+      from: () => {
+        throw new TypeError("Unknown encoding: base64url");
+      },
+    });
+    const dashed =
+      "eyJuYW1lIjoiQnVkYmVyZ2FzIG11acW-YSIsImlkIjoiMzgzMWQyNzUtNmJiMC00MTBmLWE2YzAtYWEwZjE1ZDc5YWZmIiwic2NvcGUiOiIzYjQ0MTk5MzExYzgwMDY2In0";
+    expect(decodeCursor(dashed)?.name).toBe("Budbergas muiža");
     expect(decodeCursor(btoa("\xff\xfe").replace(/=+$/, ""))).toBeNull();
   });
 });
