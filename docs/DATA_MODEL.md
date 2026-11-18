@@ -89,6 +89,8 @@ An object may be associated with several families or noble houses across differe
 - source URL or bibliographic reference;
 - verification status.
 
+Day 18 directory filters count only `verified` associations, identify a family by its exact `family_name` (there is no family registry yet) and treat an object with no verified association as "not recorded". The schema cannot record that an object had no historical family. See `docs/DAY18_CLASSIFICATION_FILTERS_NOTES.md`.
+
 ## Contact information
 
 Contact information uses a separate `object_contacts` relation because one object may have several contacts for different purposes.
