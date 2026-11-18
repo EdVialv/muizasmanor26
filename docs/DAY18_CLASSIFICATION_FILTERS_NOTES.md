@@ -19,18 +19,18 @@ The plain directory and object pages are unaffected. The migration adds no colum
 
 ## Filter-to-schema mapping
 
-| Filter (URL param)                             | Schema                                                                                                                 | Known values                                                                                                                                                                       | "Unknown / not recorded"                                     |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Condition (`condition`)                        | `heritage_objects.condition_category`, nullable enum (Day 8)                                                           | The four stored values, unchanged: `historical_site`, `damaged`, `class_b`, `class_a`, with the documented labels Vēsturiska vieta, Bojāta ēka, B klase, A klase                   | `condition=unknown` matches `condition_category IS NULL`     |
-| Ownership (`ownership`)                        | `heritage_objects.ownership_type`, nullable enum (Day 8)                                                               | The two groups defined in `DATA_MODEL.md` "Ownership filter groups" and `MVP_SCOPE.md`: `private` = `private_person` + `private_legal_entity`; `public` = `municipality` + `state` | `ownership=unknown` matches `ownership_type IS NULL`         |
-| Historical family (`family`, `family_unknown`) | `object_historical_owner_families` (one row per object–family link), only rows with `verification_status = 'verified'` | `family=<exact family_name>`; an object matches if any of its verified links has a selected name                                                                                   | `family_unknown=1` matches objects with **no verified** link |
+| Filter (URL param)                             | Schema                                                                                                                 | Known values                                                                                                                                                                       | "Unknown / not recorded"                                                           |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Condition (`condition`)                        | `heritage_objects.condition_category`, nullable enum (Day 8)                                                           | The four stored values, unchanged: `historical_site`, `damaged`, `class_b`, `class_a`, with the documented labels Vēsturiska vieta, Bojāta ēka, B klase, A klase                   | `condition=unknown` matches `condition_category IS NULL`                           |
+| Ownership (`ownership`)                        | `heritage_objects.ownership_type`, nullable enum (Day 8)                                                               | The two groups defined in `DATA_MODEL.md` "Ownership filter groups" and `MVP_SCOPE.md`: `private` = `private_person` + `private_legal_entity`; `public` = `municipality` + `state` | `ownership=unknown` matches `ownership_type IS NULL`                               |
+| Historical family (`family`, `family_unknown`) | `object_historical_owner_families` (one row per object–family link), only rows with `verification_status = 'verified'` | `family=<canonical family name>`; an object matches if any of its verified links has that canonical name                                                                           | `family_unknown=1` matches objects with **no verified** link with a non-empty name |
 
 Notes on the mapping:
 
 - **Ownership vs public access.** Ownership stays separate from the Day 17 public-access filter, and the UI says so next to the group.
 - **Verified family links only.** Day 14 object pages show only verified families. Filtering on unverified links would return objects whose pages do not show that family.
-- **Family identity.** The schema has no family registry (Day 8 decision 3), so `family_name` is the only stable identifier. Spellings that differ between objects appear as separate options, as municipalities do.
-- **Picker search.** The picker searches `alternate_spellings` too, but always applies the stored `family_name`.
+- **Family identity.** The schema has no family registry (Day 8 decision 3), so the family name is the only identifier. Every query uses its **canonical form** (see "Canonical family names" below), so stored names that differ only by surrounding whitespace or Unicode composition are one family. Genuinely different spellings still appear as separate options, as municipalities do.
+- **Picker search.** The picker searches `alternate_spellings` too, but always applies the canonical family name.
 
 ### Discrepancies with the documentation
 
@@ -58,17 +58,37 @@ Notes on the mapping:
 
 ### Database (`20261115090000_directory_classification_filters.sql`)
 
+- **`canonical_family_name(text)` (new, decision 8).** It applies Unicode NFC, then removes leading and trailing whitespace: exactly the set of characters JavaScript's `String.prototype.trim()` removes. It returns `NULL` when nothing is left, and it is immutable so it can be indexed.
 - **`private.search_published_object_keys` (recreated).** This ids-only `SECURITY DEFINER` helper takes three more pairs of arguments: condition values + unknown, ownership values + unknown, family names + unknown.
   - Each group's condition is written so that, with `force_custom_plan`, the unused branches fold away.
-  - Selected families become an id array computed once with `array_agg(distinct …)`. That array is a set, so there are no duplicates.
-  - "Unknown family" is a `NOT EXISTS` over verified links.
+  - Selected families become an id array computed once with `array_agg(distinct …)`, comparing `canonical_family_name(family_name)`. That array is a set, so there are no duplicates.
+  - "Unknown family" is a `NOT EXISTS` over verified links with a non-empty canonical name.
 - **`search_public_heritage_objects` (recreated).** Still `SECURITY INVOKER`. It also takes `condition_categories`, `ownership_groups`, `historical_families` and `family_unknown`.
   - Unknown values are dropped, and the ownership groups are expanded to stored values.
   - A group given only unusable values matches nothing.
-  - At most 50 values per array, and family names of at most 120 characters.
-- **`public_directory_historical_families(search, row_limit)`.** This feeds the family picker. It returns verified family names of published objects whose name or alternate spelling contains the search text (case- and diacritic-insensitive via `fold_search_text`), with object counts, at most 50 rows.
-  - It is `SECURITY DEFINER` (see "Performance") but hard-codes published objects and verified links, and returns only names and counts. That is less than `anon` may already read from the table under RLS.
-- **One index:** `object_historical_owner_families_verified_name_idx` on `(family_name, object_id) WHERE verification_status = 'verified'`.
+  - At most 50 values per array. Family names are canonicalised with `canonical_family_name()` and must be at most 120 characters.
+- **`public_directory_historical_families(search, row_limit)`.** This feeds the family picker. It returns **canonical** family names of published objects' verified links, one row per canonical name, whose name or alternate spelling contains the search text (case- and diacritic-insensitive via `fold_search_text`). Each row carries the number of distinct published objects, and the result has at most 50 rows. Names longer than 120 characters, which the URL parser would refuse, are not offered.
+  - **Trust boundary.** This function is **`SECURITY DEFINER`**: it runs as its owner, so **Row Level Security does not filter what it reads**. The boundary is the function's own SQL:
+    - it reads only links with `verification_status = 'verified'` whose object has `status = 'published'`;
+    - it returns only canonical names and object counts, never ids, years, sources or unverified names;
+    - its search text is a bound argument, folded and escaped before `LIKE`;
+    - it runs with `search_path = ''`.
+
+    The result is a subset of what `anon` may already read from `object_historical_owner_families` under the Day 9 RLS policy, which exposes every link of a published object, unverified ones included. It was made `SECURITY DEFINER` for performance (see "Performance"). Any change to its body must keep these limits, because RLS will not catch a mistake.
+- **One index:** `object_historical_owner_families_verified_name_idx` on `(canonical_family_name(family_name), object_id) WHERE verification_status = 'verified'`.
+
+### Canonical family names (second review)
+
+`family_name` is free text, and the schema allows values such as `"  Ābele "` or a decomposed `"A\u0304bele"`. The filters no longer rely on stored data being clean, and they rewrite nothing. There is one canonical form, and every layer uses it:
+
+| Layer                 | Canonicalisation                                                                                                                                                                  |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Database              | `canonical_family_name()` (NFC + JavaScript-trim whitespace set)                                                                                                                  |
+| Options RPC           | groups links by canonical name, canonicalising each distinct stored spelling once (a materialised CTE), so variants give **one option with one merged count of distinct objects** |
+| Browser value and URL | `normalizeFamily()` in `filters.ts` (`normalize("NFC").trim()`), the same transformation                                                                                          |
+| Matching RPC          | canonicalises its input with `canonical_family_name()` and compares it with `canonical_family_name(family_name)` through the expression index                                     |
+
+A family stored as `"  Ābele "` is therefore offered as `Ābele`, put in the URL as `family=Ābele`, and matches that object. `"Ābele"`, `"  Ābele "` and NFD `"Ābele\t"` are one option whose count is the number of distinct objects. A verified link whose name is empty after canonicalisation is not a family: it is never offered or matched, and it does not stop an object counting as "not recorded".
 
 ### Application
 
@@ -79,7 +99,7 @@ Notes on the mapping:
   - `family_unknown` accepts only `1`.
 - **`src/lib/directory/supabaseSearchDataSource.ts`.** The new values travel as bound RPC arguments; an empty group is sent as `null`.
 - **`src/lib/directory/familyOptions.ts` and `src/app/api/directory/families/route.ts`.** `GET /api/directory/families?q=…` returns at most 20 matches (21 are fetched to detect "more"), sorted in Latvian order for display.
-  - It reads through the anon-key client.
+  - It reads through the anon-key client, never a service key. The function it calls is `SECURITY DEFINER` (trust boundary above).
   - Responses are cacheable for 60 s.
   - Errors return 503 or 502 with a generic body.
 - **`src/components/DirectoryFamilyPicker.tsx`.** The WAI-ARIA combobox-with-listbox pattern:
@@ -107,36 +127,40 @@ There were two data shapes on **10,643 published objects** (the 886 realistic ob
 - **Sparse:** fixtures only on the original objects. 358 objects have a known condition, 358 a known ownership, and there are 324 verified family links on 235 objects. This is the realistic early state.
 - **Dense:** every scaled copy inherits its original's values, giving 4,307 known conditions and ownerships and 3,888 verified links on 2,820 objects.
 
-| Case                                     | Sparse  | Dense   | Dense, without the family index |
-| ---------------------------------------- | ------- | ------- | ------------------------------- |
-| condition `class_a`                      | 0.45 ms | 0.31 ms | —                               |
-| condition unknown                        | 0.27 ms | 0.30 ms | —                               |
-| condition `damaged` + unknown            | 0.30 ms | 0.29 ms | —                               |
-| ownership private                        | 0.45 ms | 0.24 ms | —                               |
-| ownership unknown                        | 0.27 ms | 0.28 ms | —                               |
-| one family                               | 0.57 ms | 1.88 ms | 2.17 ms                         |
-| rare family (3 / 36 objects)             | 0.42 ms | 0.57 ms | 1.06 ms                         |
-| two families (OR)                        | 0.71 ms | 2.08 ms | 2.39 ms                         |
-| family unknown                           | 0.38 ms | 0.95 ms | 1.71 ms                         |
-| family + unknown                         | 0.66 ms | 2.63 ms | 2.91 ms                         |
-| search + family                          | 0.62 ms | 1.91 ms | 2.21 ms                         |
-| condition + ownership + family + unknown | 0.88 ms | 2.81 ms | 3.01 ms                         |
-| no match (unknown family name)           | 0.40 ms | 0.42 ms | 0.80 ms                         |
-| family options, first 21                 | 1.43 ms | 7.04 ms | —                               |
-| family options, search "kenin"           | 1.53 ms | 6.92 ms | —                               |
+| Case                                     | Sparse  | Dense   | Dense, without the canonical-name index |
+| ---------------------------------------- | ------- | ------- | --------------------------------------- |
+| condition `class_a`                      | 0.44 ms | 0.26 ms | —                                       |
+| condition unknown                        | 0.28 ms | 0.24 ms | —                                       |
+| condition `damaged` + unknown            | 0.27 ms | 0.28 ms | —                                       |
+| ownership private                        | 0.49 ms | 0.21 ms | —                                       |
+| ownership unknown                        | 0.27 ms | 0.23 ms | —                                       |
+| one family                               | 0.60 ms | 1.35 ms | 15.86 ms                                |
+| rare family (3 / 36 objects)             | 0.43 ms | 0.64 ms | 12.75 ms                                |
+| two families (OR)                        | 0.79 ms | 1.83 ms | 18.38 ms                                |
+| family unknown                           | 0.38 ms | 1.69 ms | 14.46 ms                                |
+| family + unknown                         | 0.93 ms | 2.68 ms | 20.69 ms                                |
+| search + family                          | 0.70 ms | 1.47 ms | 10.76 ms                                |
+| condition + ownership + family + unknown | 1.17 ms | 2.91 ms | 20.84 ms                                |
+| no match (unknown family name)           | 0.43 ms | 0.44 ms | 9.83 ms                                 |
+| family options, first 21                 | 1.46 ms | 7.06 ms | 6.98 ms                                 |
+| family options, search "kenin"           | 1.56 ms | 7.17 ms | 7.08 ms                                 |
+
+These figures are from the second review's final migration, freshly applied. Earlier figures in this file's history were taken before family names were canonicalised.
 
 - **Condition and ownership** use the existing Day 9 B-tree indexes, or walk the Day 16 partial `(name_lv, id)` index. Both stay under 0.5 ms, so no index was added for them.
-- **The family index** speeds up family filters by 10–50% at 3,888 links; with a sparse family set it makes no measurable difference. It is small and partial (verified links only). It was kept because the cost of finding a family's objects without it grows with every recorded link. Codex may judge it marginal.
-- **Family options as `SECURITY INVOKER`** made the RLS policy's `EXISTS` run as a hashed scan of all 10,643 published objects on every call, at 3.1 ms and 5.5 ms (sparse). As `SECURITY DEFINER`, which folds each distinct name once, the same calls take 1.4 ms and 1.5 ms.
+- **The canonical-name expression index is required.** Without it, every family filter computed `canonical_family_name()` for every verified link: 10–21 ms per page at 3,888 links, against 0.4–2.9 ms with it. It is partial (verified links only) and replaces the earlier plain `family_name` index.
+- **No index for "not recorded".** A second partial index on `(object_id)` for verified, non-empty names was measured at 0.95 ms against 1.37 ms without it on the dense data. That gain was too small to justify another index, so it is not included.
+- **Options query shape.** Canonicalising inside a plain grouping evaluated the function per link and per sort row, taking 22–38 ms dense. Canonicalising each distinct stored spelling once, in a materialised CTE, brings it back to ~7 ms.
+- **An earlier `SECURITY INVOKER` version of the family options function** made the RLS policy's `EXISTS` run as a hashed scan of all 10,643 published objects on every call, at 3.1 ms and 5.5 ms (sparse). As `SECURITY DEFINER`, which folds each distinct name once, the same calls take 1.4 ms and 1.5 ms.
 - **Family options at dense scale** take ~7 ms, because every call groups all verified links. The route's 60 s `Cache-Control` absorbs repeats. A maintained family list would be the next step if needed; it is not built here.
 
 ## Decisions requiring Codex review
 
 1. **Ownership filters by the two documented groups**, not the four stored values.
 2. **Only verified family links count**, for matching, for "unknown" and for options, which is consistent with Day 14 object pages.
-3. **A family is identified by its exact stored `family_name`.** Variants are separate options, and the picker searches alternate spellings.
+3. **A family is identified by its canonical name** (`canonical_family_name()`: NFC + JavaScript-trim whitespace), the same in SQL, the options, the URL and matching. Genuinely different spellings remain separate options, and the picker searches alternate spellings.
 4. **"Unknown" is an explicit, OR-ed choice.** Known values never match missing ones. For families, unknown means "no verified link".
-5. **`public_directory_historical_families` is `SECURITY DEFINER`**, for the measured reason above, with hard-coded published and verified limits and only names and counts returned.
+5. **`public_directory_historical_families` is `SECURITY DEFINER`, so RLS does not apply to it.** Its own SQL is the boundary: published objects and verified links only, canonical names and counts only, `search_path = ''` (see "Trust boundary"). It was chosen for the measured performance reason above.
 6. **The family picker loads at most 20 options per request** through a new route handler (`/api/directory/families`); the list is never loaded whole.
 7. **`family_unknown=1` is a separate parameter.** Family names are free text, so a sentinel value inside `family` could collide with a real name.
 8. **One partial index** on verified family links, with a modest measured benefit.

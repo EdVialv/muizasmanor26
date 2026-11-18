@@ -29,13 +29,14 @@
 --    verification_status = 'verified' - the same rule the Day 14 object page
 --    uses to show families, so a filter never returns an object for a
 --    family its page does not show. The schema has no family registry: a
---    family is identified by its exact stored family_name.
+--    family is identified by its *canonical* name (decision 8).
 --
 -- 4. "Unknown / not recorded" is the schema's own representation of missing
 --    information, nothing else:
 --      condition  -> condition_category IS NULL
 --      ownership  -> ownership_type IS NULL
---      family     -> no verified family association
+--      family     -> no verified family association with a non-empty
+--                    (canonical) name
 --    The schema cannot record "this object had no historical family", so
 --    there is no such option; an absent association is always "not
 --    recorded". No source data is rewritten.
@@ -45,22 +46,62 @@
 --    computed once per call, so an object linked to several selected
 --    families is returned once.
 --
--- 6. One partial index, on verified family associations by family_name
+-- 6. One partial index, on verified family associations by canonical name
 --    (justified by measurement - see section 1). Condition and ownership
 --    use the existing Day 9 B-tree indexes, which also serve IS NULL.
 --
 -- 7. The family options function is SECURITY DEFINER, for the reason and
 --    with the limits given at its definition (section 2).
+--
+-- 8. One canonical family name, end to end. family_name is free text and
+--    the schema does not stop "  Ābele " or a decomposed "Ābele" being
+--    stored. Rather than rely on clean data (or rewrite it), every query
+--    compares canonical_family_name(family_name): Unicode NFC, then leading
+--    and trailing whitespace removed - exactly the characters JavaScript's
+--    String.prototype.trim() removes, so the browser's normalizeFamily()
+--    (src/lib/directory/filters.ts) produces the same string. Options are
+--    grouped by it (no duplicate options, no split counts), the matching
+--    function compares it, and the public function canonicalises its input
+--    with it. A name that is empty after canonicalisation is not a family.
+--    The index below is on the same expression.
 
 begin;
 
 -- ---------------------------------------------------------------------------
--- 1. Index (decision 6)
+-- 1. Canonical family name (decision 8) and index (decision 6)
 -- ---------------------------------------------------------------------------
 
+-- NFC, then trim the JavaScript String.prototype.trim() whitespace set:
+-- U+0009-U+000D, U+0020, U+00A0, U+1680, U+2000-U+200A, U+2028, U+2029,
+-- U+202F, U+205F, U+3000, U+FEFF. NULL when nothing is left. Immutable, so
+-- it can be indexed. Requires a UTF8 database (Supabase's encoding).
+create function canonical_family_name(input text) returns text
+  language sql
+  immutable
+  parallel safe
+  set search_path = ''
+as $$
+  select nullif(
+    pg_catalog.regexp_replace(
+      normalize(input, NFC),
+      '^[\u0009-\u000d\u0020\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+|[\u0009-\u000d\u0020\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+$',
+      '',
+      'g'
+    ),
+    ''
+  );
+$$;
+
+comment on function canonical_family_name(text) is
+  'The one canonical form of a historical-family name for directory filters: Unicode NFC, leading/trailing whitespace removed (the JavaScript String.prototype.trim() set); NULL when empty. Must stay identical to normalizeFamily() in src/lib/directory/filters.ts.';
+
+revoke all on function canonical_family_name(text) from public;
+grant execute on function canonical_family_name(text) to anon, authenticated, service_role;
+
 create index object_historical_owner_families_verified_name_idx
-  on object_historical_owner_families (family_name, object_id)
+  on object_historical_owner_families (public.canonical_family_name(family_name), object_id)
   where verification_status = 'verified';
+
 
 -- ---------------------------------------------------------------------------
 -- 2. Family options: a bounded, searchable list (decision 3)
@@ -68,8 +109,9 @@ create index object_historical_owner_families_verified_name_idx
 
 -- Verified family names of published objects whose name or an alternate
 -- spelling contains `search` (case- and diacritic-insensitive), with the
--- number of published objects for each. At most row_limit rows (1..50),
--- in the database's order of family_name.
+-- number of published objects for each, grouped by canonical name (decision
+-- 8) - so "Ābele" and "  Ābele " are one option with one count. At most
+-- row_limit rows (1..50), in the database's order of the canonical name.
 --
 -- SECURITY DEFINER (decision 7): it hard-codes status = 'published' and
 -- verification_status = 'verified', so it returns less than anon may
@@ -78,7 +120,8 @@ create index object_historical_owner_families_verified_name_idx
 -- heritage_objects was evaluated as a hashed scan of every published
 -- object on every call (measured: 3-6 ms at 10,643 objects, growing with
 -- the directory). Each distinct name and spelling is folded once, after
--- grouping, rather than once per association.
+-- grouping, rather than once per association; canonical names are
+-- computed once per distinct stored spelling.
 create function public_directory_historical_families(
   search text default null,
   row_limit integer default 20
@@ -97,19 +140,33 @@ begin
   end if;
 
   return query
-    with families as (
-      select
-        f.family_name as name,
-        count(distinct f.object_id) as objects,
-        array_agg(distinct a.spelling) filter (where a.spelling is not null) as spellings
+    with links as (
+      select f.family_name, f.object_id, f.alternate_spellings
       from public.object_historical_owner_families f
       join public.heritage_objects ho
         on ho.id = f.object_id
        and ho.status = 'published'
-      left join lateral unnest(f.alternate_spellings) as a(spelling) on true
       where f.verification_status = 'verified'
-        and btrim(f.family_name) <> ''
-      group by f.family_name
+    ),
+    -- Canonicalised once per distinct stored spelling, not once per link.
+    canonical as materialized (
+      select d.family_name, public.canonical_family_name(d.family_name) as name
+      from (select distinct l.family_name from links l) d
+    ),
+    families as (
+      select
+        c.name,
+        count(distinct l.object_id) as objects,
+        array_agg(distinct a.spelling) filter (where a.spelling is not null) as spellings
+      from links l
+      join canonical c
+        on c.family_name = l.family_name
+      left join lateral unnest(l.alternate_spellings) as a(spelling) on true
+      where c.name is not null
+        -- A name the URL parser would refuse (over 120 characters) could
+        -- never be selected; do not offer it.
+        and pg_catalog.length(c.name) <= 120
+      group by c.name
     )
     select fam.name, fam.objects
     from families fam
@@ -188,7 +245,7 @@ begin
         on fo.id = f.object_id
        and fo.status = 'published'
       where f.verification_status = 'verified'
-        and f.family_name = any (family_names);
+        and public.canonical_family_name(f.family_name) = any (family_names);
   end if;
 
   return query
@@ -226,6 +283,7 @@ begin
             from public.object_historical_owner_families nf
             where nf.object_id = ho.id
               and nf.verification_status = 'verified'
+              and public.canonical_family_name(nf.family_name) is not null
           )
         )
       )
@@ -254,7 +312,7 @@ grant execute on function private.search_published_object_keys(text, text, text,
 -- As Day 17, plus:
 --   condition_categories  condition_category values and/or 'unknown'
 --   ownership_groups      'private', 'public' and/or 'unknown' (decision 2)
---   historical_families   verified family names, matched exactly
+--   historical_families   verified family names, compared by canonical name
 --   family_unknown        true = also match objects with no verified family
 -- Unknown values are ignored; a category given only unusable values
 -- matches nothing. At most 50 values per array; family names at most 120
@@ -351,10 +409,12 @@ begin
     where o.value is not null;
   ownership_unknown := coalesce('unknown' = any (ownership_groups[1:50]), false);
 
-  select array_agg(distinct btrim(v.value))
+  -- Canonicalised exactly as stored names are compared (decision 8).
+  select array_agg(distinct canonical_family_name(v.value))
     into family_filter
     from (select unnest(historical_families[1:50]) as value) v
-    where btrim(v.value) <> '' and length(v.value) <= 120;
+    where canonical_family_name(v.value) is not null
+      and length(canonical_family_name(v.value)) <= 120;
 
   -- A category the caller asked to filter on, but with no usable value,
   -- matches nothing (an empty array, not NULL) - never silently "all".

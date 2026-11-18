@@ -154,7 +154,14 @@ export function normalizeRegion(raw: string): string | null {
   return value;
 }
 
-/** Family names follow the same rules as regions: stored free text, matched exactly. */
+/**
+ * The canonical family name: Unicode NFC, then leading and trailing
+ * whitespace removed (String.prototype.trim()). This must stay identical to
+ * the database's canonical_family_name() (Day 18 migration, decision 8),
+ * which every family query compares - so a name stored as "  Ābele " is
+ * offered, put in the URL and matched as "Ābele". Null when empty or too
+ * long.
+ */
 export function normalizeFamily(raw: string): string | null {
   const value = raw.normalize("NFC").trim();
   if (value.length === 0 || Array.from(value).length > MAX_FAMILY_LENGTH) {

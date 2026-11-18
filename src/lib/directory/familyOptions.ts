@@ -1,9 +1,16 @@
 /**
  * Historical-family filter options (docs/DAY18_CLASSIFICATION_FILTERS_NOTES.md):
  * verified family names of published objects, searched by name or alternate
- * spelling in the SECURITY INVOKER function
- * public_directory_historical_families() through the anon-key client - so
- * RLS decides what is counted.
+ * spelling, from the database function public_directory_historical_families()
+ * called through the anon-key client.
+ *
+ * Trust boundary: that function is SECURITY DEFINER, so Row Level Security
+ * does NOT filter what it reads. Its own SQL is the boundary: it hard-codes
+ * status = 'published' and verification_status = 'verified' and returns
+ * only canonical family names and object counts - a subset of what RLS
+ * already lets anon read from object_historical_owner_families (see the
+ * Day 18 migration, decision 7). Names arrive in canonical form
+ * (canonical_family_name(), decision 8), one row per name.
  *
  * The list can grow to hundreds of names, so it is never loaded whole: the
  * picker asks for at most FAMILY_OPTIONS_LIMIT matches of what the visitor

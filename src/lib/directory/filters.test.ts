@@ -13,6 +13,7 @@ import {
   isPlainDirectory,
   listingKey,
   listingScope,
+  normalizeFamily,
   parseFilters,
   parseListing,
 } from "./filters";
@@ -337,5 +338,34 @@ describe("condition, ownership and family parameters (Day 18)", () => {
   it("leaves a Day 17-only listing's URL and cursor scope unchanged", () => {
     const listing = { q: null, filters: { ...EMPTY_FILTERS, types: ["manor_estate" as const] } };
     expect(buildListingHref("/objects", listing)).toBe("/objects?type=manor_estate");
+  });
+});
+
+describe("normalizeFamily matches the database's canonical_family_name()", () => {
+  // The same table of cases is asserted in SQL in
+  // supabase/tests/directory_family_names.test.sql.
+  it.each([
+    ["Ābele", "Ābele"],
+    ["  Ābele ", "Ābele"],
+    ["\tĀbele\n", "Ābele"],
+    ["A\u0304bele", "Ābele"],
+    ["\u00a0Ābele\u3000", "Ābele"],
+    ["\ufeff\u2003Ābele\u2029", "Ābele"],
+    ["von der  Pahlen", "von der  Pahlen"],
+    ["   ", null],
+    ["", null],
+  ])("%j -> %j", (input, expected) => {
+    expect(normalizeFamily(input)).toBe(expected);
+  });
+
+  it("puts every spelling of one canonical name into the URL once", () => {
+    const { filters } = parseFilters(
+      new URLSearchParams([
+        ["family", "  Ābele "],
+        ["family", "A\u0304bele\t"],
+        ["family", "\u00a0Ābele"],
+      ]),
+    );
+    expect(filters.families).toEqual(["Ābele"]);
   });
 });

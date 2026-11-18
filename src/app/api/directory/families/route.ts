@@ -14,8 +14,11 @@ import {
  * names matching q, with their published-object counts, for the directory's
  * family picker (docs/DAY18_CLASSIFICATION_FILTERS_NOTES.md).
  *
- * Read through the anon-key client, so Row Level Security applies; the
- * response holds only names and counts. Errors return a status and a
+ * Read through the anon-key client (never a service key). The function it
+ * calls is SECURITY DEFINER: RLS does not filter its reads, and its own SQL
+ * limits it to published objects and verified links - see
+ * src/lib/directory/familyOptions.ts. The response holds only names and
+ * counts. Errors return a status and a
  * generic body - never the underlying message.
  */
 export async function GET(request: NextRequest) {

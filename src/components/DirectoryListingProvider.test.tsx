@@ -392,4 +392,149 @@ describe("no-JavaScript search form", () => {
     expect(submittedUrl(form)).toBe("/objects?q=pils");
     expect(form.querySelector("a.directorySearchClear")?.getAttribute("href")).toBe("/objects");
   });
+
+  it("carries the Day 18 filters too: condition, ownership, family and family_unknown (no hydration)", () => {
+    const form = serverForm(
+      "q=pils&family=von Biron&condition=unknown&type=manor_estate&ownership=public&region=Cēsu novads" +
+        "&family=  Ābele &condition=class_a&access=open&service=catering&ownership=unknown" +
+        "&family_unknown=1&condition=ruined&ownership=private_person&cursor=abc",
+    );
+
+    expect(hidden(form)).toEqual([
+      ["type", "manor_estate"],
+      ["region", "Cēsu novads"],
+      ["access", "open"],
+      ["service", "catering"],
+      ["condition", "class_a"],
+      ["condition", "unknown"],
+      ["ownership", "public"],
+      ["ownership", "unknown"],
+      ["family", "von Biron"],
+      ["family", "Ābele"],
+      ["family_unknown", "1"],
+    ]);
+    expect(form.querySelector('[name="cursor"]')).toBeNull();
+
+    (form.querySelector('input[name="q"]') as HTMLInputElement).value = "muiža";
+    expect(submittedUrl(form)).toBe(
+      "/objects?q=mui%C5%BEa&type=manor_estate&region=C%C4%93su+novads&access=open&service=catering" +
+        "&condition=class_a&condition=unknown&ownership=public&ownership=unknown" +
+        "&family=von+Biron&family=%C4%80bele&family_unknown=1",
+    );
+  });
+});
+
+describe("shared listing state with the Day 18 filters", () => {
+  const fetchMock = vi.fn();
+
+  beforeEach(() => {
+    router.push.mockClear();
+    router.replace.mockClear();
+    router.inFlight.length = 0;
+    navigation.search = "";
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({ options: [{ value: "von der Pahlen", count: 4 }], hasMore: false }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+  });
+
+  afterEach(async () => {
+    await act(async () => {
+      for (const navigationInFlight of router.inFlight) {
+        navigationInFlight.settle();
+      }
+    });
+    vi.unstubAllGlobals();
+  });
+
+  const unknownIn = (group: string) =>
+    within(screen.getByRole("group", { name: group })).getByRole("checkbox", {
+      name: /nav reģistrēt/,
+    });
+
+  async function pickFamily(text: string, option: string) {
+    fireEvent.change(screen.getByRole("combobox", { name: "Meklēt un pievienot dzimtu" }), {
+      target: { value: text },
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    });
+    fireEvent.mouseDown(await screen.findByRole("option", { name: option }));
+  }
+
+  it("type a search, then at once select a condition: both survive any landing order", async () => {
+    const { rerender } = render(tree());
+
+    search("muiža");
+    fireEvent.click(unknownIn("Stāvoklis"));
+    expect(pushed()).toEqual(["/objects?q=mui%C5%BEa", "/objects?q=mui%C5%BEa&condition=unknown"]);
+
+    // The newer navigation lands first, the older search last.
+    await land(1, rerender);
+    await land(0, rerender);
+    expect(searchInput().value).toBe("muiža");
+    expect(unknownIn("Stāvoklis")).toBeChecked();
+    // That stale landing is corrected back to the newest listing...
+    expect(router.replace).toHaveBeenLastCalledWith("/objects?q=mui%C5%BEa&condition=unknown", {
+      scroll: false,
+    });
+    // ...and once the correction lands, everything agrees.
+    await land(2, rerender);
+    expect(navigation.search).toBe("q=mui%C5%BEa&condition=unknown");
+    expect(searchInput().value).toBe("muiža");
+    expect(unknownIn("Stāvoklis")).toBeChecked();
+  });
+
+  it("select ownership, then at once commit a search: both survive any landing order", async () => {
+    const { rerender } = render(tree());
+
+    fireEvent.click(box("Publisks (pašvaldība vai valsts)"));
+    search("pils");
+    expect(pushed()).toEqual(["/objects?ownership=public", "/objects?q=pils&ownership=public"]);
+
+    await land(0, rerender);
+    expect(searchInput().value).toBe("pils");
+    expect(box("Publisks (pašvaldība vai valsts)")).toBeChecked();
+    await land(1, rerender);
+    expect(searchInput().value).toBe("pils");
+    expect(box("Publisks (pašvaldība vai valsts)")).toBeChecked();
+  });
+
+  it("a family picked while a search is in flight keeps the search, and vice versa", async () => {
+    const { rerender } = render(tree());
+
+    search("rund");
+    await pickFamily("pahlen", "von der Pahlen (4)");
+    expect(pushed().at(-1)).toBe("/objects?q=rund&family=von+der+Pahlen");
+
+    fireEvent.click(unknownIn("Vēsturiskā īpašnieku dzimta"));
+    search("muiža");
+    expect(pushed().at(-1)).toBe("/objects?q=mui%C5%BEa&family=von+der+Pahlen&family_unknown=1");
+
+    for (const index of [3, 0, 2, 1]) {
+      await land(index, rerender);
+      expect(searchInput().value).toBe("muiža");
+      expect(
+        screen.getByRole("button", { name: "Noņemt filtru: Dzimta: von der Pahlen" }),
+      ).toBeInTheDocument();
+      expect(unknownIn("Vēsturiskā īpašnieku dzimta")).toBeChecked();
+    }
+  });
+
+  it("a debounced search firing after a Day 18 filter keeps that filter", async () => {
+    render(tree());
+
+    fireEvent.change(searchInput(), { target: { value: "pils" } });
+    fireEvent.click(box("A klase"));
+    expect(pushed().at(-1)).toBe("/objects?condition=class_a");
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, SEARCH_DEBOUNCE_MS + 50));
+    });
+
+    expect(pushed().at(-1)).toBe("/objects?q=pils&condition=class_a");
+  });
 });
