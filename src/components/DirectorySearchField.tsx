@@ -54,7 +54,8 @@ export function buildSearchHref(
  * - Day 20: Back/Forward (a new epoch) cancels a pending debounced commit
  *   and shows the restored query; a commit scheduled before it is ignored
  *   by the provider even if its timer already fired. One typing burst
- *   adds one history entry; leaving the field ends the burst.
+ *   adds one history entry; leaving the field commits any pending search
+ *   at once and then ends the burst.
  *
  * Without JavaScript it is still a plain GET form to the same URL, carrying
  * the active filters and the map position as hidden inputs - in their
@@ -133,6 +134,18 @@ export default function DirectorySearchField() {
     commit(value, epoch);
   }
 
+  // Leaving the field ends the typing burst - but first commits a search
+  // still waiting for its debounce, in the current epoch (commit() cancels
+  // the timer). Otherwise that timer would fire after the burst ended,
+  // start a new one, and the next separate search would replace its
+  // history entry instead of adding one.
+  function handleBlur() {
+    if (timerRef.current !== null) {
+      commit(value, epoch);
+    }
+    endSearchBurst();
+  }
+
   function handleClear() {
     setValue("");
     commit("", epoch);
@@ -159,7 +172,7 @@ export default function DirectorySearchField() {
           name="q"
           value={value}
           onChange={(event) => handleChange(event.target.value)}
-          onBlur={endSearchBurst}
+          onBlur={handleBlur}
           maxLength={MAX_SEARCH_QUERY_LENGTH}
           autoComplete="off"
           spellCheck={false}

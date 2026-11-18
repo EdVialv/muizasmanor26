@@ -138,8 +138,9 @@ export function DirectoryListingProvider({ children }: { children: ReactNode }) 
   // Query strings of every state this provider has intended (and so may
   // write to the URL) since the state was last taken from the URL.
   const [ownUrls, setOwnUrls] = useState<string[]>([]);
-  // Set by Back/Forward: the URL the state must follow once it arrives.
-  const [followUrl, setFollowUrl] = useState<string | null>(null);
+  // Set by Back/Forward: the URL the state must follow once it arrives
+  // (`target`), and the URL shown when the event fired (`from`).
+  const [followUrl, setFollowUrl] = useState<{ target: string; from: string } | null>(null);
   const [epoch, setEpoch] = useState(0);
   const [pendingSource, setPendingSource] = useState<ListingChangeSource | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -156,12 +157,14 @@ export function DirectoryListingProvider({ children }: { children: ReactNode }) 
 
   // Follow the URL (adjusting state during render, as React recommends
   // over an effect):
-  // - after Back/Forward, as soon as the URL changes - even while one of
-  //   our navigations is in flight;
+  // - after Back/Forward, once the URL is the restored one or has changed
+  //   since the event - even while one of our navigations is in flight. (Not
+  //   "differs from the last synced URL": a landing of ours not yet synced
+  //   because a transition is still pending would then be adopted instead.)
   // - otherwise when nothing of ours is in flight and the URL is not one
   //   this provider wrote.
   const intendedKey = browseKey(intended);
-  const follow = followUrl !== null && (urlKey === followUrl || urlKey !== syncedUrlKey);
+  const follow = followUrl !== null && (urlKey === followUrl.target || urlKey !== followUrl.from);
   if (follow || (followUrl === null && !isPending && urlKey !== syncedUrlKey)) {
     setSyncedUrlKey(urlKey);
     if (follow || (urlKey !== intendedKey && !ownUrls.includes(urlKey))) {
@@ -186,7 +189,10 @@ export function DirectoryListingProvider({ children }: { children: ReactNode }) 
     function onPopState() {
       followingRef.current = true;
       searchBurstRef.current = null;
-      setFollowUrl(new URLSearchParams(window.location.search).toString());
+      setFollowUrl({
+        target: new URLSearchParams(window.location.search).toString(),
+        from: urlKeyRef.current,
+      });
     }
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);

@@ -22,7 +22,7 @@ Read it before starting a session and update it before ending a session.
 - **Current roadmap day:** Days 17–20 implemented, awaiting Codex review
 - **Last completed-and-merged day:** Day 16 ([#42](https://github.com/EdVialv/muizasmanor26/pull/42), `5d15f23`)
 - **Current issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
-- **Next outcome:** Codex reviews Day 17 (`claude/day17-directory-filters`, `e46b81c`), Day 18 (`claude/day18-condition-ownership-family`, `9b13fdb`), Day 19 (`claude/day19-map`, rebased to `9de61a3`) and Day 20 (`claude/day20-url-state`), each stacked on the previous one. After that, apply the Day 15–19 migrations to `muizasmanor26-dev` in order (Day 20 has none), choose a tile provider, and start Day 21 (authentication).
+- **Next outcome:** Codex reviews Day 17 (`claude/day17-directory-filters`, `e46b81c`), Day 18 (`claude/day18-condition-ownership-family`, `9b13fdb`), Day 19 (`claude/day19-map`, owner-pushed, with fix `443dd77`) and Day 20 (`claude/day20-url-state`), each stacked on the previous one. After that, apply the Day 15–19 migrations to `muizasmanor26-dev` in order (Day 20 has none), choose a tile provider, and start Day 21 (authentication).
 - **MVP status:** Days 1–16 are merged and verified; Days 17–18 (filters) and Day 19 (map) await review. Day 14 added object pages, Day 15 added the first visual alpha and its image/access migration, and Day 16 added indexed multilingual search and its search migration. The two new migrations remain unapplied to the real development database. The real dataset remains non-destructive: no Day 11 row was bulk-staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
 - **Detailed plan:** [TODO.md](TODO.md)
 
@@ -68,11 +68,25 @@ Copy this template to the top of **Session history** before ending a session.
 
 ## Session history
 
+### 2026-11-18 Europe/Riga — Claude Code (Day 20 corrections after review)
+
+- **Issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
+- **Branch:** `claude/day20-url-state`, now based on the owner-pushed `claude/day19-map` at the Day 19 fix `443dd77` (the previous delivery, based on `9de61a3`, is kept locally as `claude/day20-url-state-pre-correction`). `codex/travel-guide-design` (PR #44) was not touched. `main` is still `f3311e7`.
+- **Pull request:** not opened (the push returns 403; delivered as `muizasmanor26-day20-corrected.bundle`, which needs `443dd77`).
+- **Completed:**
+  - Restored the Day 19 fixes by rebasing the Day 20 commits onto `443dd77` (no conflicts; the old base had the same tree as `9b43948`): immediate abort/invalidation in `useMapData`, strict tile templates, `minZoom <= maxZoom`, and their regression tests.
+  - Search history: blur now commits a pending debounced search in the current epoch before ending the typing burst, so a later separate search adds its own entry.
+  - Back/Forward: after popstate the provider follows the restored URL, or any URL change since the event, instead of any URL differing from the last synced one (which could adopt one of our unsynced landings). Found by the new regression test.
+  - Regression tests for both; docs updated ("Corrections after review").
+- **Verification:** `npm ci`, format, lint, typecheck, tests (52 files, 554 tests), build, `npm audit --omit=dev` (0) and `git diff --check` — passed. Browser (Chromium): blur-before-debounce reproduction 12/12 (desktop and mobile), Day 20 66/66, Day 19 22/22, Day 17 27/27 and 19/19, Day 18 27/27 and 6/6.
+- **Next exact action:** Codex reviews the corrected Day 20; design integration with PR #44 follows separately.
+- **Handoff state:** committed on `claude/day20-url-state`, not pushed; awaiting review
+
 ### 2026-11-18 Europe/Riga — Claude Code (Day 20)
 
 - **Issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
-- **Branch:** `claude/day20-url-state`, based on Day 19 rebased onto the owner-pushed Day 18 (`9b13fdb`, on Day 17 `e46b81c`): `claude/day19-map` = `9de61a3`, same tree as the delivered Day 19. `main` is still `f3311e7`.
-- **Pull request:** not opened (the push returns 403; delivered as `muizasmanor26-day20.bundle`, which needs `9de61a3`).
+- **Branch:** `claude/day20-url-state`, first based on Day 19 rebased onto the owner-pushed Day 18 (`9b13fdb`, on Day 17 `e46b81c`): `claude/day19-map` = `9de61a3`, same tree as the delivered Day 19. Superseded by the corrections above. `main` is still `f3311e7`.
+- **Pull request:** not opened (the push returns 403; delivered as `muizasmanor26-day20.bundle`, which needed `9de61a3`).
 - **Session goal:** Opening, refreshing or sharing a list or map URL restores the same search, filters, list page and map position; Back/Forward works.
 - **Completed:**
   - One canonical URL model (`src/lib/directory/browseState.ts`, `src/lib/map/position.ts`): listing params unchanged, `cursor`, and `lat`/`lng`/`zoom` (centre and zoom are authoritative). Defaults omitted; values validated, deduplicated, ordered and bounded.

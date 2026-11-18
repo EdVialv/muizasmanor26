@@ -292,6 +292,73 @@ describe("search, filters and pagination", () => {
     expect(pushed()).toEqual(["/objects?q=rund", "/objects?q=c%C4%93sis"]);
   });
 
+  it("leaving the field before the debounce commits that search, so the next search adds its own entry", async () => {
+    vi.useFakeTimers();
+    navigation.pathname = "/objects";
+    const { rerender } = render(tree());
+
+    // 1-2. Type "rund" and leave the field before 300 ms.
+    fireEvent.focus(searchInput());
+    fireEvent.change(searchInput(), { target: { value: "rund" } });
+    act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS - 100));
+    fireEvent.blur(searchInput());
+    expect(pushed()).toEqual(["/objects?q=rund"]);
+    // The pending timer was cancelled: nothing fires later.
+    act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS * 2));
+    expect(pushed()).toEqual(["/objects?q=rund"]);
+
+    // 3. That search finishes.
+    await land(0, rerender);
+
+    // 4. Return to the field and search for "cēsis".
+    fireEvent.focus(searchInput());
+    fireEvent.change(searchInput(), { target: { value: "cēsis" } });
+    act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS));
+
+    // 5. A new entry, not a replacement of the first search.
+    expect(pushed()).toEqual(["/objects?q=rund", "/objects?q=c%C4%93sis"]);
+    expect(routerReplaced()).toEqual([]);
+    await land(1, rerender);
+
+    // Back returns to the first search.
+    popState("q=rund", rerender);
+    expect(searchInput().value).toBe("rund");
+    expect(probe.current?.listing.q).toBe("rund");
+    expect(pushed()).toHaveLength(2);
+    expect(routerReplaced()).toEqual([]);
+  });
+
+  it("leaving the field keeps the latest filters, the map position and resets the cursor", () => {
+    vi.useFakeTimers();
+    navigation.pathname = "/objects";
+    const listing = { q: null, filters: { ...EMPTY_FILTERS, types: ["manor_house" as const] } };
+    const cursor = encodeCursor({
+      name: "Jaunmoku pils",
+      id: "11111111-2222-4333-8444-555555555555",
+      scope: listingScope(listing),
+    });
+    navigation.search = `type=manor_house&cursor=${cursor}&${P1_QUERY}`;
+    render(tree());
+
+    fireEvent.change(searchInput(), { target: { value: "rund" } });
+    fireEvent.blur(searchInput());
+    expect(pushed()).toEqual([`/objects?q=rund&type=manor_house&${P1_QUERY}`]);
+  });
+
+  it("leaving the field after Back/Forward does not commit the typing from before it", () => {
+    vi.useFakeTimers();
+    navigation.pathname = "/objects";
+    navigation.search = "q=pils";
+    const { rerender } = render(tree());
+
+    fireEvent.change(searchInput(), { target: { value: "pilsēta" } });
+    popState("q=muiza", rerender);
+    fireEvent.blur(searchInput());
+    act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS * 2));
+    expect(pushed()).toEqual([]);
+    expect(searchInput().value).toBe("muiza");
+  });
+
   it("a typing burst whose first commit has not landed pushes again (never replaces the entry before it)", () => {
     vi.useFakeTimers();
     navigation.pathname = "/objects";
@@ -342,6 +409,30 @@ describe("Back/Forward", () => {
     expect(mapProps.current?.positionEpoch).toBe(1);
     // ...and nothing is written back.
     expect(replaced).toEqual([]);
+    expect(routerReplaced()).toEqual([]);
+  });
+
+  it("follows the restored URL, not a landing of ours that was not yet synced", async () => {
+    navigation.pathname = "/objects";
+    navigation.search = "q=pils";
+    const { rerender } = render(tree());
+
+    fireEvent.click(box("Pils"));
+    fireEvent.click(box("Muižas kungu māja"));
+    // The newer navigation lands while the older one is still in flight:
+    // the shared transition stays pending, so this URL is not synced yet.
+    navigation.search = new URL(router.inFlight[1].href, "http://localhost").search.slice(1);
+    act(() => rerender(tree()));
+
+    popState("q=pils", rerender);
+    expect(probe.current?.listing.filters.types).toEqual([]);
+    expect(box("Pils")).not.toBeChecked();
+    expect(box("Muižas kungu māja")).not.toBeChecked();
+    expect(searchInput().value).toBe("pils");
+    await act(async () => {
+      router.inFlight.forEach((navigationInFlight) => navigationInFlight.settle());
+    });
+    expect(probe.current?.listing.filters.types).toEqual([]);
     expect(routerReplaced()).toEqual([]);
   });
 
