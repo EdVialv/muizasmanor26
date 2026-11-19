@@ -89,6 +89,8 @@ An object may be associated with several families or noble houses across differe
 - source URL or bibliographic reference;
 - verification status.
 
+Day 18 directory filters count only `verified` associations, identify a family by its canonical name — `canonical_family_name(family_name)`: Unicode NFC with leading and trailing whitespace removed (there is no family registry yet) and treat an object with no verified association as "not recorded". The schema cannot record that an object had no historical family. See `docs/DAY18_CLASSIFICATION_FILTERS_NOTES.md`.
+
 ## Contact information
 
 Contact information uses a separate `object_contacts` relation because one object may have several contacts for different purposes.
@@ -149,6 +151,7 @@ Raw API keys, tokens, passwords and webhook secrets must never be stored in obje
 - Opening/access information.
 - Event availability and indicative capacity.
 - Accommodation and catering availability.
+  - Day 17 stores availability as three nullable booleans on `heritage_objects` (`offers_accommodation`, `offers_catering`, `offers_event_facilities`) plus `services_verified_at`: `true` = recorded as offered, `false` = recorded as not offered, `NULL` = not recorded. Directory filters match `true` only. Indicative event capacity is not modelled yet. See `docs/DAY17_DIRECTORY_FILTERS_NOTES.md`.
 - Accessibility notes.
 - Property-sale status and agent contact only after commercial validation.
 - Image records with credit, rights, alt text and derivative sizes.

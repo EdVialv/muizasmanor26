@@ -98,3 +98,64 @@ export function accessibilityLabel(value: string): string {
 export function contactTypeLabel(value: string): string {
   return CONTACT_TYPE_LABELS[value] ?? value;
 }
+
+/**
+ * Day 17 filter labels for the three recorded services
+ * (docs/DAY17_DIRECTORY_FILTERS_NOTES.md). This session's own wording, for
+ * product copy review like the labels above. "Pasākumi" means event
+ * services or a venue, not a calendar of dated events.
+ */
+const SERVICE_LABELS: Record<string, string> = {
+  accommodation: "Naktsmītnes",
+  catering: "Ēdināšana",
+  events: "Pasākumu rīkošana",
+};
+
+export function serviceLabel(value: string): string {
+  return SERVICE_LABELS[value] ?? value;
+}
+
+/**
+ * Day 18 filter labels (docs/DAY18_CLASSIFICATION_FILTERS_NOTES.md). The
+ * ownership groups are docs/DATA_MODEL.md's "Ownership filter groups";
+ * "unknown" always says "not recorded" - never "private", "ruined" or "no
+ * family". This session's own wording, for product copy review.
+ */
+const OWNERSHIP_GROUP_LABELS: Record<string, string> = {
+  private: "Privāts (privātpersona vai privāts juridiskais subjekts)",
+  public: "Publisks (pašvaldība vai valsts)",
+  unknown: "Nezināms / nav reģistrēts",
+};
+
+/** Short forms for the active-filter chips, where the group is not visible. */
+const OWNERSHIP_GROUP_CHIP_LABELS: Record<string, string> = {
+  private: "Privāts īpašnieks",
+  public: "Publisks īpašnieks",
+  unknown: "Īpašnieks nav reģistrēts",
+};
+
+export const UNKNOWN_OPTION_LABEL = "Nezināms / nav reģistrēts";
+export const FAMILY_UNKNOWN_OPTION_LABEL = "Nezināma / nav reģistrēta";
+
+export function ownershipGroupLabel(value: string): string {
+  return OWNERSHIP_GROUP_LABELS[value] ?? value;
+}
+
+export function ownershipGroupChipLabel(value: string): string {
+  return OWNERSHIP_GROUP_CHIP_LABELS[value] ?? value;
+}
+
+/** Condition filter option label: the documented label, or "not recorded" for unknown. */
+export function conditionFilterLabel(value: string): string {
+  return value === "unknown" ? UNKNOWN_OPTION_LABEL : conditionCategoryLabel(value).label;
+}
+
+export function conditionChipLabel(value: string): string {
+  return value === "unknown" ? "Stāvoklis nav reģistrēts" : conditionCategoryLabel(value).label;
+}
+
+export function familyChipLabel(name: string): string {
+  return `Dzimta: ${name}`;
+}
+
+export const FAMILY_UNKNOWN_CHIP_LABEL = "Dzimta nav reģistrēta";

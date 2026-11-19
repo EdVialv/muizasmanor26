@@ -11,7 +11,11 @@ import {
   objectTypeLabel,
   ownershipTypeLabel,
 } from "@/lib/directory/labels";
-import { buildDirectoryHref, parseDirectoryContext } from "@/lib/directory/links";
+import {
+  buildDirectoryHref,
+  directoryBackLabel,
+  parseDirectoryContextParams,
+} from "@/lib/directory/links";
 import { formatLatvianDate } from "@/lib/format/dates";
 import type { ObjectDetail } from "@/lib/objects/detail";
 import { loadObject } from "./loadObject";
@@ -20,7 +24,8 @@ import ObjectRelationsSection, { ObjectRelationsSkeleton } from "./ObjectRelatio
 
 interface ObjectPageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ from?: string | string[]; fromQ?: string | string[] }>;
+  /** from, fromQ, fromFilters, fromView, fromLat, fromLng, fromZoom (lib/directory/links.ts). */
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export async function generateMetadata({ params }: ObjectPageProps): Promise<Metadata> {
@@ -58,8 +63,9 @@ function toParagraphs(text: string): string[] {
  */
 export default async function ObjectPage({ params, searchParams }: ObjectPageProps) {
   const [{ slug }, query] = await Promise.all([params, searchParams]);
-  const context = parseDirectoryContext(query.from, query.fromQ);
+  const context = parseDirectoryContextParams(query);
   const directoryHref = buildDirectoryHref(context);
+  const backLabel = directoryBackLabel(context);
 
   const outcome = await loadObject(slug);
 
@@ -87,7 +93,7 @@ export default async function ObjectPage({ params, searchParams }: ObjectPagePro
             )}
             <p>
               <Link className="directoryPaginationLink" href={directoryHref}>
-                Atpakaļ uz katalogu
+                {backLabel}
               </Link>
             </p>
           </div>
@@ -109,7 +115,8 @@ export default async function ObjectPage({ params, searchParams }: ObjectPagePro
       <div className="container">
         <nav className="objectBackNav" aria-label="Atgriezties">
           <Link href={directoryHref}>
-            <span aria-hidden="true">← </span>Atpakaļ uz katalogu
+            <span aria-hidden="true">← </span>
+            {backLabel}
           </Link>
         </nav>
 

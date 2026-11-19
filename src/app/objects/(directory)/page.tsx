@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import HeritageObjectCard from "@/components/HeritageObjectCard";
+import { decodeCursor, encodeCursor, type DirectoryCursor } from "@/lib/directory/cursor";
+import { buildBrowseHref, parseBrowseState } from "@/lib/directory/browseState";
 import {
-  buildNextPageParams,
-  cursorMatchesScope,
-  decodeCursor,
-  type DirectoryCursor,
-} from "@/lib/directory/cursor";
+  EMPTY_FILTERS,
+  hasActiveFilters,
+  isPlainDirectory,
+  type DirectoryListing,
+} from "@/lib/directory/filters";
 import { DIRECTORY_PATH, type DirectoryContext } from "@/lib/directory/links";
 import {
   DIRECTORY_PAGE_SIZE,
@@ -15,8 +17,7 @@ import {
   fetchDirectoryPage,
   type DirectoryPageResult,
 } from "@/lib/directory/queries";
-import { fetchSearchPage } from "@/lib/directory/search";
-import { normalizeSearchQuery, searchScope } from "@/lib/directory/searchQuery";
+import { fetchListingPage } from "@/lib/directory/search";
 import { createDirectoryDataSourceFromEnv } from "@/lib/directory/supabaseDataSource";
 import { createDirectorySearchDataSourceFromEnv } from "@/lib/directory/supabaseSearchDataSource";
 
@@ -25,10 +26,7 @@ export const metadata: Metadata = {
   description: "Latvijas muižu un kultūrvēsturisko objektu katalogs.",
 };
 
-interface ObjectsPageSearchParams {
-  cursor?: string | string[];
-  q?: string | string[];
-}
+type ObjectsPageSearchParams = Record<string, string | string[] | undefined>;
 
 type LoadOutcome =
   | { kind: "ok"; result: DirectoryPageResult }
@@ -36,24 +34,25 @@ type LoadOutcome =
   | { kind: "query_error" };
 
 /**
- * Keeps this Server Component itself async and thin: all pagination, search
- * and query logic lives in src/lib/directory, which the test file exercises
- * by mocking the two data-source factories. Nothing from a failure is
+ * The plain directory keeps its reviewed Day 13 path. Any search or filter
+ * goes through one database function that applies the search and every
+ * filter in the same query, in the same (name_lv, id) keyset order
+ * (docs/DAY17_DIRECTORY_FILTERS_NOTES.md). Nothing from a failure is
  * returned to the render beyond its kind.
  */
 async function loadPage(
-  query: string | null,
+  listing: DirectoryListing,
   cursor: DirectoryCursor | null,
 ): Promise<LoadOutcome> {
   try {
-    const result = query
-      ? await fetchSearchPage(
+    const result = isPlainDirectory(listing)
+      ? await fetchDirectoryPage(createDirectoryDataSourceFromEnv(), cursor, DIRECTORY_PAGE_SIZE)
+      : await fetchListingPage(
           createDirectorySearchDataSourceFromEnv(),
-          query,
+          listing,
           cursor,
           DIRECTORY_PAGE_SIZE,
-        )
-      : await fetchDirectoryPage(createDirectoryDataSourceFromEnv(), cursor, DIRECTORY_PAGE_SIZE);
+        );
     return { kind: "ok", result };
   } catch (error) {
     if (error instanceof DirectoryConfigurationError) {
@@ -71,7 +70,8 @@ async function loadPage(
 
 /**
  * Rendered inside ./layout.tsx, which provides the section, container,
- * heading and search field (so they survive while results load).
+ * heading, search field and filter panel (so they survive while results
+ * load).
  */
 export default async function ObjectsPage({
   searchParams,
@@ -80,38 +80,58 @@ export default async function ObjectsPage({
 }) {
   const params = await searchParams;
 
-  const query = normalizeSearchQuery(params.q);
-  const scope = query ? searchScope(query) : undefined;
+  // The whole browse state (Day 20 - lib/directory/browseState.ts), validated
+  // and in canonical form. Unknown filter values are dropped (and noted),
+  // never passed on. A cursor is used only when it decodes AND belongs to
+  // this exact listing - same search, same filters. Anything else -
+  // malformed, repeated, tampered, or carried over from a different search
+  // or filter set - fails safely to the first page of the current listing,
+  // with a notice. The map position is not used by the list (map bounds
+  // never restrict it); it is only carried on in links, so the map can be
+  // restored.
+  const {
+    state: browse,
+    hadInvalidValues,
+    hadInvalidCursor: cursorWasInvalid,
+  } = parseBrowseState(params);
+  const { listing, cursor: rawCursor, position } = browse;
+  const filtered = hasActiveFilters(listing.filters);
+  const cursor = decodeCursor(rawCursor);
 
-  // A cursor is used only when it decodes AND belongs to this exact listing
-  // (this search, or the unfiltered directory). Anything else - malformed,
-  // tampered, or carried over from a different search - fails safely to the
-  // first page of the current listing, with a notice.
-  const rawCursor = typeof params.cursor === "string" ? params.cursor : undefined;
-  const decoded = decodeCursor(rawCursor);
-  const cursor = decoded && cursorMatchesScope(decoded, scope) ? decoded : null;
-  const cursorWasGiven = Array.isArray(params.cursor) || Boolean(params.cursor);
-  const cursorWasInvalid = cursorWasGiven && cursor === null;
-
-  const outcome = await loadPage(query, cursor);
-  // Cards carry the current search and (validated) cursor, so an object page
+  const outcome = await loadPage(listing, cursor);
+  // Cards carry the whole listing and (validated) cursor, so an object page
   // can link back to this same page of these same results.
   const directoryContext: DirectoryContext = {
-    ...(query ? { q: query } : {}),
+    ...(listing.q ? { q: listing.q } : {}),
+    ...(filtered ? { filters: listing.filters } : {}),
     ...(cursor && rawCursor ? { cursor: rawCursor } : {}),
+    ...(position ? { position } : {}),
   };
+  const searchOnlyHref = buildBrowseHref(DIRECTORY_PATH, {
+    listing: { q: listing.q, filters: EMPTY_FILTERS },
+    cursor: null,
+    position,
+  });
 
   return (
     <>
+      {hadInvalidValues ? (
+        <p className="directoryStatusNotice" role="status">
+          Daži saites filtri nebija derīgi un netika ņemti vērā.
+        </p>
+      ) : null}
+
       {cursorWasInvalid ? (
         <p className="directoryStatusNotice" role="status">
           Saite uz šo lapu bija nederīga — rādīta pirmā lapa.
         </p>
       ) : null}
 
-      {query && outcome.kind === "ok" && outcome.result.items.length > 0 ? (
+      {!isPlainDirectory(listing) && outcome.kind === "ok" && outcome.result.items.length > 0 ? (
         <h2 className="directoryResultsHeading">
-          Meklēšanas rezultāti: „{query}”{cursor ? " (turpinājums)" : ""}
+          {listing.q ? <>Meklēšanas rezultāti: „{listing.q}”</> : <>Atlasītie objekti</>}
+          {listing.q && filtered ? ", ar filtriem" : ""}
+          {cursor ? " (turpinājums)" : ""}
         </h2>
       ) : null}
 
@@ -122,12 +142,10 @@ export default async function ObjectsPage({
         </div>
       ) : outcome.kind === "query_error" ? (
         <div className="directoryStatus" role="alert">
-          {query ? (
+          {!isPlainDirectory(listing) ? (
             <>
-              <h2>Meklēšana neizdevās</h2>
-              <p>
-                Šobrīd nevaram izpildīt meklēšanu. Lūdzu, mēģiniet vēlreiz vai apmeklējiet vēlāk.
-              </p>
+              <h2>{filtered ? "Atlase neizdevās" : "Meklēšana neizdevās"}</h2>
+              <p>Šobrīd nevaram atlasīt objektus. Lūdzu, mēģiniet vēlreiz vai apmeklējiet vēlāk.</p>
               <p>
                 <Link className="directoryPaginationLink" href={DIRECTORY_PATH}>
                   Rādīt visu katalogu
@@ -145,12 +163,27 @@ export default async function ObjectsPage({
           )}
         </div>
       ) : outcome.result.items.length === 0 ? (
-        query ? (
+        filtered ? (
+          <div className="directoryStatus">
+            <h2>Neviens objekts neatbilst izvēlētajiem filtriem</h2>
+            <p>
+              {listing.q ? <>Meklējot „{listing.q}”, ar </> : "Ar "}
+              šiem filtriem nekas netika atrasts. Objekti, kuriem attiecīgā informācija vēl nav
+              reģistrēta, zināmas vērtības atlasē netiek rādīti. Stāvoklim, īpašniekam un dzimtai
+              varat izvēlēties arī „Nezināms / nav reģistrēts”.
+            </p>
+            <p className="directoryStatusActions">
+              <Link className="directoryPaginationLink" href={searchOnlyHref}>
+                {listing.q ? "Notīrīt filtrus, paturēt meklēšanu" : "Notīrīt filtrus"}
+              </Link>
+            </p>
+          </div>
+        ) : listing.q ? (
           <div className="directoryStatus">
             <h2>Nekas netika atrasts</h2>
             <p>
-              Pēc „{query}” nav atrasts neviens publicēts objekts. Pārbaudiet rakstību, izmēģiniet
-              īsāku vārda daļu vai citu vietas nosaukumu.
+              Pēc „{listing.q}” nav atrasts neviens publicēts objekts. Pārbaudiet rakstību,
+              izmēģiniet īsāku vārda daļu vai citu vietas nosaukumu.
             </p>
             <p>
               <Link className="directoryPaginationLink" href={DIRECTORY_PATH}>
@@ -183,10 +216,10 @@ export default async function ObjectsPage({
             {outcome.result.hasNextPage && outcome.result.nextCursor ? (
               <Link
                 className="directoryPaginationLink"
-                href={{
-                  pathname: DIRECTORY_PATH,
-                  query: buildNextPageParams(outcome.result.nextCursor, query),
-                }}
+                href={buildBrowseHref(DIRECTORY_PATH, {
+                  ...browse,
+                  cursor: encodeCursor(outcome.result.nextCursor),
+                })}
               >
                 Nākamā lapa
               </Link>

@@ -16,56 +16,89 @@
 
 import type { DirectoryCursor } from "./cursor";
 import {
+  EMPTY_FILTERS,
+  canonicalFilters,
+  isPlainDirectory,
+  listingScope,
+  type DirectoryFilters,
+  type DirectoryListing,
+} from "./filters";
+import {
   DIRECTORY_PAGE_SIZE,
   DirectoryQueryError,
   toPageResult,
   type DirectoryPageResult,
   type RawDirectoryRow,
 } from "./queries";
-import { normalizeSearchQuery, searchScope } from "./searchQuery";
+import { normalizeSearchQuery } from "./searchQuery";
 
 export interface DirectorySearchDataSource {
   /**
-   * Up to `limit` published objects matching `query`, in (name_lv, id)
-   * order, strictly after `after` when given. `query` is already
-   * normalised.
+   * Up to `limit` published objects matching `query` (when given) and every
+   * active filter, in (name_lv, id) order, strictly after `after` when
+   * given. `query` is already normalised and `filters` canonical.
    */
   searchPublishedObjects(
-    query: string,
+    query: string | null,
+    filters: DirectoryFilters,
     after: DirectoryCursor | null,
     limit: number,
   ): Promise<RawDirectoryRow[]>;
 }
 
 /**
- * One page of search results. Re-normalises the query defensively (a
- * caller passing raw input still gets bounded, canonical input to the
- * database) and refuses a cursor that was not issued for this exact search.
+ * One page of a searched and/or filtered listing (Day 17 -
+ * docs/DAY17_DIRECTORY_FILTERS_NOTES.md). Re-normalises the query and
+ * re-validates the filters defensively, refuses the plain directory (it has
+ * its own path), and refuses a cursor that was not issued for this exact
+ * listing - same search, same filters.
  */
-export async function fetchSearchPage(
+export async function fetchListingPage(
   dataSource: DirectorySearchDataSource,
-  rawQuery: string,
+  listing: DirectoryListing,
   cursor: DirectoryCursor | null,
   pageSize: number = DIRECTORY_PAGE_SIZE,
 ): Promise<DirectoryPageResult> {
   if (!Number.isInteger(pageSize) || pageSize <= 0) {
     throw new RangeError(`pageSize must be a positive integer, got ${pageSize}`);
   }
-  const query = normalizeSearchQuery(rawQuery);
-  if (query === null) {
-    throw new RangeError("A search needs at least one non-blank term.");
+  const normalized: DirectoryListing = {
+    q: listing.q === null ? null : normalizeSearchQuery(listing.q),
+    filters: canonicalFilters(listing.filters),
+  };
+  if (isPlainDirectory(normalized)) {
+    throw new RangeError("A listing needs a search term or at least one filter.");
   }
-  const scope = searchScope(query);
+  const scope = listingScope(normalized);
   if (cursor !== null && cursor.scope !== scope) {
-    throw new RangeError("This cursor was not issued for this search.");
+    throw new RangeError("This cursor was not issued for this listing.");
   }
 
   let rows: RawDirectoryRow[];
   try {
-    rows = await dataSource.searchPublishedObjects(query, cursor, pageSize + 1);
+    rows = await dataSource.searchPublishedObjects(
+      normalized.q,
+      normalized.filters,
+      cursor,
+      pageSize + 1,
+    );
   } catch (error) {
     throw new DirectoryQueryError("Failed to search the directory.", error);
   }
 
   return toPageResult(rows, pageSize, scope);
+}
+
+/** Day 16 entry point: a search with no filters. */
+export async function fetchSearchPage(
+  dataSource: DirectorySearchDataSource,
+  rawQuery: string,
+  cursor: DirectoryCursor | null,
+  pageSize: number = DIRECTORY_PAGE_SIZE,
+): Promise<DirectoryPageResult> {
+  const q = normalizeSearchQuery(rawQuery);
+  if (q === null) {
+    throw new RangeError("A search needs at least one non-blank term.");
+  }
+  return fetchListingPage(dataSource, { q, filters: EMPTY_FILTERS }, cursor, pageSize);
 }

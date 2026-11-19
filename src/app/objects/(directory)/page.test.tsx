@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { EMPTY_FILTERS, type DirectoryFilters } from "@/lib/directory/filters";
 import {
   DirectoryConfigurationError,
   DirectoryQueryError,
@@ -57,9 +58,7 @@ function fakeDataSource(fixture: RawDirectoryRow[]): DirectoryDataSource {
   };
 }
 
-async function renderObjectsPage(
-  searchParams: { cursor?: string | string[]; q?: string | string[] } = {},
-) {
+async function renderObjectsPage(searchParams: Record<string, string | string[]> = {}) {
   const { default: ObjectsPage } = await import("./page");
   const element = await ObjectsPage({ searchParams: Promise.resolve(searchParams) });
   render(element);
@@ -198,27 +197,107 @@ function fold(text: string): string {
   return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 }
 
-function fakeSearchSource(fixture: RawDirectoryRow[]) {
+/** A directory row plus the recorded service flags and families the database filters on. */
+type FakeRow = RawDirectoryRow & {
+  offers_accommodation?: boolean | null;
+  offers_catering?: boolean | null;
+  offers_event_facilities?: boolean | null;
+  /** Historical-family associations; only verified ones count (Day 18). */
+  families?: Array<{ name: string; verified: boolean }>;
+};
+
+const OWNERSHIP_GROUPS: Record<string, string[]> = {
+  private: ["private_person", "private_legal_entity"],
+  public: ["municipality", "state"],
+};
+
+/** Day 18: a known value never matches a missing one; "unknown" matches only missing ones. */
+function matchesWithUnknown(selected: string[], value: string | null, expand = (v: string) => [v]) {
+  if (selected.length === 0) {
+    return true;
+  }
+  if (value === null) {
+    return selected.includes("unknown");
+  }
+  return selected.filter((v) => v !== "unknown").some((v) => expand(v).includes(value));
+}
+
+/**
+ * Mirrors search_public_heritage_objects closely enough to test the page:
+ * every search term must occur (case- and diacritic-insensitively); within a
+ * filter category any value may match (OR); categories and services are
+ * ANDed; a service matches only when recorded true.
+ */
+function fakeSearchSource(fixture: FakeRow[]) {
   const sorted = [...fixture].sort((a, b) =>
     a.name_lv === b.name_lv ? a.id.localeCompare(b.id) : a.name_lv.localeCompare(b.name_lv),
   );
-  const calls: Array<{ query: string; after: { name: string; id: string } | null; limit: number }> =
-    [];
+  const calls: Array<{
+    query: string | null;
+    filters: DirectoryFilters;
+    after: { name: string; id: string } | null;
+    limit: number;
+  }> = [];
   return {
     calls,
     searchPublishedObjects: vi.fn(
-      async (query: string, after: { name: string; id: string } | null, limit: number) => {
-        calls.push({ query, after, limit });
-        const terms = fold(query).split(" ");
+      async (
+        query: string | null,
+        filters: DirectoryFilters,
+        after: { name: string; id: string } | null,
+        limit: number,
+      ) => {
+        calls.push({ query, filters, after, limit });
+        const terms = query ? fold(query).split(" ") : [];
         return sorted
           .filter((r) =>
             terms.every((t) => fold(`${r.name_lv} ${r.municipality ?? ""}`).includes(t)),
           )
           .filter(
+            (r) => filters.types.length === 0 || filters.types.includes(r.object_type as never),
+          )
+          .filter(
+            (r) => filters.regions.length === 0 || filters.regions.includes(r.municipality ?? ""),
+          )
+          .filter(
+            (r) => filters.access.length === 0 || filters.access.includes(r.public_access as never),
+          )
+          .filter(
+            (r) => !filters.services.includes("accommodation") || r.offers_accommodation === true,
+          )
+          .filter((r) => !filters.services.includes("catering") || r.offers_catering === true)
+          .filter((r) => !filters.services.includes("events") || r.offers_event_facilities === true)
+          .filter((r) => matchesWithUnknown(filters.conditions, r.condition_category))
+          .filter((r) =>
+            matchesWithUnknown(
+              filters.ownership,
+              r.ownership_type,
+              (g) => OWNERSHIP_GROUPS[g] ?? [],
+            ),
+          )
+          .filter((r) => {
+            if (filters.families.length === 0 && !filters.familyUnknown) {
+              return true;
+            }
+            const verified = (r.families ?? []).filter((f) => f.verified).map((f) => f.name);
+            return (
+              verified.some((name) => filters.families.includes(name)) ||
+              (filters.familyUnknown && verified.length === 0)
+            );
+          })
+          .filter(
             (r) =>
               !after || r.name_lv > after.name || (r.name_lv === after.name && r.id > after.id),
           )
-          .slice(0, limit);
+          .slice(0, limit)
+          .map(
+            (r) =>
+              Object.fromEntries(
+                Object.entries(r).filter(
+                  ([key]) => !key.startsWith("offers_") && key !== "families",
+                ),
+              ) as RawDirectoryRow,
+          );
       },
     ),
   };
@@ -233,7 +312,9 @@ describe("ObjectsPage search (Day 16)", () => {
     await renderObjectsPage({ q: "rundales" });
 
     expect(createDirectoryDataSourceFromEnv).not.toHaveBeenCalled();
-    expect(search.calls).toEqual([{ query: "rundales", after: null, limit: 25 }]);
+    expect(search.calls).toEqual([
+      { query: "rundales", filters: EMPTY_FILTERS, after: null, limit: 25 },
+    ]);
     expect(screen.getByRole("link", { name: "Rundāles pils" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Cēsu pils" })).not.toBeInTheDocument();
     expect(
@@ -399,5 +480,535 @@ describe("ObjectsPage search (Day 16)", () => {
     const url = new URL(href, "http://localhost");
     expect(url.searchParams.get("fromQ")).toBe("muiža");
     expect(url.searchParams.get("from")).toBe(token);
+  });
+});
+
+describe("ObjectsPage filters (Day 17)", () => {
+  // A small, fully known fixture. Services: true = recorded as offered,
+  // false = recorded as not offered, null = not recorded.
+  function fixture(): FakeRow[] {
+    const base = (n: number, name: string, extra: Partial<FakeRow>): FakeRow => ({
+      ...row(name, ID(n)),
+      slug: `obj-${n}`,
+      ...extra,
+    });
+    return [
+      base(1, "Alfa pils", {
+        object_type: "palace_or_castle",
+        municipality: "Cēsu novads",
+        public_access: "open",
+        offers_accommodation: true,
+        offers_catering: true,
+        offers_event_facilities: true,
+      }),
+      base(2, "Beta muiža", {
+        object_type: "manor_estate",
+        municipality: "Cēsu novads",
+        public_access: "by_appointment",
+        offers_accommodation: true,
+        offers_catering: false,
+        offers_event_facilities: null,
+      }),
+      base(3, "Gamma muiža", {
+        object_type: "manor_estate",
+        municipality: "Bauskas novads",
+        public_access: null,
+        offers_accommodation: null,
+        offers_catering: true,
+        offers_event_facilities: true,
+      }),
+      base(4, "Delta drupas", {
+        object_type: "ruin_or_historical_site",
+        municipality: "Bauskas novads",
+        public_access: "exterior_only",
+        offers_accommodation: false,
+        offers_catering: null,
+        offers_event_facilities: false,
+      }),
+    ];
+  }
+
+  async function namesFor(params: Record<string, string | string[]>) {
+    document.body.innerHTML = "";
+    createDirectorySearchDataSourceFromEnv.mockReturnValue(fakeSearchSource(fixture()));
+    await renderObjectsPage(params);
+    return screen.queryAllByRole("link", { name: /pils|muiža|drupas/ }).map((l) => l.textContent);
+  }
+
+  it("filters by object type", async () => {
+    expect(await namesFor({ type: "manor_estate" })).toEqual(["Beta muiža", "Gamma muiža"]);
+  });
+
+  it("filters by region (stored municipality, exact)", async () => {
+    expect(await namesFor({ region: "Bauskas novads" })).toEqual(["Delta drupas", "Gamma muiža"]);
+  });
+
+  it("filters by public access", async () => {
+    expect(await namesFor({ access: "exterior_only" })).toEqual(["Delta drupas"]);
+  });
+
+  it("filters by each service, matching only objects recorded as offering it", async () => {
+    expect(await namesFor({ service: "accommodation" })).toEqual(["Alfa pils", "Beta muiža"]);
+    expect(await namesFor({ service: "catering" })).toEqual(["Alfa pils", "Gamma muiža"]);
+    expect(await namesFor({ service: "events" })).toEqual(["Alfa pils", "Gamma muiža"]);
+  });
+
+  it("treats missing service and access data as unknown, never as a match", async () => {
+    // Gamma has no recorded accommodation; Beta none for events; Gamma no access.
+    expect(await namesFor({ service: "accommodation" })).not.toContain("Gamma muiža");
+    expect(await namesFor({ service: "events" })).not.toContain("Beta muiža");
+    expect(
+      await namesFor({ access: ["open", "by_appointment", "exterior_only", "not_accessible"] }),
+    ).not.toContain("Gamma muiža");
+  });
+
+  it("ORs values within one category", async () => {
+    expect(await namesFor({ type: ["palace_or_castle", "ruin_or_historical_site"] })).toEqual([
+      "Alfa pils",
+      "Delta drupas",
+    ]);
+    expect(await namesFor({ access: ["open", "exterior_only"] })).toEqual([
+      "Alfa pils",
+      "Delta drupas",
+    ]);
+  });
+
+  it("ANDs different categories, and services independently", async () => {
+    expect(await namesFor({ type: "manor_estate", region: "Cēsu novads" })).toEqual(["Beta muiža"]);
+    expect(await namesFor({ service: ["accommodation", "catering"] })).toEqual(["Alfa pils"]);
+    expect(await namesFor({ service: ["catering", "events"], region: "Bauskas novads" })).toEqual([
+      "Gamma muiža",
+    ]);
+  });
+
+  it("applies search and several filters in the same request", async () => {
+    const search = fakeSearchSource(fixture());
+    createDirectorySearchDataSourceFromEnv.mockReturnValue(search);
+    document.body.innerHTML = "";
+
+    await renderObjectsPage({ q: "muiža", region: "Cēsu novads", service: "accommodation" });
+
+    expect(search.calls).toHaveLength(1);
+    expect(search.calls[0]).toMatchObject({
+      query: "muiža",
+      filters: {
+        ...EMPTY_FILTERS,
+        types: [],
+        regions: ["Cēsu novads"],
+        access: [],
+        services: ["accommodation"],
+      },
+    });
+    expect(screen.getAllByRole("link", { name: /muiža/ }).map((l) => l.textContent)).toEqual([
+      "Beta muiža",
+    ]);
+    expect(
+      screen.getByRole("heading", { name: /meklēšanas rezultāti: „muiža”, ar filtriem/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("ignores invalid filter values, says so, and still applies the valid ones", async () => {
+    const names = await namesFor({ type: ["castle", "manor_estate"], service: "spa" });
+    expect(names).toEqual(["Beta muiža", "Gamma muiža"]);
+    expect(screen.getByText(/daži saites filtri nebija derīgi/i)).toBeInTheDocument();
+  });
+
+  it("shows the plain directory when every filter value is invalid", async () => {
+    createDirectoryDataSourceFromEnv.mockReturnValue(fakeDataSource([row("Alfa muiža", ID(1))]));
+    createDirectorySearchDataSourceFromEnv.mockReset();
+    document.body.innerHTML = "";
+
+    await renderObjectsPage({ type: "castle", access: "state" });
+
+    expect(createDirectorySearchDataSourceFromEnv).not.toHaveBeenCalled();
+    expect(screen.getByRole("link", { name: "Alfa muiža" })).toBeInTheDocument();
+  });
+
+  it("shows a no-results state that keeps the search when clearing filters", async () => {
+    await namesFor({ q: "pils", type: "outbuilding" });
+
+    expect(
+      screen.getByRole("heading", { name: /neviens objekts neatbilst izvēlētajiem filtriem/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/informācija vēl nav reģistrēta/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Notīrīt filtrus, paturēt meklēšanu" }),
+    ).toHaveAttribute("href", "/objects?q=pils");
+  });
+
+  it("keeps the search and every filter on the next-page link, with a cursor scoped to them", async () => {
+    const { decodeCursor } = await import("@/lib/directory/cursor");
+    const { listingScope } = await import("@/lib/directory/filters");
+    const many: FakeRow[] = Array.from({ length: 30 }, (_, i) => ({
+      ...row(`Muiža ${String(i).padStart(2, "0")}`, ID(i)),
+      slug: `m-${i}`,
+      object_type: "manor_estate",
+      offers_catering: true,
+    }));
+    createDirectorySearchDataSourceFromEnv.mockReturnValue(fakeSearchSource(many));
+    document.body.innerHTML = "";
+
+    await renderObjectsPage({ q: "muiža", type: "manor_estate", service: "catering" });
+
+    const href = screen.getByRole("link", { name: "Nākamā lapa" }).getAttribute("href") ?? "";
+    const url = new URL(href, "http://localhost");
+    expect(url.searchParams.get("q")).toBe("muiža");
+    expect(url.searchParams.getAll("type")).toEqual(["manor_estate"]);
+    expect(url.searchParams.getAll("service")).toEqual(["catering"]);
+    expect(decodeCursor(url.searchParams.get("cursor"))?.scope).toBe(
+      listingScope({
+        q: "muiža",
+        filters: {
+          ...EMPTY_FILTERS,
+          types: ["manor_estate"],
+          regions: [],
+          access: [],
+          services: ["catering"],
+        },
+      }),
+    );
+  });
+
+  it("walks every filtered page with no duplicate and no skipped result", async () => {
+    const many: FakeRow[] = Array.from({ length: 70 }, (_, i) => ({
+      ...row(`Muiža ${String(Math.floor(i / 2)).padStart(2, "0")}`, ID(i)),
+      slug: `m-${i}`,
+      offers_accommodation: i % 2 === 0 ? true : null,
+    }));
+    createDirectorySearchDataSourceFromEnv.mockReturnValue(fakeSearchSource(many));
+
+    const seen: string[] = [];
+    let params: Record<string, string> = { service: "accommodation" };
+    for (let page = 0; page < 10; page += 1) {
+      document.body.innerHTML = "";
+      await renderObjectsPage(params);
+      for (const link of screen.getAllByRole("link", { name: /^Muiža/ })) {
+        seen.push(new URL(link.getAttribute("href") ?? "", "http://localhost").pathname);
+      }
+      const next = screen.queryByRole("link", { name: "Nākamā lapa" });
+      if (!next) {
+        break;
+      }
+      const url = new URL(next.getAttribute("href") ?? "", "http://localhost");
+      params = Object.fromEntries(url.searchParams.entries());
+    }
+
+    expect(seen).toHaveLength(35);
+    expect(new Set(seen).size).toBe(35);
+  });
+
+  it("refuses a cursor from a different filter set: first page, with a notice", async () => {
+    const { encodeCursor } = await import("@/lib/directory/cursor");
+    const { listingScope } = await import("@/lib/directory/filters");
+    const search = fakeSearchSource(fixture());
+    createDirectorySearchDataSourceFromEnv.mockReturnValue(search);
+    document.body.innerHTML = "";
+    const otherFilters = {
+      ...EMPTY_FILTERS,
+      types: [],
+      regions: [],
+      access: [],
+      services: ["catering" as const],
+    };
+    const staleCursor = encodeCursor({
+      name: "Alfa pils",
+      id: ID(1),
+      scope: listingScope({ q: null, filters: otherFilters }),
+    });
+
+    await renderObjectsPage({ service: "accommodation", cursor: staleCursor });
+
+    expect(search.calls[0].after).toBeNull();
+    expect(screen.getByText(/saite uz šo lapu bija nederīga/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Alfa pils" })).toBeInTheDocument();
+  });
+
+  it("refuses a search-only cursor once a filter is added", async () => {
+    const { encodeCursor } = await import("@/lib/directory/cursor");
+    const { searchScope } = await import("@/lib/directory/searchQuery");
+    const search = fakeSearchSource(fixture());
+    createDirectorySearchDataSourceFromEnv.mockReturnValue(search);
+    document.body.innerHTML = "";
+
+    await renderObjectsPage({
+      q: "muiža",
+      type: "manor_estate",
+      cursor: encodeCursor({ name: "Beta muiža", id: ID(2), scope: searchScope("muiža") }),
+    });
+
+    expect(search.calls[0].after).toBeNull();
+    expect(screen.getByText(/saite uz šo lapu bija nederīga/i)).toBeInTheDocument();
+  });
+
+  it("gives result cards the whole listing so the object page can link back to it", async () => {
+    await namesFor({ q: "muiža", type: "manor_estate", service: "catering" });
+
+    const href = screen.getByRole("link", { name: "Gamma muiža" }).getAttribute("href") ?? "";
+    const url = new URL(href, "http://localhost");
+    expect(url.searchParams.get("fromQ")).toBe("muiža");
+    expect(url.searchParams.get("fromFilters")).toBe("type=manor_estate&service=catering");
+  });
+});
+
+describe("ObjectsPage condition, ownership and family filters (Day 18)", () => {
+  // Fully known fixture. NULL condition/ownership and "no verified family"
+  // are the schema's representation of "not recorded".
+  function fixture(): FakeRow[] {
+    const base = (n: number, name: string, extra: Partial<FakeRow>): FakeRow => ({
+      ...row(name, ID(n)),
+      slug: `obj-${n}`,
+      ...extra,
+    });
+    return [
+      base(1, "Alfa pils", {
+        object_type: "palace_or_castle",
+        condition_category: "class_a",
+        ownership_type: "state",
+        public_access: "open",
+        families: [
+          { name: "von der Pahlen", verified: true },
+          { name: "von Biron", verified: true },
+        ],
+      }),
+      base(2, "Beta muiža", {
+        object_type: "manor_estate",
+        condition_category: "damaged",
+        ownership_type: "private_person",
+        families: [{ name: "von Biron", verified: true }],
+      }),
+      base(3, "Gamma muiža", {
+        object_type: "manor_estate",
+        condition_category: null,
+        ownership_type: null,
+        families: [{ name: "von der Pahlen", verified: false }],
+      }),
+      base(4, "Delta drupas", {
+        object_type: "ruin_or_historical_site",
+        condition_category: "historical_site",
+        ownership_type: "municipality",
+        public_access: "exterior_only",
+      }),
+      base(5, "Epsilon muiža", {
+        object_type: "manor_estate",
+        condition_category: null,
+        ownership_type: "private_legal_entity",
+        families: [{ name: "von Wolff", verified: true }],
+      }),
+    ];
+  }
+
+  async function namesFor(params: Record<string, string | string[]>) {
+    document.body.innerHTML = "";
+    createDirectorySearchDataSourceFromEnv.mockReturnValue(fakeSearchSource(fixture()));
+    await renderObjectsPage(params);
+    return screen.queryAllByRole("link", { name: /pils|muiža|drupas/ }).map((l) => l.textContent);
+  }
+
+  it("filters by condition, using the stored categories", async () => {
+    expect(await namesFor({ condition: "class_a" })).toEqual(["Alfa pils"]);
+    expect(await namesFor({ condition: "historical_site" })).toEqual(["Delta drupas"]);
+  });
+
+  it("filters by ownership group: private and public each cover their stored values", async () => {
+    expect(await namesFor({ ownership: "private" })).toEqual(["Beta muiža", "Epsilon muiža"]);
+    expect(await namesFor({ ownership: "public" })).toEqual(["Alfa pils", "Delta drupas"]);
+  });
+
+  it("filters by a verified historical family, ignoring unverified associations", async () => {
+    expect(await namesFor({ family: "von der Pahlen" })).toEqual(["Alfa pils"]);
+    expect(await namesFor({ family: "von Wolff" })).toEqual(["Epsilon muiža"]);
+  });
+
+  it("ORs values within one new filter, and returns an object with several selected families once", async () => {
+    expect(await namesFor({ condition: ["class_a", "damaged"] })).toEqual([
+      "Alfa pils",
+      "Beta muiža",
+    ]);
+    expect(await namesFor({ family: ["von der Pahlen", "von Biron"] })).toEqual([
+      "Alfa pils",
+      "Beta muiža",
+    ]);
+  });
+
+  it('matches only missing values with "unknown", and never missing values with a known one', async () => {
+    expect(await namesFor({ condition: "unknown" })).toEqual(["Epsilon muiža", "Gamma muiža"]);
+    expect(await namesFor({ ownership: "unknown" })).toEqual(["Gamma muiža"]);
+    // Gamma's only family link is unverified, so its family is not recorded.
+    expect(await namesFor({ family_unknown: "1" })).toEqual(["Delta drupas", "Gamma muiža"]);
+    expect(await namesFor({ ownership: "private" })).not.toContain("Gamma muiža");
+  });
+
+  it('returns either group when known values and "unknown" are selected together', async () => {
+    expect(await namesFor({ condition: ["damaged", "unknown"] })).toEqual([
+      "Beta muiža",
+      "Epsilon muiža",
+      "Gamma muiža",
+    ]);
+    expect(await namesFor({ ownership: ["public", "unknown"] })).toEqual([
+      "Alfa pils",
+      "Delta drupas",
+      "Gamma muiža",
+    ]);
+    expect(await namesFor({ family: "von Wolff", family_unknown: "1" })).toEqual([
+      "Delta drupas",
+      "Epsilon muiža",
+      "Gamma muiža",
+    ]);
+  });
+
+  it("ANDs the new filters with each other, with search and with Day 17 filters", async () => {
+    expect(await namesFor({ ownership: "private", family: "von Biron" })).toEqual(["Beta muiža"]);
+    expect(await namesFor({ q: "muiža", condition: "unknown", ownership: "private" })).toEqual([
+      "Epsilon muiža",
+    ]);
+    expect(await namesFor({ type: "manor_estate", family_unknown: "1" })).toEqual(["Gamma muiža"]);
+    expect(await namesFor({ access: "open", ownership: "public", condition: "class_a" })).toEqual([
+      "Alfa pils",
+    ]);
+  });
+
+  it("sends the new filters to the data source in the same single request as the search", async () => {
+    const search = fakeSearchSource(fixture());
+    createDirectorySearchDataSourceFromEnv.mockReturnValue(search);
+    document.body.innerHTML = "";
+
+    await renderObjectsPage({
+      q: "muiža",
+      condition: ["unknown", "class_b"],
+      ownership: "public",
+      family: "von Biron",
+      family_unknown: "1",
+    });
+
+    expect(search.calls).toHaveLength(1);
+    expect(search.calls[0].query).toBe("muiža");
+    expect(search.calls[0].filters).toMatchObject({
+      conditions: ["class_b", "unknown"],
+      ownership: ["public"],
+      families: ["von Biron"],
+      familyUnknown: true,
+    });
+  });
+
+  it("ignores invalid and obsolete values with a notice, without inventing categories", async () => {
+    const names = await namesFor({
+      condition: ["ruined", "class_a"],
+      ownership: "private_person",
+      family_unknown: "yes",
+    });
+    expect(names).toEqual(["Alfa pils"]);
+    expect(screen.getByText(/filtri nebija derīgi/i)).toBeInTheDocument();
+  });
+
+  it("keeps the new selections on the next-page link, with a cursor scoped to them", async () => {
+    const { decodeCursor } = await import("@/lib/directory/cursor");
+    const { listingScope } = await import("@/lib/directory/filters");
+    const many: FakeRow[] = Array.from({ length: 30 }, (_, i) => ({
+      ...row(`Muiža ${String(i).padStart(2, "0")}`, ID(i)),
+      slug: `m-${i}`,
+      condition_category: null,
+      families: i % 2 === 0 ? [{ name: "von Biron", verified: true }] : [],
+    }));
+    createDirectorySearchDataSourceFromEnv.mockReturnValue(fakeSearchSource(many));
+    document.body.innerHTML = "";
+
+    await renderObjectsPage({ condition: "unknown", family: "von Biron", family_unknown: "1" });
+
+    const href = screen.getByRole("link", { name: "Nākamā lapa" }).getAttribute("href") ?? "";
+    const url = new URL(href, "http://localhost");
+    expect(url.searchParams.getAll("condition")).toEqual(["unknown"]);
+    expect(url.searchParams.getAll("family")).toEqual(["von Biron"]);
+    expect(url.searchParams.get("family_unknown")).toBe("1");
+    expect(decodeCursor(url.searchParams.get("cursor"))?.scope).toBe(
+      listingScope({
+        q: null,
+        filters: {
+          ...EMPTY_FILTERS,
+          conditions: ["unknown"],
+          families: ["von Biron"],
+          familyUnknown: true,
+        },
+      }),
+    );
+  });
+
+  it("walks every page of a multi-family selection with no duplicate and no skipped result", async () => {
+    const many: FakeRow[] = Array.from({ length: 60 }, (_, i) => ({
+      ...row(`Muiža ${String(Math.floor(i / 2)).padStart(2, "0")}`, ID(i)),
+      slug: `m-${i}`,
+      // Every third object is linked to both selected families.
+      families:
+        i % 3 === 0
+          ? [
+              { name: "von Biron", verified: true },
+              { name: "von der Pahlen", verified: true },
+            ]
+          : i % 3 === 1
+            ? [{ name: "von Biron", verified: true }]
+            : [],
+    }));
+    createDirectorySearchDataSourceFromEnv.mockReturnValue(fakeSearchSource(many));
+
+    const seen: string[] = [];
+    let params: Record<string, string | string[]> = { family: ["von Biron", "von der Pahlen"] };
+    for (let page = 0; page < 10; page += 1) {
+      document.body.innerHTML = "";
+      await renderObjectsPage(params);
+      for (const link of screen.getAllByRole("link", { name: /^Muiža/ })) {
+        seen.push(new URL(link.getAttribute("href") ?? "", "http://localhost").pathname);
+      }
+      const next = screen.queryByRole("link", { name: "Nākamā lapa" });
+      if (!next) {
+        break;
+      }
+      const url = new URL(next.getAttribute("href") ?? "", "http://localhost");
+      params = {};
+      for (const key of new Set(url.searchParams.keys())) {
+        const values = url.searchParams.getAll(key);
+        params[key] = values.length === 1 ? values[0] : values;
+      }
+    }
+
+    expect(seen).toHaveLength(40);
+    expect(new Set(seen).size).toBe(40);
+  });
+
+  it("refuses a cursor once a new filter changes: first page, with a notice", async () => {
+    const { encodeCursor } = await import("@/lib/directory/cursor");
+    const { listingScope } = await import("@/lib/directory/filters");
+    const search = fakeSearchSource(fixture());
+    createDirectorySearchDataSourceFromEnv.mockReturnValue(search);
+    document.body.innerHTML = "";
+    const staleCursor = encodeCursor({
+      name: "Alfa pils",
+      id: ID(1),
+      scope: listingScope({ q: null, filters: { ...EMPTY_FILTERS, conditions: ["class_a"] } }),
+    });
+
+    await renderObjectsPage({ condition: ["class_a", "unknown"], cursor: staleCursor });
+
+    expect(search.calls[0].after).toBeNull();
+    expect(screen.getByText(/saite uz šo lapu bija nederīga/i)).toBeInTheDocument();
+  });
+
+  it("offers clearing the filters while keeping the search when nothing matches", async () => {
+    await namesFor({ q: "drupas", ownership: "private" });
+
+    expect(
+      screen.getByRole("heading", { name: /neviens objekts neatbilst izvēlētajiem filtriem/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/nezināms \/ nav reģistrēts/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Notīrīt filtrus, paturēt meklēšanu" }),
+    ).toHaveAttribute("href", "/objects?q=drupas");
+  });
+
+  it("gives result cards the new filters so the object page can link back", async () => {
+    await namesFor({ condition: "unknown", family_unknown: "1" });
+
+    const href = screen.getByRole("link", { name: "Gamma muiža" }).getAttribute("href") ?? "";
+    expect(new URL(href, "http://localhost").searchParams.get("fromFilters")).toBe(
+      "condition=unknown&family_unknown=1",
+    );
   });
 });

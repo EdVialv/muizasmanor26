@@ -5,6 +5,13 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     tsconfigPaths: true,
+    alias: {
+      // Next.js resolves "server-only" itself; outside Next it is a no-op.
+      "server-only": new URL(
+        "./node_modules/next/dist/compiled/server-only/empty.js",
+        import.meta.url,
+      ).pathname,
+    },
   },
   test: {
     environment: "jsdom",

@@ -1,46 +1,18 @@
 import type { ReactNode } from "react";
-import { Suspense } from "react";
-import DirectorySearchField from "@/components/DirectorySearchField";
+import DirectoryFrame from "@/components/DirectoryFrame";
 
 /**
- * The directory's frame: heading and search field (Day 16 -
- * docs/DAY16_SEARCH_NOTES.md).
+ * The list view's frame (src/components/DirectoryFrame.tsx): heading,
+ * list/map switch, search field and filter panel, above this route's
+ * loading.tsx boundary.
  *
- * They live in a layout, above the route's loading.tsx boundary, so that
- * while a search or a page of results is loading only the results area
- * changes - the field keeps its text, its caret and keyboard focus.
+ * The directory is rendered per request (its page reads searchParams). This
+ * says so explicitly, so the build never tries to prerender it: the search
+ * field and filter panel read useSearchParams() without a Suspense
+ * fallback, and render on the server with the real, validated listing.
  */
-export default function DirectoryLayout({ children }: { children: ReactNode }) {
-  return (
-    <section className="objectsSection">
-      <div className="container">
-        <h1 className="objectsHeading">Muižu un kultūrvēsturisko objektu katalogs</h1>
-        {/* useSearchParams() needs a Suspense boundary; on this dynamic route
-            the fallback is only a no-JavaScript stand-in. */}
-        <Suspense fallback={<SearchFieldFallback />}>
-          <DirectorySearchField />
-        </Suspense>
-        {children}
-      </div>
-    </section>
-  );
-}
+export const dynamic = "force-dynamic";
 
-function SearchFieldFallback() {
-  return (
-    <form className="directorySearch" role="search" action="/objects" method="get">
-      <label className="directorySearchLabel" htmlFor="directory-search-fallback">
-        Meklēt pēc nosaukuma vai vietas
-      </label>
-      <div className="directorySearchControls">
-        <input
-          id="directory-search-fallback"
-          className="directorySearchInput"
-          type="search"
-          name="q"
-          autoComplete="off"
-        />
-      </div>
-    </form>
-  );
+export default function DirectoryLayout({ children }: { children: ReactNode }) {
+  return <DirectoryFrame>{children}</DirectoryFrame>;
 }

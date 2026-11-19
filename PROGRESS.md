@@ -19,26 +19,26 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Day 17 ready to start
+- **Current roadmap day:** Day 21 implemented on the integrated Day 20 + design baseline, awaiting review; Days 17–20 and the design (PR #44) are not yet merged into `main`
 - **Last completed-and-merged day:** Day 16 ([#42](https://github.com/EdVialv/muizasmanor26/pull/42), `5d15f23`)
-- **Current issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
-- **Next outcome:** Apply the Day 15 and Day 16 migrations to `muizasmanor26-dev` in order, then build Day 17 object-type, region, access and service filters.
-- **MVP status:** Days 1–16 are merged and verified. Day 14 added object pages, Day 15 added the first visual alpha and its image/access migration, and Day 16 added indexed multilingual search and its search migration. The two new migrations remain unapplied to the real development database. The real dataset remains non-destructive: no Day 11 row was bulk-staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
+- **Current issue:** [#10 — Administration](https://github.com/EdVialv/muizasmanor26/issues/10)
+- **Next outcome:** Review Day 21 (`claude/day21-auth-admin`), which sits on the reviewed Day 20 (`fb46cd0`) merged with the travel-guide design (`867ffef`) as `4c79149`, plus integration fixes `265fc62`. Then apply the Day 15–21 migrations to `muizasmanor26-dev` in order, provision the first administrator (docs/DAY21_AUTH_PERMISSIONS_NOTES.md, "Account setup"), verify sign-in against the real Supabase Auth, and start Day 22 (admin lists and forms).
+- **MVP status:** Days 1–16 are merged and verified; Days 17–18 (filters) and Day 19 (map) await review. Day 14 added object pages, Day 15 added the first visual alpha and its image/access migration, and Day 16 added indexed multilingual search and its search migration. The two new migrations remain unapplied to the real development database. The real dataset remains non-destructive: no Day 11 row was bulk-staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
 - **Detailed plan:** [TODO.md](TODO.md)
 
 ## Current work
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                           |
-| ---------------- | ------------------------------------------------------- |
-| Status           | Ready for Day 17                                        |
-| Agent            | None                                                    |
-| Issue            | #9                                                      |
-| Branch           | None                                                    |
-| Session goal     | Build object-type, region, access and service filters   |
-| Started          | Not started                                             |
-| Expected handoff | Tested, URL-synchronised filters ready for Codex review |
+| Field            | Current value                                                      |
+| ---------------- | ------------------------------------------------------------------ |
+| Status           | Day 21 awaiting review                                             |
+| Agent            | Claude Code (session ended)                                        |
+| Issue            | #10                                                                |
+| Branch           | `claude/day21-auth-admin` (on Day 20 `fb46cd0` + design `867ffef`) |
+| Session goal     | Staff sign-in, trusted roles and a protected `/admin`              |
+| Started          | 2026-11-19                                                         |
+| Expected handoff | Tested authentication and permissions ready for review             |
 
 ## Required session entry
 
@@ -67,6 +67,279 @@ Copy this template to the top of **Session history** before ending a session.
 ```
 
 ## Session history
+
+### 2026-11-19 Europe/Riga — Claude Code (Day 21)
+
+- **Issue:** [#10 — Administration](https://github.com/EdVialv/muizasmanor26/issues/10)
+- **Branch:** `claude/day21-auth-admin`, created from the reviewed Day 20 head `fb46cd0`. `4c79149` merges `origin/codex/travel-guide-design` (`867ffef`) as a separate merge commit (6 conflicts, both sides kept); `265fc62` fixes two integration problems (the design's map resize rewrote shared positions; desktop "Filtri" could hide the always-open sidebar). Neither source branch was modified. `main` is still `f3311e7`.
+- **Pull request:** not opened (the push returns 403; delivered as `muizasmanor26-day21.bundle`).
+- **Session goal:** Staff sign in with Supabase Auth and reach a protected `/admin`; public browsing unchanged.
+- **Completed:**
+  - Integrated baseline verified before any Day 21 work: format, lint, typecheck, 558 tests, build, audit, `git diff --check`, and every browser suite (Day 17–20).
+  - `@supabase/ssr` cookie sessions; Next 16 `proxy.ts` refreshes sessions for `/admin*` and `/api/admin/*` only (no authorisation there).
+  - Every protected page, route handler and server action verifies the user (`getClaims()`) and reads the role from `staff_members` under the user's own RLS; default deny.
+  - Migration `20261119090000_staff_roles.sql`: `staff_role` enum, `staff_members` (read-only to the app: own row, or all for administrators; no write grants or policies), `private.current_staff_role()`, and a staff read policy for every object status.
+  - `/admin/sign-in` (e-mail + password, no sign-up, safe `next`, pending/validation/failure/expired/signed-out states, works without JS), `/admin` (role, content overview, administrator-only read-only staff figures, access-denied and not-verifiable states), POST sign-out, `GET /api/admin/session` (401/403/503/200). Staff responses private and noindex.
+  - Account setup, permission matrix and Day 22/23 plan in `docs/DAY21_AUTH_PERMISSIONS_NOTES.md`.
+- **Verification:** see the notes. Mocked unit/integration tests (review fixes: 67 files, 643 tests); real local PostgreSQL RLS test; real local PostgREST + PostgreSQL with stub-issued JWTs (20/20); browser with a local Auth **stub** (55/55, desktop and mobile); Day 17–20 browser regressions pass. Real Supabase Auth and live settings: **blocked** (not passed).
+- **Decisions:** see the notes, "Limitations and decisions for review" (6).
+- **Blockers or risks:** sign-in has not been run against the real Supabase Auth server; stacked on the unmerged Days 17–20 and design.
+- **Next exact action:** review Day 21; on `muizasmanor26-dev`, apply the Day 15–21 migrations, provision a first administrator and run the three-account test plan.
+- **Handoff state:** committed on `claude/day21-auth-admin`, not pushed; awaiting review
+
+### 2026-11-18 Europe/Riga — Claude Code (Day 20 corrections after review)
+
+- **Issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
+- **Branch:** `claude/day20-url-state`, now based on the owner-pushed `claude/day19-map` at the Day 19 fix `443dd77` (the previous delivery, based on `9de61a3`, is kept locally as `claude/day20-url-state-pre-correction`). `codex/travel-guide-design` (PR #44) was not touched. `main` is still `f3311e7`.
+- **Pull request:** not opened (the push returns 403; delivered as `muizasmanor26-day20-corrected.bundle`, which needs `443dd77`).
+- **Completed:**
+  - Restored the Day 19 fixes by rebasing the Day 20 commits onto `443dd77` (no conflicts; the old base had the same tree as `9b43948`): immediate abort/invalidation in `useMapData`, strict tile templates, `minZoom <= maxZoom`, and their regression tests.
+  - Search history: blur now commits a pending debounced search in the current epoch before ending the typing burst, so a later separate search adds its own entry.
+  - Back/Forward: after popstate the provider follows the restored URL, or any URL change since the event, instead of any URL differing from the last synced one (which could adopt one of our unsynced landings). Found by the new regression test.
+  - URL map positions now accept zoom 1–22, matching Day 19's supported tile-provider range; this keeps copied/restored positions valid for providers below 6 or above 19.
+  - Regression tests for both; docs updated ("Corrections after review").
+- **Verification:** `npm ci`, format, lint, typecheck, tests (52 files, 555 tests), build, `npm audit --omit=dev` (0) and `git diff --check` — passed. Browser (Chromium): blur-before-debounce reproduction 12/12 (desktop and mobile), Day 20 66/66, Day 19 22/22, Day 17 27/27 and 19/19, Day 18 27/27 and 6/6.
+- **Next exact action:** Codex reviews the corrected Day 20; design integration with PR #44 follows separately.
+- **Handoff state:** committed on `claude/day20-url-state`, not pushed; awaiting review
+
+### 2026-11-18 Europe/Riga — Claude Code (Day 20)
+
+- **Issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
+- **Branch:** `claude/day20-url-state`, first based on Day 19 rebased onto the owner-pushed Day 18 (`9b13fdb`, on Day 17 `e46b81c`): `claude/day19-map` = `9de61a3`, same tree as the delivered Day 19. Superseded by the corrections above. `main` is still `f3311e7`.
+- **Pull request:** not opened (the push returns 403; delivered as `muizasmanor26-day20.bundle`, which needed `9de61a3`).
+- **Session goal:** Opening, refreshing or sharing a list or map URL restores the same search, filters, list page and map position; Back/Forward works.
+- **Completed:**
+  - One canonical URL model (`src/lib/directory/browseState.ts`, `src/lib/map/position.ts`): listing params unchanged, `cursor`, and `lat`/`lng`/`zoom` (centre and zoom are authoritative). Defaults omitted; values validated, deduplicated, ordered and bounded.
+  - `DirectoryListingProvider` owns listing, cursor and position. Filter changes push and reset the cursor; a typing burst pushes once and then replaces; map moves `replaceState` after a 400 ms debounce; Back/Forward wins over navigations in flight and invalidates pending debounced writes. Stale landings and non-canonical URLs are corrected once, with no loops.
+  - The map opens at the URL position before its first data request and never writes programmatic moves back.
+  - The view switch, object links (`fromLat`/`fromLng`/`fromZoom`, and the cursor from the map too), "Nākamā lapa" and the no-JS forms carry cursor and position.
+  - "Kopēt saiti" with success status and a manual-copy fallback.
+  - Fixed during browser verification: client-side cursor decoding now uses `atob`/`TextDecoder` (a `Buffer` polyfill rejected tokens containing `-`/`_`).
+- **Files changed:** see `docs/DAY20_URL_STATE_NOTES.md` "Files"; `docs/day20-screenshots/` — new; `TODO.md`, `PROGRESS.md`.
+- **Verification:**
+  - Format, lint, typecheck, tests (52 files, 549 tests), build, `npm audit --omit=dev` (0) and `git diff --check` — passed.
+  - Browser: 66/66 Day 20 checks (desktop and mobile journeys, races, canonicalisation, no-JS), plus the Day 17/18/19 regressions (27/27, 19/19, 27/27, 6/6, 22/22).
+  - Not verified: Supabase itself, real tiles, non-Chromium browsers.
+- **Decisions:** see `docs/DAY20_URL_STATE_NOTES.md` "Limitations and decisions for review" (5).
+- **Blockers or risks:** stacked on unreviewed Days 17–19. No migration.
+- **Next exact action:** Codex reviews Days 17–20 in order; then Day 21 (authentication).
+- **Handoff state:** committed on `claude/day20-url-state`, not pushed; awaiting review
+
+### 2026-11-18 Europe/Riga — Claude Code (Day 19)
+
+- **Issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
+- **Branch:** `claude/day19-map`, based on the corrected Day 18 `8e92f7c`. Days 17–18 were not yet accepted: `main` is still `f3311e7`.
+- **Pull request:** not opened (this session cannot push; delivered as `muizasmanor26-day19.bundle`, which needs `8e92f7c`).
+- **Session goal:** Interactive Leaflet map with viewport queries, clustering and list-to-map navigation.
+- **Completed:**
+  - **Migration:** one unapplied migration.
+    - Moves the Day 16–18 parsing and matching rules into a shared parser and an inlinable matcher, now used by both the list and the map. List signatures and behaviour are unchanged.
+    - Adds `public_map_objects`: the viewport is validated and clamped to the Latvia box; it returns every point up to 500, otherwise exact grid clusters.
+    - Adds the `SECURITY DEFINER` id and cluster helpers and a partial GiST expression index.
+  - **API route:** `/api/directory/map` validates the viewport and parses search and filters exactly as the list does.
+  - **Page:** `/map` shares one frame and one `DirectoryListingProvider` with the list, with a Saraksts/Karte switch and a "Karte" header link.
+  - **Map behaviour:**
+    - Leaflet loads browser-only, with canvas points.
+    - Supercluster clusters, and same-position stacks with list popups.
+    - Popups with name, type and object link.
+    - Debounced, aborting requests that ignore stale answers; no requests while the page is hidden.
+    - Loading, no-results, error, tile-failure, missing-base-map, chunk-failure and no-JavaScript states.
+    - An accessible in-view list.
+    - Wheel zoom only while the map is in use; markers are not Tab stops.
+    - Object pages link "Atpakaļ uz karti".
+  - **Tiles:** configured by `MAP_TILE_URL`, `MAP_TILE_ATTRIBUTION` and `MAP_TILE_MAX_ZOOM` (documented in `.env.example`). The OSM standard tiles are used in development only; no paid service is enabled.
+- **Files changed:**
+  - `supabase/migrations/20261116090000_directory_map.sql` and `supabase/tests/directory_map.test.sql` — new.
+  - New, with tests: `src/lib/map/*` and `src/components/map/*`; `src/app/map/*` and `src/app/api/directory/map/*`; `src/components/DirectoryFrame.tsx` and `DirectoryViewSwitch.tsx`.
+  - `src/app/objects/(directory)/layout.tsx`, `src/components/SiteHeader.tsx`, `src/lib/directory/links.ts`, `supabaseSearchDataSource.ts`, the object page, `globals.css`.
+  - `package.json` and `package-lock.json` (`leaflet`, `supercluster`, `@types/leaflet`), `.env.example`.
+  - `docs/DAY19_MAP_NOTES.md` and `docs/day19-screenshots/` — new; `TODO.md`, `PROGRESS.md`.
+- **Verification:**
+  - Format, lint, typecheck, `npm test -- --run` (49 files, 503 tests), build, `npm audit --omit=dev` (0) and `git diff --check` — passed.
+  - SQL: the map and family-name regression tests passed, and the Day 17/18 ground-truth walks (16/16, 23/23) passed again.
+  - Browser: 22/22 Day 19 checks, plus the Day 17/18 regressions (27/27, 19/19, 27/27, 6/6).
+  - Timed locally at 10,643 objects: see the notes.
+  - Not verified: any real tile provider, Supabase itself, and browsers other than Chromium.
+- **Decisions:** see `docs/DAY19_MAP_NOTES.md` "Decisions requiring Codex review" (10).
+- **Blockers or risks:**
+  - The branch is stacked on unreviewed Days 17–18.
+  - A production tile provider must be chosen by the owner; free plans are non-commercial.
+  - The whole-Latvia unfiltered view takes about 20 ms per uncached request at 10,000 objects.
+- **Next exact action:**
+  - Codex: review Days 17, 18 and 19 in order.
+  - Apply the Day 15–19 migrations to `muizasmanor26-dev`, then run `VACUUM ANALYZE heritage_objects, object_historical_owner_families`.
+  - Set `MAP_TILE_*` for a chosen provider and open `/map`.
+- **Handoff state:** committed on `claude/day19-map`, not pushed; awaiting review
+
+### 2026-11-18 Europe/Riga — Claude Code (Day 18, second correction round)
+
+- **Issue:** [#9](https://github.com/EdVialv/muizasmanor26/issues/9)
+- **Branch:** `claude/day18-condition-ownership-family`, rebased onto the corrected Day 17 branch. Both are delivered in one full bundle from `main` `f3311e7`.
+- **Completed:**
+  - Day 18 now uses the shared listing state: all filter groups and the family picker go through `DirectoryListingProvider`, which also survives out-of-order completion.
+  - The no-JavaScript search form keeps all eight filter parameters.
+  - Family names are canonical end to end: a new `canonical_family_name()` (NFC + the JavaScript trim set) is used by the options RPC (one option, merged count), the matching RPC (through an expression index) and its input. It is identical to `normalizeFamily()`. No data is rewritten.
+  - The `SECURITY DEFINER` trust boundary of `public_directory_historical_families` is documented accurately.
+- **Files changed:**
+  - `supabase/migrations/20261115090000_directory_classification_filters.sql` (still unapplied; same order);
+  - `supabase/tests/directory_family_names.test.sql` (new);
+  - `src/lib/directory/filters.ts`, `familyOptions.ts`, `src/app/api/directory/families/route.ts`;
+  - `src/components/DirectoryFilterPanel.tsx`;
+  - tests;
+  - `docs/DAY18_CLASSIFICATION_FILTERS_NOTES.md`, `docs/DATA_MODEL.md`.
+- **Verification:**
+  - `npm run format:check`, `lint`, `typecheck`, `npm test -- --run` (42 files, 462 tests), `build` and `npm audit --omit=dev` (0) — passed. `git diff --check` is clean.
+  - The SQL regression test passed. The 23 SQL ground-truth walks passed.
+  - Browser: 6/6 new checks, 19/19 Day 17 checks and 27/27 Day 18 checks passed.
+  - Timings were re-measured; see the notes.
+  - No migration was applied to any shared environment, and nothing was written to Supabase.
+- **Next exact action:**
+  - Codex: review `claude/day17-directory-filters`, which includes the separate Next 16.4.6 bump commit, then `claude/day18-condition-ownership-family`. Merge them in that order.
+  - Apply the Day 15–18 migrations to `muizasmanor26-dev` in order.
+  - Run `supabase/tests/directory_family_names.test.sql` there only if it is disposable.
+- **Handoff state:** committed, not pushed (bundle); awaiting review
+
+### 2026-11-18 Europe/Riga — Claude Code (Day 17, second correction round)
+
+- **Issue:** [#9](https://github.com/EdVialv/muizasmanor26/issues/9). **Branch:** `claude/day17-directory-filters`.
+- **Completed:** `DirectoryListingProvider` no longer depends on navigations completing in order. If an older navigation's URL settles after the newest, it is treated as a stale landing: the newest search and filters are kept and the URL is corrected with `router.replace()`. Back/Forward and links are followed as before. A new integration test lands a search, filters and another search newest-first and oldest-last.
+- **Dependency:** `next` and `eslint-config-next` were bumped 16.4.3 → 16.4.6 in their own commit. Advisories GHSA-mfr8-8qww-v76h and GHSA-vc7v-qv4w-wrv8, published since `f3311e7`, made `npm audit --omit=dev` fail and `next build` refuse to run on 16.4.3, on `main` too. The commit can be taken or dropped on its own.
+- **Verification (with the bump):** format, lint, typecheck, 394 tests, build and `npm audit --omit=dev` (0) — passed. No Supabase migration or write.
+- **Next exact action:** Codex reviews Day 17 together with the rebased Day 18 branch.
+- **Handoff state:** committed, not pushed (bundle); awaiting review
+
+### 2026-11-13 Europe/Riga — Claude Code (Day 18)
+
+- **Issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
+- **Branch:** `claude/day18-condition-ownership-family`. It is based on the Day 17 commit `1c09a36`, because Day 17 was not yet reviewed or merged: `main` is still `f3311e7`.
+- **Pull request:** not opened (this session cannot push; delivered as `muizasmanor26-day18.bundle`, which needs `1c09a36`).
+- **Session goal:** Condition, ownership and historical-family filters with explicit handling of missing data.
+- **Completed:**
+  - Mapped the filters to the schema:
+    - condition → `condition_category`;
+    - ownership → `ownership_type` through the documented private/public groups;
+    - family → `object_historical_owner_families`, verified links only, identified by `family_name`.
+  - Each filter has a "Nezināms / nav reģistrēts" choice matching `NULL` or "no verified link". Known values never match missing ones, and known + unknown returns either group.
+  - Wrote one unapplied migration:
+    - the search function and its ids-only helper, recreated with the new filters; family matches are a set computed once, so there are no duplicates and no per-result queries;
+    - a bounded `SECURITY DEFINER` family-options function;
+    - one partial index on verified family links.
+  - URL model: `condition`, `ownership`, `family` and `family_unknown=1`, validated, deduplicated, bounded and canonical. They are part of the cursor scope; Day 17-only URLs are unchanged.
+  - UI: three fieldsets in the existing panel, an accessible searchable family picker backed by `GET /api/directory/families` (at most 20 per request), chips, and clearing that covers the new filters while keeping the search.
+- **Files changed:**
+  - `supabase/migrations/20261115090000_directory_classification_filters.sql` — new.
+  - New, with tests: `src/lib/directory/familyOptions.ts`, `src/app/api/directory/families/route.ts`, `src/components/DirectoryFamilyPicker.tsx`.
+  - Modified, with tests: `src/lib/directory/filters.ts`, `labels.ts`, `supabaseSearchDataSource.ts`, `src/components/DirectoryFilterPanel.tsx`, `src/app/objects/(directory)/page.tsx`.
+  - `src/app/globals.css` — combobox styles.
+  - `docs/DAY18_CLASSIFICATION_FILTERS_NOTES.md` and `docs/day18-screenshots/` — new.
+  - `docs/DATA_MODEL.md`, `TODO.md`, `PROGRESS.md`.
+- **Verification:**
+  - `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run build` and typecheck after the build — passed.
+  - `npm test` — passed, 41 files, 432 tests (379 → 432).
+  - `npm audit --omit=dev` — 0 vulnerabilities.
+  - 23 local SQL ground-truth walks — passed.
+  - 27/27 Playwright checks against a local PostgREST — passed.
+  - Timed locally at 10,643 published objects (sparse and dense fixtures), with the final migration freshly applied. Details are in the notes.
+  - Run on Node 22.23.4.
+  - Not run: anything against the real Supabase project.
+- **Decisions:** see `docs/DAY18_CLASSIFICATION_FILTERS_NOTES.md` "Decisions requiring Codex review" (9). The most important are the ownership groups, verified-only family links, the `SECURITY DEFINER` options function, and `family_unknown` as its own parameter.
+- **Blockers or risks:**
+  - The branch is stacked on unreviewed Day 17.
+  - The migration replaces the search signature again: apply it and deploy the code together.
+  - On real data, known values return nothing until editors record condition, ownership and verified families.
+  - Family options take ~7 ms at 3,888 links (cached for 60 s).
+- **Next exact action:**
+  - Codex: review Day 17, then Day 18 (rebase if Day 17 changes). Apply the Day 15–18 migrations to `muizasmanor26-dev` in order, then run `VACUUM ANALYZE heritage_objects, object_historical_owner_families`. Check one filtered listing and the family picker in a browser.
+- **Handoff state:** committed on `claude/day18-condition-ownership-family`, not pushed; awaiting review
+
+### 2026-11-14 Europe/Riga — Claude Code (Day 17 corrections after Codex review)
+
+- **Issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
+- **Branch:** `claude/day17-directory-filters` (on `main` `f3311e7`)
+- **Pull request:** not opened (this session cannot push; delivered as `muizasmanor26-day17-corrected.bundle`)
+- **Session goal:** Fix the two interaction defects Codex found in Day 17; nothing else.
+- **Completed:**
+  - Shared listing state: `DirectoryListingProvider`, a client context, now owns the latest intended search and filters for both the search field and the panel.
+    - Every change derives from it, never from a URL snapshot, and navigates to page 1.
+    - One shared transition keeps an older, delayed navigation from replacing the newest state.
+    - Back/Forward still restore everything.
+  - No-JavaScript search form: it carries the active filters as canonical hidden inputs (`filtersToEntries`), with no invalid values and no cursor. Its clear link keeps the filters.
+  - The Suspense fallback form is removed. The layout is declared `force-dynamic`, so the server renders the real form.
+  - The migration and all accepted Day 17 decisions are unchanged.
+- **Files changed:**
+  - `src/components/DirectoryListingProvider.tsx` and its test — new;
+  - `src/components/DirectorySearchField.tsx`, `DirectoryFilterPanel.tsx` and their tests;
+  - `src/app/objects/(directory)/layout.tsx`;
+  - `src/app/globals.css` — the no-JavaScript clear link;
+  - `docs/DAY17_DIRECTORY_FILTERS_NOTES.md`, `PROGRESS.md`.
+- **Verification:**
+  - `npm ci`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run build` and typecheck after the build — passed.
+  - `npm test` — passed, 39 files, 393 tests (379 → 393).
+  - `npm audit --omit=dev` — 0 vulnerabilities. The full `npm ci` audit still lists 12 advisories in development dependencies; the lockfile is unchanged.
+  - Browser checks for the corrections — 19/19 passed; the uncorrected build fails them.
+  - The original Day 17 browser run — 27/27 passed.
+  - No Supabase migration or data write was performed.
+- **Decisions:** the layout is `force-dynamic` instead of keeping a Suspense fallback that could not know the filters. The route was already rendered per request.
+- **Blockers or risks:**
+  - The Day 18 branch (`claude/day18-condition-ownership-family`) was built on the uncorrected Day 17 and needs rebasing onto this commit before its review.
+  - This session cannot push: the work is delivered as a git bundle.
+- **Next exact action:**
+  - Codex: review the corrections on `claude/day17-directory-filters` and merge Day 17. Apply the Day 15, 16 and 17 migrations to `muizasmanor26-dev` in order.
+- **Handoff state:** committed on `claude/day17-directory-filters`, not pushed; awaiting review
+
+### 2026-11-13 Europe/Riga — Claude Code (Day 17)
+
+- **Issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
+- **Branch:** `claude/day17-directory-filters`, based on the accepted Day 16 baseline `main` `f3311e7`
+- **Pull request:** not opened (this session cannot push; delivered as `muizasmanor26-day17.bundle`)
+- **Session goal:** Object-type, region, public-access, accommodation, catering and event filters on `/objects`.
+- **Completed:**
+  - Mapped each filter to the schema:
+    - type → `object_type`;
+    - region → `municipality`, the only stored geography, matched exactly;
+    - access → Day 15 `public_access`.
+  - Found the schema had no field for services. Added the smallest shape that keeps unknown ≠ no: nullable `offers_accommodation`, `offers_catering` and `offers_event_facilities`, plus `services_verified_at`. Nothing is backfilled or inferred.
+  - Wrote one unapplied migration:
+    - the columns;
+    - three partial `(name_lv, id)` indexes for flagged rows, justified by measurement;
+    - a `public_directory_municipalities()` options function;
+    - the Day 16 search function and its ids-only helper, recreated with filter arguments, so search and filters run in one query and one keyset order.
+  - Rules: AND across groups, OR within, services independent; positive filters match recorded `true` only; no parent inheritance; access kept distinct from ownership.
+  - URL model: validated, canonical and bounded params, with cursors scoped to search + filters. Any change resets to page 1, and "Nākamā lapa" keeps selections. Object pages return to the same filtered page.
+  - Filter panel:
+    - labelled fieldsets in a `<details>`, closed by default;
+    - chips with individual removal, "clear filters (keep search)" and "clear search and filters";
+    - pending announcement, newest-navigation-wins, and a no-JavaScript GET fallback;
+    - filter-specific no-results and error states.
+- **Files changed:**
+  - `supabase/migrations/20261114090000_directory_filters.sql` — new.
+  - New library modules with tests: `src/lib/directory/filters.ts`, `regionOptions.ts`.
+  - Modified library modules with tests: `search.ts`, `supabaseSearchDataSource.ts`, `links.ts`, `labels.ts`.
+  - `src/components/DirectoryFilterPanel.tsx` and its test — new.
+  - `src/components/DirectorySearchField.tsx` and its test — keeps filters.
+  - `src/app/objects/(directory)/layout.tsx`, `page.tsx`, `page.test.tsx` — filtered listing and states.
+  - `src/app/objects/[slug]/page.tsx` — `fromFilters`.
+  - `src/app/globals.css` — filter styles from existing tokens.
+  - `docs/DAY17_DIRECTORY_FILTERS_NOTES.md` and `docs/day17-screenshots/` — new.
+  - `docs/DATA_MODEL.md`, `TODO.md`, `PROGRESS.md`.
+- **Verification:**
+  - `npm run format:check`, `npm run lint` and `npm run typecheck` — passed.
+  - `npm test` — passed, 38 files, 379 tests (322 → 379).
+  - `npm run build` — passed.
+  - `npm audit --omit=dev` — 0 vulnerabilities.
+  - Local SQL ground-truth walks, and 27/27 Playwright checks against a real local PostgREST, including a delayed older response — passed (details in the notes).
+  - Timed locally on 10,632 published rows with the migration freshly applied: every filtered page had a median ≤ 1 ms.
+  - Run on Node 22.23.4.
+  - Not run: anything against the real Supabase project.
+- **Decisions:** see `docs/DAY17_DIRECTORY_FILTERS_NOTES.md` "Decisions requiring Codex review" (9). The most important are the services schema, region = exact municipality, the changed function signature, and invalid URL values being dropped with a notice.
+- **Blockers or risks:**
+  - The migration replaces the Day 16 search signature: apply it and deploy the Day 17 code together.
+  - Service and access filters return nothing on real data until those values are recorded editorially.
+  - Municipality variants appear as separate region options until the mapping is done.
+  - This session cannot push: the work is delivered as a git bundle.
+- **Next exact action:**
+  - Codex: review and merge Day 17. Apply the Day 15, Day 16 and Day 17 migrations to `muizasmanor26-dev` in that order, then run `VACUUM ANALYZE heritage_objects`. Check one filtered listing and one search+filter listing in a browser.
+- **Handoff state:** committed on `claude/day17-directory-filters`, not pushed; awaiting review
 
 ### 2026-11-13 Europe/Riga — Codex (Days 14–16 review and merge)
 

@@ -1,50 +1,83 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useId, useRef, useState, useTransition, type FormEvent } from "react";
+import Icon from "./Icon";
+import { usePathname } from "next/navigation";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
+import { useDirectoryListing } from "@/components/DirectoryListingProvider";
+import { buildBrowseHref } from "@/lib/directory/browseState";
+import {
+  EMPTY_FILTERS,
+  buildListingHref,
+  filtersToEntries,
+  type DirectoryFilters,
+} from "@/lib/directory/filters";
 import { MAX_SEARCH_QUERY_LENGTH, normalizeSearchQuery } from "@/lib/directory/searchQuery";
+import { positionEntries } from "@/lib/map/position";
+
+/** For useSyncExternalStore: "hydrated" never changes once true. */
+function subscribeToNothing() {
+  return () => {};
+}
 
 export const SEARCH_DEBOUNCE_MS = 300;
 
-/** The directory URL for a query: a new search always starts at its first page. */
-export function buildSearchHref(pathname: string, query: string | null): string {
-  return query ? `${pathname}?${new URLSearchParams({ q: query }).toString()}` : pathname;
+/**
+ * The directory URL for a query: a new search always starts at its first
+ * page, and keeps the active filters (Day 17).
+ */
+export function buildSearchHref(
+  pathname: string,
+  query: string | null,
+  filters: DirectoryFilters = EMPTY_FILTERS,
+): string {
+  return buildListingHref(pathname, { q: query, filters });
 }
 
 /**
  * The directory's search field (docs/DAY16_SEARCH_NOTES.md).
  *
- * The URL is the single source of truth: `?q=` decides what the server
- * renders, so refresh, sharing and browser Back/Forward all work. This
- * component only edits the URL:
+ * The URL decides what the server renders, so refresh, sharing and browser
+ * Back/Forward all work. The field changes the URL only through the shared
+ * listing controller (DirectoryListingProvider), together with the filter
+ * panel, so neither can erase the other's newest change:
  *
- * - typing commits the query to the URL 300 ms after the last keystroke;
- *   Enter or the clear button commit at once;
- * - a committed query always drops any `cursor`, so a new search starts on
- *   its first page (the server also refuses a cursor from another search);
+ * - typing commits the query 300 ms after the last keystroke; Enter or the
+ *   clear button commit at once;
+ * - a committed query keeps the latest intended filters and always drops
+ *   any `cursor`, so a new search starts on its first page (the server also
+ *   refuses a cursor from another search);
  * - a change that does not alter the normalised query (extra spaces) does
  *   nothing, so it cannot reset the visitor's page;
- * - navigations run in a React transition. The App Router renders only the
- *   newest navigation, and the server renders results for the URL that
- *   reached it, so a slow response for an older query can never replace
- *   the results of a newer one. While a search is in flight the field says
- *   so in a polite live region.
- * - if the URL changes from elsewhere (Back/Forward, a link), the field
- *   follows it - but never overwrites what the visitor is still typing.
+ * - while a search is in flight the field says so in a polite live region;
+ * - if the listing changes from elsewhere ("clear search and filters"),
+ *   the field follows it - but never overwrites what the visitor is still
+ *   typing;
+ * - Day 20: Back/Forward (a new epoch) cancels a pending debounced commit
+ *   and shows the restored query; a commit scheduled before it is ignored
+ *   by the provider even if its timer already fired. One typing burst
+ *   adds one history entry; leaving the field commits any pending search
+ *   at once and then ends the burst.
  *
- * Without JavaScript it is still a plain GET form to the same URL.
+ * Without JavaScript it is still a plain GET form to the same URL, carrying
+ * the active filters and the map position as hidden inputs - in their
+ * canonical, validated form and never with a cursor - so a search keeps
+ * them.
  */
 export default function DirectorySearchField() {
-  const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const urlQuery = normalizeSearchQuery(searchParams.get("q"));
+  const { listing, position, epoch, setQuery, endSearchBurst, pendingSource } =
+    useDirectoryListing();
+  const intendedQuery = listing.q;
+  const hydrated = useSyncExternalStore(
+    subscribeToNothing,
+    () => true,
+    () => false,
+  );
 
-  const [value, setValue] = useState(urlQuery ?? "");
-  const [isPending, startTransition] = useTransition();
+  const [value, setValue] = useState(intendedQuery ?? "");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** The query this field last sent to the URL. */
-  const committedRef = useRef<string | null>(urlQuery);
+  /** The query this field last committed. */
+  const committedRef = useRef<string | null>(intendedQuery);
   const inputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
   const hintId = useId();
@@ -56,43 +89,67 @@ export default function DirectorySearchField() {
     }
   }
 
-  function commit(raw: string) {
+  function commit(raw: string, startedInEpoch: number) {
     clearTimer();
     const next = normalizeSearchQuery(raw);
     committedRef.current = next;
-    if (next === urlQuery) {
-      return;
-    }
-    startTransition(() => {
-      router.push(buildSearchHref(pathname, next), { scroll: false });
-    });
+    // Built on the latest intended filters, not on a URL snapshot; a no-op
+    // when the normalised query is unchanged, ignored when Back/Forward
+    // happened since the change was made.
+    setQuery(next, { epoch: startedInEpoch });
   }
 
-  // Follow URL changes this field did not make (Back/Forward, links).
+  // Follow listing changes this field did not make (Back/Forward, links,
+  // "clear search and filters").
   useEffect(() => {
-    if (urlQuery !== committedRef.current) {
+    if (intendedQuery !== committedRef.current) {
       clearTimer();
-      committedRef.current = urlQuery;
-      setValue(urlQuery ?? "");
+      committedRef.current = intendedQuery;
+      setValue(intendedQuery ?? "");
     }
-  }, [urlQuery]);
+  }, [intendedQuery]);
+
+  // Back/Forward or a link restored a state: drop anything still pending
+  // and show the restored query, even if it equals the last committed one.
+  const seenEpochRef = useRef(epoch);
+  useEffect(() => {
+    if (seenEpochRef.current !== epoch) {
+      seenEpochRef.current = epoch;
+      clearTimer();
+      committedRef.current = intendedQuery;
+      setValue(intendedQuery ?? "");
+    }
+  }, [epoch, intendedQuery]);
 
   useEffect(() => clearTimer, []);
 
   function handleChange(nextValue: string) {
     setValue(nextValue);
     clearTimer();
-    timerRef.current = setTimeout(() => commit(nextValue), SEARCH_DEBOUNCE_MS);
+    const startedInEpoch = epoch;
+    timerRef.current = setTimeout(() => commit(nextValue, startedInEpoch), SEARCH_DEBOUNCE_MS);
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    commit(value);
+    commit(value, epoch);
+  }
+
+  // Leaving the field ends the typing burst - but first commits a search
+  // still waiting for its debounce, in the current epoch (commit() cancels
+  // the timer). Otherwise that timer would fire after the burst ended,
+  // start a new one, and the next separate search would replace its
+  // history entry instead of adding one.
+  function handleBlur() {
+    if (timerRef.current !== null) {
+      commit(value, epoch);
+    }
+    endSearchBurst();
   }
 
   function handleClear() {
     setValue("");
-    commit("");
+    commit("", epoch);
     inputRef.current?.focus();
   }
 
@@ -108,31 +165,56 @@ export default function DirectorySearchField() {
         Meklēt pēc nosaukuma vai vietas
       </label>
       <div className="directorySearchControls">
+        <Icon name="search" />
         <input
           ref={inputRef}
           id={inputId}
           className="directorySearchInput"
+          placeholder="Meklēt muižu vai vietu"
           type="search"
           name="q"
           value={value}
           onChange={(event) => handleChange(event.target.value)}
+          onBlur={handleBlur}
           maxLength={MAX_SEARCH_QUERY_LENGTH}
           autoComplete="off"
           spellCheck={false}
           enterKeyHint="search"
           aria-describedby={hintId}
         />
-        {value ? (
+        {value && hydrated ? (
           <button type="button" className="directorySearchClear" onClick={handleClear}>
             Notīrīt
           </button>
+        ) : intendedQuery && !hydrated ? (
+          // Without JavaScript: a link to the same filters with no search.
+          <a
+            className="directorySearchClear"
+            href={buildBrowseHref(pathname, {
+              listing: { q: null, filters: listing.filters },
+              cursor: null,
+              position,
+            })}
+          >
+            Notīrīt
+          </a>
         ) : null}
+        <button type="submit" className="primaryAction">
+          Meklēt
+        </button>
       </div>
+      {/* Active filters and map position for a no-JavaScript submit:
+          canonical and validated, never a cursor. */}
+      {[...filtersToEntries(listing.filters), ...positionEntries(position)].map(
+        ([name, hiddenValue]) => (
+          <input key={`${name}=${hiddenValue}`} type="hidden" name={name} value={hiddenValue} />
+        ),
+      )}
       <p id={hintId} className="directorySearchHint">
         Piemēram, „Rundāle” vai „Krāslavas novads”. Garumzīmes un lielie burti nav jāievēro.
       </p>
       <p className="directorySearchStatus" role="status" aria-live="polite">
-        {isPending ? "Meklē…" : ""}
+        {pendingSource === "search" ? "Meklē…" : ""}
       </p>
     </form>
   );

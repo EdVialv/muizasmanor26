@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DirectoryCursor } from "./cursor";
+import { EMPTY_FILTERS, canonicalFilters, listingScope } from "./filters";
 import { DirectoryQueryError, type RawDirectoryRow } from "./queries";
-import { fetchSearchPage, type DirectorySearchDataSource } from "./search";
+import { fetchListingPage, fetchSearchPage, type DirectorySearchDataSource } from "./search";
 import { searchScope } from "./searchQuery";
 
 const ID = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
@@ -31,7 +32,12 @@ describe("fetchSearchPage", () => {
 
     await fetchSearchPage(source, "  Rundāles   pils ", null, 24);
 
-    expect(source.searchPublishedObjects).toHaveBeenCalledWith("Rundāles pils", null, 25);
+    expect(source.searchPublishedObjects).toHaveBeenCalledWith(
+      "Rundāles pils",
+      EMPTY_FILTERS,
+      null,
+      25,
+    );
   });
 
   it("returns a page and a next cursor scoped to this search", async () => {
@@ -56,7 +62,7 @@ describe("fetchSearchPage", () => {
 
     await fetchSearchPage(source, "muiža", cursor, 24);
 
-    expect(source.searchPublishedObjects).toHaveBeenCalledWith("muiža", cursor, 25);
+    expect(source.searchPublishedObjects).toHaveBeenCalledWith("muiža", EMPTY_FILTERS, cursor, 25);
   });
 
   it("refuses a cursor issued for a different search, or for no search", async () => {
@@ -89,5 +95,57 @@ describe("fetchSearchPage", () => {
     await expect(fetchSearchPage(source, "muiža", null)).rejects.toBeInstanceOf(
       DirectoryQueryError,
     );
+  });
+});
+
+describe("fetchListingPage (Day 17)", () => {
+  const filters = canonicalFilters({
+    ...EMPTY_FILTERS,
+    types: ["palace_or_castle"],
+    regions: ["Cēsu novads"],
+    access: [],
+    services: ["catering", "accommodation"],
+  });
+
+  it("sends search and filters together, in canonical form, in one call", async () => {
+    const source = sourceReturning([]);
+
+    await fetchListingPage(
+      source,
+      {
+        q: " Cēsu  pils ",
+        filters: { ...filters, services: ["accommodation", "catering", "accommodation"] },
+      },
+      null,
+      24,
+    );
+
+    expect(source.searchPublishedObjects).toHaveBeenCalledTimes(1);
+    expect(source.searchPublishedObjects).toHaveBeenCalledWith("Cēsu pils", filters, null, 25);
+  });
+
+  it("works with filters and no search", async () => {
+    const source = sourceReturning([]);
+    await fetchListingPage(source, { q: null, filters }, null, 24);
+    expect(source.searchPublishedObjects).toHaveBeenCalledWith(null, filters, null, 25);
+  });
+
+  it("scopes the next cursor to this exact search and filter set", async () => {
+    const rows = [row("A", ID(1)), row("B", ID(2)), row("C", ID(3))];
+    const result = await fetchListingPage(sourceReturning(rows), { q: null, filters }, null, 2);
+    expect(result.nextCursor?.scope).toBe(listingScope({ q: null, filters }));
+  });
+
+  it("refuses a cursor from different filters, and refuses the plain directory", async () => {
+    const source = sourceReturning([]);
+    const otherScope = listingScope({ q: null, filters: { ...filters, services: [] } });
+
+    await expect(
+      fetchListingPage(source, { q: null, filters }, { name: "A", id: ID(1), scope: otherScope }),
+    ).rejects.toThrow(RangeError);
+    await expect(
+      fetchListingPage(source, { q: null, filters: EMPTY_FILTERS }, null),
+    ).rejects.toThrow(RangeError);
+    expect(source.searchPublishedObjects).not.toHaveBeenCalled();
   });
 });
