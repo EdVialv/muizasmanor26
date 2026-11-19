@@ -28,7 +28,9 @@ Staff can sign in with Supabase Auth and reach a protected `/admin` entry page. 
 
 ### Sessions
 
-- **Session cookies.** `@supabase/ssr` 0.12.7 is the one new dependency. It keeps the Supabase session in `SameSite=Lax` cookies (`sb-<ref>-auth-token`), which `@supabase/ssr` itself manages. The app never stores tokens in `localStorage` or `sessionStorage`, and never puts them in a URL.
+- **Session cookies.** `@supabase/ssr` 0.12.7 is the one new dependency. It keeps the Supabase session in cookies (`sb-<ref>-auth-token`), which `@supabase/ssr` itself manages. The app never stores tokens in `localStorage` or `sessionStorage`, and never puts them in a URL.
+  - **Attributes** come from one shared configuration, `src/lib/auth/cookies.ts` (`authCookieOptions()`), passed as `cookieOptions` by both the server client and the proxy, so the two cannot drift apart: `path=/`, `SameSite=Lax`, and **`Secure` in production** (`NODE_ENV === "production"`). `@supabase/ssr` does not set `Secure` by itself. Local development over plain HTTP keeps working because `Secure` is off outside production. A production build must therefore be served over HTTPS; browsers treat `localhost`/`127.0.0.1` as secure, so `next start` on the developer's own machine still works (the browser checks below ran that way, and the session cookie was `Secure`).
+  - **Not `httpOnly`.** The Supabase SSR session design needs the session cookie to be readable by its browser client, so the configuration never forces `httpOnly` (`@supabase/ssr` keeps `httpOnly: false`). See "Limitations and decisions for review", item 5.
 - **Proxy.** `src/proxy.ts` is the Next.js 16 "proxy", formerly middleware. It runs only for `/admin`, `/admin/*` and `/api/admin/*`. It refreshes an expired access token and writes the new cookies; it does not authorise anything. Public routes never read a session and stay cacheable.
 - **Server-side check** (`src/lib/auth/session.ts`). Every protected page, route handler and server action calls `loadStaffAccess()` itself:
   1. **Identity:** `auth.getClaims()` verifies the access token — the signature with asymmetric signing keys, or Supabase Auth itself (`getUser`) with symmetric keys. A token that merely decodes is never trusted.
@@ -158,7 +160,7 @@ Apply `20261119090000_staff_roles.sql` after the Day 15–19 migrations. Then pr
 
 ## Verification
 
-**Mocked (Vitest; jsdom or Node):** 53 → 65 test files, 558 → 635 tests; format, lint, typecheck, build, `npm audit --omit=dev` (0) and `git diff --check` pass.
+**Mocked (Vitest; jsdom or Node):** 53 → 67 test files, 558 → 643 tests; format, lint, typecheck, build, `npm audit --omit=dev` (0) and `git diff --check` pass.
 
 - `safeReturnPath` with 18 unsafe inputs.
 - Role parsing and the permission matrix.
@@ -168,16 +170,20 @@ Apply `20261119090000_staff_roles.sql` after the Day 15–19 migrations. Then pr
 - `/admin` and `/admin/sign-in` for every session kind.
 - The sign-in form's accessibility.
 - `GET /api/admin/session`: 401, 403, 503 and 200, plus the cache headers.
-- The proxy: matcher, never redirects, writes refreshed cookies, survives outages.
+- The proxy: matcher, never redirects, writes refreshed cookies, survives outages, and passes the shared cookie configuration to the Supabase client (`Secure` only in production).
+- The server client: the same shared cookie configuration, session-cookie detection, cookie writes, and the ignored write from a Server Component.
+- The cookie configuration itself, and — with the real `@supabase/ssr` and a stubbed auth response — that a stored session cookie is written with `path=/`, `SameSite=Lax`, `httpOnly: false`, and `Secure` exactly in production. These tests fail if `Secure` is not set in production.
 - `next.config` private headers.
 
 **Real local PostgreSQL** (`supabase/tests/staff_roles.test.sql`):
 
 - Every role checked as the database's own API roles.
-- Self-grant and self-escalation attempts by non-staff, editor and administrator.
+- The complete write matrix on `staff_members` — INSERT, UPDATE, DELETE and TRUNCATE — for anon, a signed-in non-staff user, an editor and an administrator: every one is denied. (TRUNCATE is checked separately because Row Level Security does not apply to it; only the missing grant stops it.)
+- Self-grant and self-escalation attempts by non-staff, editor and administrator; an administrator cannot revoke a role through the API either.
 - Metadata role claims, revocation, deleted users and unknown roles.
-- Public functions stay published-only for staff.
-- A mutation check (granting INSERT) makes the test fail as it should.
+- Called as an editor (who can read draft and review rows directly), every public object-derived function stays published-only: `search_public_heritage_objects` and `public_map_objects` return only the published fixture; `public_directory_municipalities` offers no draft-only or review-only municipality and does not count a draft in a published municipality; `public_directory_historical_families` offers no family linked only to draft/review objects and does not count drafts.
+- All committed SQL tests (`directory_family_names`, `directory_map`, `staff_roles`) pass on a fresh disposable PostgreSQL 16 + PostGIS 3.4 database with the auth stub and every migration applied; the database was dropped afterwards.
+- Mutation checks make the test fail as it should: granting INSERT on `staff_members`; granting TRUNCATE to `authenticated`; removing the `status = 'published'` filter from `public_directory_municipalities`.
 
 **Real local PostgREST + PostgreSQL**, with JWTs from a local auth stub signed with the secret PostgREST verifies — 20/20:
 
@@ -219,5 +225,5 @@ Screenshots: `docs/day21-screenshots/`.
 2. **Access denied returns HTTP 200.** The page shows "Piekļuve liegta"; the API returns 403. A 403 for the page needs Next's experimental `forbidden()`/`authInterrupts`, which was left off.
 3. **No password reset or change page yet.** Use Supabase's reset e-mail. A reset page needs a redirect route and is best added with Day 22's account work.
 4. **Sign-out ends the local session only.** To end every session of a user, an administrator uses the dashboard.
-5. **The Supabase session cookie is readable by JavaScript.** This is how `@supabase/ssr` works. No app code reads or stores it; XSS protection remains essential, and nothing in the app renders untrusted HTML.
+5. **The Supabase session cookie is readable by JavaScript** (not `httpOnly`). This is how `@supabase/ssr` works. No app code reads or stores it; XSS protection remains essential, and nothing in the app renders untrusted HTML. It is `SameSite=Lax`, and `Secure` in production, so it is never sent over plain HTTP there.
 6. **The local auth stub** (in the scratchpad, not committed) is a test double, not a product component.

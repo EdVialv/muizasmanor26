@@ -6,23 +6,32 @@ const { ssr } = vi.hoisted(() => ({
   ssr: {
     getClaims: vi.fn(),
     refreshCookies: [] as Array<{ name: string; value: string; options: object }>,
+    options: null as null | Record<string, unknown>,
   },
 }));
 vi.mock("@supabase/ssr", () => ({
   createServerClient: (
     _url: string,
     _key: string,
-    { cookies }: { cookies: { setAll: (c: typeof ssr.refreshCookies) => void } },
-  ) => ({
-    auth: {
-      getClaims: async () => {
-        if (ssr.refreshCookies.length) cookies.setAll(ssr.refreshCookies);
-        return ssr.getClaims();
-      },
+    options: {
+      cookieOptions?: Record<string, unknown>;
+      cookies: { setAll: (c: typeof ssr.refreshCookies) => void };
     },
-  }),
+  ) => {
+    ssr.options = options;
+    const { cookies } = options;
+    return {
+      auth: {
+        getClaims: async () => {
+          if (ssr.refreshCookies.length) cookies.setAll(ssr.refreshCookies);
+          return ssr.getClaims();
+        },
+      },
+    };
+  },
 }));
 
+import { authCookieOptions } from "@/lib/auth/cookies";
 import { config, proxy } from "./proxy";
 
 const ENV = {
@@ -68,5 +77,15 @@ describe("proxy (Day 21)", () => {
     expect((await proxy(new NextRequest("http://localhost/admin"))).status).toBe(200);
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
     expect((await proxy(new NextRequest("http://localhost/admin"))).status).toBe(200);
+  });
+
+  it("passes the shared auth-cookie configuration to the Supabase client", async () => {
+    await proxy(new NextRequest("http://localhost/admin"));
+    expect(ssr.options?.cookieOptions).toEqual(authCookieOptions());
+    expect(ssr.options?.cookieOptions).toMatchObject({ path: "/", sameSite: "lax", secure: false });
+
+    vi.stubEnv("NODE_ENV", "production");
+    await proxy(new NextRequest("https://muizas.example/admin"));
+    expect(ssr.options?.cookieOptions).toEqual({ path: "/", sameSite: "lax", secure: true });
   });
 });

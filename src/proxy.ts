@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { AuthConfigurationError, readAuthConfig } from "@/lib/auth/config";
+import { authCookieOptions } from "@/lib/auth/cookies";
 
 /**
  * Next.js 16 proxy (formerly middleware) for the administration area only
@@ -33,6 +34,8 @@ export async function proxy(request: NextRequest) {
   }
 
   const supabase = createServerClient(config.url, config.publishableKey, {
+    // The same attributes as the server client (Secure in production).
+    cookieOptions: authCookieOptions(),
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (toSet) => {
