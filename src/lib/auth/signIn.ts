@@ -2,7 +2,8 @@
  * Sign-in input validation and outcome mapping (Day 21). Pure, so the
  * server action stays thin and this is unit-tested directly.
  *
- * Failure messages never say whether the e-mail address exists, and
+ * Failure messages never say whether the e-mail address exists or whether
+ * its account is confirmed (one generic message covers both), and
  * nothing here logs or returns the password.
  */
 
@@ -19,6 +20,8 @@ export interface SignInFormState {
 }
 
 export const INITIAL_SIGN_IN_STATE: SignInFormState = { status: "idle" };
+
+export const GENERIC_FAILURE_MESSAGE = "Nepareiza e-pasta adrese vai parole.";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -65,13 +68,6 @@ export function signInFailureState(
       email,
     };
   }
-  if (error?.code === "email_not_confirmed") {
-    return {
-      status: "error",
-      message: "Šis konts vēl nav apstiprināts. Sazinieties ar administratoru.",
-      email,
-    };
-  }
   if (error && (error.status === undefined || error.status >= 500)) {
     return {
       status: "error",
@@ -79,9 +75,13 @@ export function signInFailureState(
       email,
     };
   }
+  // Everything else that depends on the account - a wrong password, an
+  // unknown address, an unconfirmed address (email_not_confirmed), a banned
+  // user - gets the same message, so the form never reveals which addresses
+  // have accounts or what state they are in.
   return {
     status: "error",
-    message: "Nepareiza e-pasta adrese vai parole.",
+    message: GENERIC_FAILURE_MESSAGE,
     email,
   };
 }

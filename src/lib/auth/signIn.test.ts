@@ -30,11 +30,24 @@ describe("sign-in input (Day 21)", () => {
     expect(validateSignInInput("a@b.lv", "p".repeat(2000)).ok).toBe(false);
   });
 
-  it("never says whether the account exists", () => {
+  it("never says whether the account exists, or whether it is confirmed or banned", () => {
     const wrong = signInFailureState({ status: 400, code: "invalid_credentials" }, "a@b.lv");
-    const unknown = signInFailureState({ status: 400, code: "user_not_found" }, "a@b.lv");
-    expect(wrong.message).toBe("Nepareiza e-pasta adrese vai parole.");
-    expect(unknown.message).toBe(wrong.message);
+    expect(wrong).toEqual({
+      status: "error",
+      message: "Nepareiza e-pasta adrese vai parole.",
+      email: "a@b.lv",
+    });
+    for (const error of [
+      { status: 400, code: "user_not_found" },
+      // Supabase Auth answers a correct password for an unconfirmed address
+      // with email_not_confirmed: telling the visitor so would confirm that
+      // the address has an account.
+      { status: 400, code: "email_not_confirmed" },
+      { status: 400, code: "user_banned" },
+      { status: 400 },
+    ]) {
+      expect(signInFailureState(error, "a@b.lv"), error.code).toEqual(wrong);
+    }
   });
 
   it("explains rate limits and outages", () => {

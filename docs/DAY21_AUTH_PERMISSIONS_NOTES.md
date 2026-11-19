@@ -35,7 +35,7 @@ Staff can sign in with Supabase Auth and reach a protected `/admin` entry page. 
   2. **Role:** read from `public.staff_members` with the user's own token, so Row Level Security returns the user's own row or nothing.
   3. **Default deny.** No row, an unknown role value, a token for a deleted user, or a database or network error each mean no staff access. Errors give "unverified", which is shown as "not available" and returns 503 from the API.
 - **Sign-in** (`src/app/admin/actions.ts`): a server action using `signInWithPassword`, for e-mail and password accounts an administrator has created. There is no sign-up action or link. The form works without JavaScript; with JavaScript it shows a pending state, field errors with `aria-invalid`/`aria-describedby`, and an alert that receives focus.
-  - One generic message covers both a wrong password and an unknown account, so the form never reveals whether an address exists. Rate limits and outages have their own messages.
+  - One generic message ("Nepareiza e-pasta adrese vai parole.") covers a wrong password, an unknown address and an unconfirmed address (`email_not_confirmed`), so the form never reveals whether an address has an account or what state it is in. Only rate limits and outages, which do not depend on the account, have their own messages.
   - Only the error status and code are logged — never the e-mail address, password or tokens.
 - **Return after sign-in** (`src/lib/auth/returnPath.ts`). `next` must be a plain path inside `/admin`.
   - Rejected and replaced with `/admin`: other origins, `//host`, backslashes, schemes, control characters and whitespace, dot-segment escapes, oversized values, public paths, and the sign-in page itself.
@@ -107,7 +107,7 @@ No new ones. The app uses the existing `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBL
 
 1. **Sign In / Providers → Email:** enabled.
 2. **Allow new users to sign up: off.** Staff accounts are created by an administrator. Even with sign-up on, a new user would have no role and see only public pages, but turning it off avoids unused accounts.
-3. **Confirm email: on** (accounts created in the dashboard with "Auto confirm" are confirmed).
+3. **Confirm email: on** (accounts created in the dashboard with "Auto confirm" are confirmed). An unconfirmed account cannot sign in, and the form shows it only the generic failure message — so if a new staff member cannot sign in, check that their account is confirmed.
 4. **URL Configuration:**
    - **Site URL:** the production origin.
    - **Additional Redirect URLs:** each environment's origin, including `http://localhost:3000/**` for development and preview domains.
@@ -158,13 +158,13 @@ Apply `20261119090000_staff_roles.sql` after the Day 15–19 migrations. Then pr
 
 ## Verification
 
-**Mocked (Vitest; jsdom or Node):** 53 → 65 test files, 558 → 634 tests; format, lint, typecheck, build, `npm audit --omit=dev` (0) and `git diff --check` pass.
+**Mocked (Vitest; jsdom or Node):** 53 → 65 test files, 558 → 635 tests; format, lint, typecheck, build, `npm audit --omit=dev` (0) and `git diff --check` pass.
 
 - `safeReturnPath` with 18 unsafe inputs.
 - Role parsing and the permission matrix.
 - `getStaffSession` with a fake client: anonymous and expired sessions, claims that are not an authenticated user, metadata role claims ignored, unknown role values, errors treated as unverified.
 - Sign-in validation and failure messages.
-- The server actions: validation before any Supabase call, success, unsafe `next`, a generic message with no credentials logged, an unreachable auth service, sign-out.
+- The server actions: validation before any Supabase call, success, unsafe `next`, a generic message with no credentials logged (also for an unconfirmed address), an unreachable auth service, sign-out.
 - `/admin` and `/admin/sign-in` for every session kind.
 - The sign-in form's accessibility.
 - `GET /api/admin/session`: 401, 403, 503 and 200, plus the cache headers.

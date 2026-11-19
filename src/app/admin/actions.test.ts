@@ -103,6 +103,23 @@ describe("staff sign-in and sign-out actions (Day 21)", () => {
     expect(text).not.toContain("redaktors@example.invalid");
   });
 
+  it("does not reveal that an address exists but is unconfirmed", async () => {
+    auth.signInWithPassword.mockResolvedValue({
+      data: {},
+      error: { status: 400, code: "email_not_confirmed", message: "Email not confirmed" },
+    });
+    const state = await signInAction(
+      INITIAL_SIGN_IN_STATE,
+      form({ email: "redaktors@example.invalid", password: PASSWORD }),
+    );
+    expect(state).toEqual({
+      status: "error",
+      message: "Nepareiza e-pasta adrese vai parole.",
+      email: "redaktors@example.invalid",
+    });
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
   it("treats an unreachable auth service as a failure, not a success", async () => {
     auth.signInWithPassword.mockRejectedValue(new TypeError("fetch failed"));
     const state = await signInAction(
