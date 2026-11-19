@@ -211,7 +211,16 @@ export default function DirectoryFilterPanel({
         <details
           open={desktop || open}
           onToggle={(event) => {
-            if (!desktop) setOpen(event.currentTarget.open);
+            const details = event.currentTarget;
+            if (!desktop) {
+              setOpen(details.open);
+            } else if (!details.open) {
+              // The desktop sidebar is always open. A click or Enter on
+              // "Filtri" closes <details> natively, and React would not
+              // reopen it (its `open` prop has not changed) - leaving every
+              // filter hidden until the page is reloaded.
+              details.open = true;
+            }
           }}
         >
           <summary className="directoryFiltersSummary">

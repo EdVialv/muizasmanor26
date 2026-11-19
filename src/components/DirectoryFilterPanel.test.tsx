@@ -432,4 +432,32 @@ describe("DirectoryFilterPanel", () => {
       expect(push).toHaveBeenLastCalledWith("/objects?q=pils", { scroll: false });
     });
   });
+
+  it("keeps the desktop sidebar open when 'Filtri' is clicked or activated with Enter", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      (query: string) =>
+        ({
+          matches: query === "(min-width: 64rem)",
+          media: query,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+        }) as unknown as MediaQueryList,
+    );
+    try {
+      const { container } = render(
+        <DirectoryListingProvider>
+          <DirectoryFilterPanel regionOptions={REGIONS} />
+        </DirectoryListingProvider>,
+      );
+      const details = container.querySelector("details") as HTMLDetailsElement;
+      expect(details.open).toBe(true);
+      // What the browser does natively on a click or Enter on <summary>.
+      details.open = false;
+      fireEvent(details, new Event("toggle"));
+      expect(details.open).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

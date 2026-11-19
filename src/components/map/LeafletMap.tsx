@@ -38,6 +38,23 @@ const TILE_FAILURES_BEFORE_NOTICE = 4;
 /** A settled move is written to the URL this long after the last moveend. */
 export const MAP_URL_DEBOUNCE_MS = 400;
 
+/**
+ * True when `position` is where the map already is, to within a pixel.
+ * Leaflet keeps the exact centre only until the next resize; after that the
+ * centre is recomputed from whole pixels and can differ from the URL's by
+ * a fraction of a pixel - a difference the visitor cannot see, which must
+ * not be written back as a "move".
+ */
+function showsPosition(map: L.Map, position: MapPosition | null): boolean {
+  if (!position || map.getZoom() !== position.zoom) {
+    return false;
+  }
+  const zoom = position.zoom;
+  const here = map.project(map.getCenter(), zoom);
+  const there = map.project([position.lat, position.lng], zoom);
+  return here.distanceTo(there) < 1;
+}
+
 function currentPosition(map: L.Map): MapPosition | null {
   const center = map.getCenter();
   return normalizePosition({ lat: center.lat, lng: center.lng, zoom: map.getZoom() });
@@ -254,7 +271,8 @@ export default function LeafletMap({
         if (
           next === null ||
           positionsEqual(next, intended) ||
-          (intended === null && positionsEqual(next, defaultViewRef.current))
+          showsPosition(map, intended) ||
+          (intended === null && showsPosition(map, defaultViewRef.current))
         ) {
           return;
         }
@@ -467,10 +485,33 @@ export default function LeafletMap({
   }, [selectedObjectId, maxZoom]);
 
   // Sidebar expansion and responsive columns change the canvas after mount.
+  // A resize is not a move by the visitor: the centre is kept (pan: true;
+  // the design branch used pan: false, which kept the top-left corner and
+  // moved the centre, rewriting a shared Day 20 position), and the default
+  // view is re-fitted to the new size. Any sub-pixel drift is ignored by
+  // showsPosition(), so nothing is written back.
   useEffect(() => {
     const container = containerRef.current;
     if (!container || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => mapRef.current?.invalidateSize({ pan: false }));
+    const observer = new ResizeObserver(() => {
+      const map = mapRef.current;
+      // Not while the map is being removed (detached or zero-sized), and
+      // only for a real size change: invalidateSize() drops Leaflet's exact
+      // centre even when nothing changed.
+      if (!map || !container.isConnected || !container.clientWidth || !container.clientHeight) {
+        return;
+      }
+      const size = map.getSize();
+      if (size.x === container.clientWidth && size.y === container.clientHeight) {
+        return;
+      }
+      const atDefault = positionRef.current === null && showsPosition(map, defaultViewRef.current);
+      map.invalidateSize({ pan: true, animate: false });
+      if (atDefault) {
+        // The default view is "all of Latvia": fit it to the new size.
+        showPosition(map, null, defaultViewRef);
+      }
+    });
     observer.observe(container);
     return () => observer.disconnect();
   }, []);
