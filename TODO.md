@@ -57,7 +57,7 @@ The platform will contain more than 5,000 manor estates and related heritage obj
 |  18 | Add condition, ownership and historical-family filters with verified labels and null handling.                | [#9](https://github.com/EdVialv/muizasmanor26/issues/9)   | Claude Code, Codex review           |  [x]   |
 |  19 | Integrate Leaflet with production tiles, viewport queries, clustering and list-to-map navigation.             | [#9](https://github.com/EdVialv/muizasmanor26/issues/9)   | Claude Code                         |  [x]   |
 |  20 | Synchronise indexed filters, cursor pagination and map viewport through shareable URL parameters.             | [#9](https://github.com/EdVialv/muizasmanor26/issues/9)   | Claude Code                         |  [x]   |
-|  21 | Configure Supabase authentication and define administrator and editor permissions.                            | [#10](https://github.com/EdVialv/muizasmanor26/issues/10) | Claude Code, Codex security review  |  [ ]   |
+|  21 | Configure Supabase authentication and define administrator and editor permissions.                            | [#10](https://github.com/EdVialv/muizasmanor26/issues/10) | Claude Code, Codex security review  |  [x]   |
 |  22 | Build paginated protected admin lists and create/edit forms with server-side validation.                      | [#10](https://github.com/EdVialv/muizasmanor26/issues/10) | Claude Code                         |  [ ]   |
 |  23 | Implement draft, review, publish and archive transitions with audit metadata and authorization tests.         | [#10](https://github.com/EdVialv/muizasmanor26/issues/10) | Claude Code, Codex review           |  [ ]   |
 |  24 | Build the accessible event-enquiry form, consent language and confirmation state.                             | [#11](https://github.com/EdVialv/muizasmanor26/issues/11) | Claude Code + manual copy review    |  [ ]   |
@@ -96,12 +96,15 @@ Its migration, `supabase/migrations/20261115090000_directory_classification_filt
 
 **Day 20 is implemented, awaiting Codex review** (branch `claude/day20-url-state`, based on the owner-pushed Day 19 with its fix `443dd77`, delivered as `muizasmanor26-day20-corrected.bundle`). The URL now fully describes what a visitor browses: search, filters, the list cursor and the map position (`lat`, `lng`, `zoom`). Direct links, refresh, Back/Forward and "Kopēt saiti" restore the same state in either view. Map moves replace the history entry; filter, page and view changes add one. No migration. See `docs/DAY20_URL_STATE_NOTES.md`.
 
+**Day 21 is implemented, awaiting review** (branch `claude/day21-auth-admin`: reviewed Day 20 `fb46cd0` merged with the travel-guide design `867ffef` as `4c79149`, integration fixes `265fc62`, then Day 21; delivered as `muizasmanor26-day21.bundle`). Staff sign in with Supabase Auth e-mail and password and reach `/admin`; roles come only from `public.staff_members`, which the application can read but never write. Migration `supabase/migrations/20261119090000_staff_roles.sql` must be applied after the Day 15–19 migrations, followed by provisioning the first administrator. See `docs/DAY21_AUTH_PERMISSIONS_NOTES.md`.
+
 Next steps:
 
-1. Codex reviews and merges Day 17, then Day 18, then Day 19, then Day 20, rebasing later days if earlier ones change.
+1. Codex reviews and merges Day 17, then Day 18, then Day 19, then Day 20, the design (PR #44) and Day 21, rebasing later days if earlier ones change.
 2. Apply the Day 15–19 migrations to `muizasmanor26-dev` in order and verify the public pages.
 3. Choose a production tile provider (`docs/DAY19_MAP_NOTES.md`, "Tiles") and set `MAP_TILE_*` in the hosting environment.
-4. Start **Day 21**: configure Supabase authentication and define administrator and editor permissions.
+4. Provision the first administrator on `muizasmanor26-dev` and verify staff sign-in against the real Supabase Auth (docs/DAY21_AUTH_PERMISSIONS_NOTES.md, "Account setup").
+5. Start **Day 22**: paginated protected admin lists and create/edit forms with server-side validation.
 
 In parallel, continue the editorial data stream before any bulk staging: assign `object_type`, define municipality mapping, and review the 165 duplicate and 92 relationship candidates documented by Day 11. This does not block the visual directory implementation, but it does block promotion of the real bulk dataset.
 

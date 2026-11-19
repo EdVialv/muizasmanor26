@@ -19,10 +19,10 @@ Read it before starting a session and update it before ending a session.
 
 ## Project position
 
-- **Current roadmap day:** Days 17–20 implemented, awaiting Codex review
+- **Current roadmap day:** Day 21 implemented on the integrated Day 20 + design baseline, awaiting review; Days 17–20 and the design (PR #44) are not yet merged into `main`
 - **Last completed-and-merged day:** Day 16 ([#42](https://github.com/EdVialv/muizasmanor26/pull/42), `5d15f23`)
-- **Current issue:** [#9 — Search, filters and map](https://github.com/EdVialv/muizasmanor26/issues/9)
-- **Next outcome:** Codex reviews Day 17 (`claude/day17-directory-filters`, `e46b81c`), Day 18 (`claude/day18-condition-ownership-family`, `9b13fdb`), Day 19 (`claude/day19-map`, owner-pushed, with fix `443dd77`) and Day 20 (`claude/day20-url-state`), each stacked on the previous one. After that, apply the Day 15–19 migrations to `muizasmanor26-dev` in order (Day 20 has none), choose a tile provider, and start Day 21 (authentication).
+- **Current issue:** [#10 — Administration](https://github.com/EdVialv/muizasmanor26/issues/10)
+- **Next outcome:** Review Day 21 (`claude/day21-auth-admin`), which sits on the reviewed Day 20 (`fb46cd0`) merged with the travel-guide design (`867ffef`) as `4c79149`, plus integration fixes `265fc62`. Then apply the Day 15–21 migrations to `muizasmanor26-dev` in order, provision the first administrator (docs/DAY21_AUTH_PERMISSIONS_NOTES.md, "Account setup"), verify sign-in against the real Supabase Auth, and start Day 22 (admin lists and forms).
 - **MVP status:** Days 1–16 are merged and verified; Days 17–18 (filters) and Day 19 (map) await review. Day 14 added object pages, Day 15 added the first visual alpha and its image/access migration, and Day 16 added indexed multilingual search and its search migration. The two new migrations remain unapplied to the real development database. The real dataset remains non-destructive: no Day 11 row was bulk-staged or promoted. `object_type`, municipality mapping and duplicate/relationship review continue as a parallel editorial stream before bulk staging.
 - **Detailed plan:** [TODO.md](TODO.md)
 
@@ -30,15 +30,15 @@ Read it before starting a session and update it before ending a session.
 
 Update this section when a session starts. Only one write-enabled session should be active.
 
-| Field            | Current value                                     |
-| ---------------- | ------------------------------------------------- |
-| Status           | Days 17–20 awaiting Codex review                  |
-| Agent            | Claude Code (session ended)                       |
-| Issue            | #9                                                |
-| Branch           | `claude/day20-url-state` (on Days 19, 18, 17)     |
-| Session goal     | Shareable URL state for list and map              |
-| Started          | 2026-11-18                                        |
-| Expected handoff | Tested URL synchronisation ready for Codex review |
+| Field            | Current value                                                      |
+| ---------------- | ------------------------------------------------------------------ |
+| Status           | Day 21 awaiting review                                             |
+| Agent            | Claude Code (session ended)                                        |
+| Issue            | #10                                                                |
+| Branch           | `claude/day21-auth-admin` (on Day 20 `fb46cd0` + design `867ffef`) |
+| Session goal     | Staff sign-in, trusted roles and a protected `/admin`              |
+| Started          | 2026-11-19                                                         |
+| Expected handoff | Tested authentication and permissions ready for review             |
 
 ## Required session entry
 
@@ -67,6 +67,25 @@ Copy this template to the top of **Session history** before ending a session.
 ```
 
 ## Session history
+
+### 2026-11-19 Europe/Riga — Claude Code (Day 21)
+
+- **Issue:** [#10 — Administration](https://github.com/EdVialv/muizasmanor26/issues/10)
+- **Branch:** `claude/day21-auth-admin`, created from the reviewed Day 20 head `fb46cd0`. `4c79149` merges `origin/codex/travel-guide-design` (`867ffef`) as a separate merge commit (6 conflicts, both sides kept); `265fc62` fixes two integration problems (the design's map resize rewrote shared positions; desktop "Filtri" could hide the always-open sidebar). Neither source branch was modified. `main` is still `f3311e7`.
+- **Pull request:** not opened (the push returns 403; delivered as `muizasmanor26-day21.bundle`).
+- **Session goal:** Staff sign in with Supabase Auth and reach a protected `/admin`; public browsing unchanged.
+- **Completed:**
+  - Integrated baseline verified before any Day 21 work: format, lint, typecheck, 558 tests, build, audit, `git diff --check`, and every browser suite (Day 17–20).
+  - `@supabase/ssr` cookie sessions; Next 16 `proxy.ts` refreshes sessions for `/admin*` and `/api/admin/*` only (no authorisation there).
+  - Every protected page, route handler and server action verifies the user (`getClaims()`) and reads the role from `staff_members` under the user's own RLS; default deny.
+  - Migration `20261119090000_staff_roles.sql`: `staff_role` enum, `staff_members` (read-only to the app: own row, or all for administrators; no write grants or policies), `private.current_staff_role()`, and a staff read policy for every object status.
+  - `/admin/sign-in` (e-mail + password, no sign-up, safe `next`, pending/validation/failure/expired/signed-out states, works without JS), `/admin` (role, content overview, administrator-only read-only staff figures, access-denied and not-verifiable states), POST sign-out, `GET /api/admin/session` (401/403/503/200). Staff responses private and noindex.
+  - Account setup, permission matrix and Day 22/23 plan in `docs/DAY21_AUTH_PERMISSIONS_NOTES.md`.
+- **Verification:** see the notes. Mocked unit/integration tests; real local PostgreSQL RLS test; real local PostgREST + PostgreSQL with stub-issued JWTs (20/20); browser with a local Auth **stub** (55/55, desktop and mobile); Day 17–20 browser regressions pass. Real Supabase Auth and live settings: **blocked** (not passed).
+- **Decisions:** see the notes, "Limitations and decisions for review" (6).
+- **Blockers or risks:** sign-in has not been run against the real Supabase Auth server; stacked on the unmerged Days 17–20 and design.
+- **Next exact action:** review Day 21; on `muizasmanor26-dev`, apply the Day 15–21 migrations, provision a first administrator and run the three-account test plan.
+- **Handoff state:** committed on `claude/day21-auth-admin`, not pushed; awaiting review
 
 ### 2026-11-18 Europe/Riga — Claude Code (Day 20 corrections after review)
 
