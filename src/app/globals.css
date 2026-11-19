@@ -2263,3 +2263,230 @@ h2 {
     justify-content: flex-start;
   }
 }
+
+/* ------------------------------------------------------------------------
+   Day 21: staff sign-in and administration entry
+   (docs/DAY21_AUTH_PERMISSIONS_NOTES.md). Travel-guide tokens only.
+   ------------------------------------------------------------------------ */
+
+.adminSection {
+  padding-block: var(--space-10) var(--space-16);
+}
+
+.adminContainer {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.adminHeading {
+  margin: 0 0 var(--space-3);
+  color: var(--olive-dark);
+  font: 750 var(--text-h3)/1.15 var(--font-heading);
+  letter-spacing: -0.02em;
+}
+
+.adminLead,
+.adminNote {
+  max-width: 40rem;
+  color: var(--muted);
+}
+
+.adminNote {
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-small);
+}
+
+.adminSignIn {
+  width: 100%;
+  max-width: 28rem;
+  margin-inline: auto;
+}
+
+.adminSignInForm {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-6);
+  padding: var(--space-6);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.adminSignInForm .primaryAction {
+  justify-self: stretch;
+}
+
+.adminSignInForm .primaryAction:disabled {
+  cursor: progress;
+  opacity: 0.75;
+}
+
+.adminField {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.adminField label {
+  color: var(--ink);
+  font: 700 var(--text-small)/1.3 var(--font-sans);
+}
+
+.adminField input {
+  width: 100%;
+  min-height: 2.875rem;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  background: var(--paper);
+  padding: 0.7rem 0.9rem;
+  color: var(--ink);
+  font: 400 var(--text-body)/1.3 var(--font-sans);
+}
+
+.adminField input:hover {
+  border-color: var(--olive);
+}
+
+.adminField input[aria-invalid="true"] {
+  border-color: #a33b2b;
+}
+
+.adminFieldError {
+  margin: 0;
+  color: #8f2f22;
+  font: 600 var(--text-small)/1.4 var(--font-sans);
+}
+
+.adminFormAlert {
+  margin: 0;
+  border-left: 4px solid #a33b2b;
+  border-radius: 0.4rem;
+  background: #fbf0ee;
+  padding: var(--space-3) var(--space-4);
+  color: #6e2419;
+  font: 600 var(--text-small)/1.45 var(--font-sans);
+}
+
+.adminFormAlert:focus-visible {
+  outline: 3px solid var(--olive);
+  outline-offset: 4px;
+}
+
+.adminNotice {
+  margin: var(--space-4) 0 0;
+  border-left: 4px solid var(--olive);
+  border-radius: 0.4rem;
+  background: var(--surface);
+  padding: var(--space-3) var(--space-4);
+  color: var(--ink);
+  font: 500 var(--text-small)/1.45 var(--font-sans);
+}
+
+.adminNotice p {
+  margin: 0 0 var(--space-3);
+}
+
+.adminHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--line);
+}
+
+.adminIdentity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.adminRoleBadge {
+  display: inline-flex;
+  border-radius: var(--radius-full);
+  background: var(--olive);
+  padding: 0.2rem 0.7rem;
+  color: var(--ink-contrast);
+  font: 700 var(--text-small)/1.4 var(--font-sans);
+}
+
+.adminDashboard {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.adminPanel {
+  padding: var(--space-6);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.adminPanel h2 {
+  margin: 0 0 var(--space-4);
+  color: var(--olive-dark);
+  font: 750 var(--text-h4)/1.3 var(--font-heading);
+}
+
+.adminStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.adminStats div {
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  background: var(--paper);
+}
+
+.adminStats dt {
+  color: var(--muted);
+  font: 600 var(--text-small)/1.3 var(--font-sans);
+}
+
+.adminStats dd {
+  margin: 0.25rem 0 0;
+  color: var(--olive-dark);
+  font: 750 1.75rem/1.1 var(--font-heading);
+}
+
+.adminSignOut {
+  margin: var(--space-4) 0 0;
+}
+
+.adminHeader .adminSignOut {
+  margin: 0;
+}
+
+.adminSecondaryAction {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  background: var(--paper);
+  padding: 0.65rem 1rem;
+  color: var(--olive-dark);
+  font: 700 var(--text-small)/1.2 var(--font-sans);
+  cursor: pointer;
+}
+
+.adminSecondaryAction:hover {
+  border-color: var(--olive);
+  background: var(--olive);
+  color: var(--ink-contrast);
+}
+
+@media (max-width: 40rem) {
+  .adminSignInForm,
+  .adminPanel {
+    padding: var(--space-4);
+  }
+}
