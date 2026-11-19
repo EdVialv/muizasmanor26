@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import Icon from "@/components/Icon";
 import { useCallback, useMemo, useState } from "react";
 import { useDirectoryListing } from "@/components/DirectoryListingProvider";
 import { buildBrowseHref } from "@/lib/directory/browseState";
@@ -65,6 +66,7 @@ export default function DirectoryMap({ tiles }: { tiles: TileConfigOutcome }) {
   const { listing, cursor, position, epoch, setMapPosition } = useDirectoryListing();
   const [viewport, setViewport] = useState<Viewport | null>(null);
   const [tilesFailed, setTilesFailed] = useState(false);
+  const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const { state, retry } = useMapData(listing, viewport);
 
   const result: MapResult | null =
@@ -137,6 +139,8 @@ export default function DirectoryMap({ tiles }: { tiles: TileConfigOutcome }) {
         onPositionChange={setMapPosition}
         onViewportChange={setViewport}
         onTileFailure={setTilesFailed}
+        selectedObjectId={selectedObjectId}
+        onObjectSelect={setSelectedObjectId}
       />
 
       <div className="directoryMapStatus">
@@ -169,9 +173,19 @@ export default function DirectoryMap({ tiles }: { tiles: TileConfigOutcome }) {
         ) : sortedObjects.length > 0 ? (
           <ul className="directoryMapListItems">
             {sortedObjects.map((object) => (
-              <li key={object.id}>
+              <li key={object.id} data-selected={selectedObjectId === object.id}>
                 <Link href={objectHref(object.slug)}>{object.name}</Link>
                 <span className="directoryMapListType">{objectTypeLabel(object.objectType)}</span>
+                <button
+                  className="mapLocateButton"
+                  type="button"
+                  aria-label={`Rādīt kartē: ${object.name}`}
+                  aria-pressed={selectedObjectId === object.id}
+                  onClick={() => setSelectedObjectId(object.id)}
+                >
+                  <Icon name="pin" width="16" height="16" />
+                  Rādīt kartē
+                </button>
               </li>
             ))}
           </ul>

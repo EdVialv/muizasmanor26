@@ -14,7 +14,7 @@ describe("SiteHeader", () => {
   it("renders the site wordmark linking to the homepage", async () => {
     await renderAt("/");
 
-    const wordmark = screen.getByRole("link", { name: "Latvijas muižas" });
+    const wordmark = screen.getByRole("link", { name: "MuizasDB — sākumlapa" });
     expect(wordmark).toHaveAttribute("href", "/");
   });
 
@@ -27,31 +27,31 @@ describe("SiteHeader", () => {
   it("lists Home and the directory, each linking to its own route", async () => {
     await renderAt("/");
 
-    const homeLink = screen.getByRole("link", { name: "Sākums" });
+    const homeLink = screen.getByRole("link", { name: "Atklāt" });
     expect(homeLink).toHaveAttribute("href", "/");
 
-    const directoryLink = screen.getByRole("link", { name: "Objekti" });
+    const directoryLink = screen.getByRole("link", { name: "Muižas" });
     expect(directoryLink).toHaveAttribute("href", "/objects");
   });
 
   it("marks Home as the current page when the pathname is /", async () => {
     await renderAt("/");
 
-    expect(screen.getByRole("link", { name: "Sākums" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "Objekti" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "Atklāt" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Muižas" })).not.toHaveAttribute("aria-current");
   });
 
   it("marks the directory as the current page when the pathname is /objects", async () => {
     await renderAt("/objects");
 
-    expect(screen.getByRole("link", { name: "Objekti" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "Sākums" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "Muižas" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Atklāt" })).not.toHaveAttribute("aria-current");
   });
 
   it("marks neither item current on an unrelated route (e.g. a future detail page)", async () => {
     await renderAt("/objects/rundales-pils");
 
-    expect(screen.getByRole("link", { name: "Sākums" })).not.toHaveAttribute("aria-current");
-    expect(screen.getByRole("link", { name: "Objekti" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "Atklāt" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "Muižas" })).not.toHaveAttribute("aria-current");
   });
 });

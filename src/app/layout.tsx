@@ -5,8 +5,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Latvijas muižas",
-    template: "%s | Latvijas muižas",
+    default: "MuizasDB — Latvijas muižas un pilis",
+    template: "%s | MuizasDB",
   },
   description: "Atklāj Latvijas muižas, to stāstus, pakalpojumus un pasākumu iespējas.",
 };

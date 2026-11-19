@@ -110,6 +110,22 @@ describe("DirectoryMap with the shared listing state", () => {
     vi.unstubAllGlobals();
   });
 
+  it("selects a result for the map while keeping its detail-page link", async () => {
+    render(tree());
+    reportViewport();
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: "Rādīt kartē: Ābeļu muiža" }));
+    expect(mapProps.current?.selectedObjectId).toBe("id-Ābeļu muiža");
+    expect(screen.getByRole("button", { name: "Rādīt kartē: Ābeļu muiža" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("link", { name: "Ābeļu muiža" })).toHaveAttribute(
+      "href",
+      "/objects/slug-0?fromView=map",
+    );
+  });
+
   it("loads the viewport with the URL's search and filters, and lists what is in view", async () => {
     navigation.search = "q=muiža&condition=unknown&family_unknown=1&cursor=abc";
     render(tree());

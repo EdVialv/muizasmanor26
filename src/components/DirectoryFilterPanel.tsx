@@ -32,6 +32,17 @@ import {
 } from "@/lib/directory/labels";
 import type { RegionOption } from "@/lib/directory/regionOptions";
 
+const DESKTOP_FILTER_QUERY = "(min-width: 64rem)";
+function subscribeDesktop(callback: () => void) {
+  if (!window.matchMedia) return () => {};
+  const media = window.matchMedia(DESKTOP_FILTER_QUERY);
+  media.addEventListener("change", callback);
+  return () => media.removeEventListener("change", callback);
+}
+function desktopSnapshot() {
+  return window.matchMedia?.(DESKTOP_FILTER_QUERY).matches ?? false;
+}
+
 type ListKey = "types" | "access" | "services" | "conditions" | "ownership";
 
 /** For useSyncExternalStore: "hydrated" never changes once true. */
@@ -82,6 +93,7 @@ export default function DirectoryFilterPanel({
   // summary already show what is applied, and on a phone an open panel
   // would push every result below the first screen.
   const [open, setOpen] = useState(false);
+  const desktop = useSyncExternalStore(subscribeDesktop, desktopSnapshot, () => false);
   const regionSelectId = useId();
   const statusId = useId();
 
@@ -196,7 +208,12 @@ export default function DirectoryFilterPanel({
         {positionEntries(position).map(([name, value]) => (
           <input key={name} type="hidden" name={name} value={value} />
         ))}
-        <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
+        <details
+          open={desktop || open}
+          onToggle={(event) => {
+            if (!desktop) setOpen(event.currentTarget.open);
+          }}
+        >
           <summary className="directoryFiltersSummary">
             Filtri{activeCount > 0 ? ` (${activeCount})` : ""}
           </summary>
